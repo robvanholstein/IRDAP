@@ -14,6 +14,11 @@ path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup'
 path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\IRDIS'
 
 # Options for pre-processing
+
+#TODO: Keep this or always do sigmafiltering? If keep then write part README
+sigmafiltering_sky = True
+
+
 save_preprocessed_data = True
 
 # Options for post-processing
@@ -230,8 +235,8 @@ from scipy.ndimage.interpolation import rotate
 from scipy.ndimage.filters import gaussian_filter
 from scipy import interpolate
 from scipy import optimize
+from scipy import ndimage
 from scipy.stats import trim_mean
-from scipy import ndimage as nd
 from astropy.modeling import models, fitting
 from astropy.modeling.models import custom_model
 
@@ -641,6 +646,211 @@ def check_sort_data_create_directories():
     
     return path_object_files, path_sky_files, path_center_files, path_flux_files, path_sky_flux_files
 
+###############################################################################
+# read_fits_files
+###############################################################################
+
+def read_fits_files(path, silent=False):
+    ''' 
+    Read FITS-files
+    
+    Input:
+        path: string or list of strings specifying paths to read FITS-files 
+              and its headers from 
+        silent: if True do not output message stating which file is read 
+                (default = False)
+    
+    Output:
+        data: image data cube (when 1 path specified) or list of image data 
+              cubes (when more than 1 path specified) read from FITS-files
+        header: headers (when 1 path specified) or list of headers 
+                (when more than 1 path specified) read from FITS-files
+    
+    Note:
+        If the data read is a single frame, an additional dimension is added to
+        make it a 3D image data cube (third dimension of length 1).
+                
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+    
+    if type(path) == str:
+        # Turn string into list with single string
+        path = [path]   
+
+    # Read data and header        
+    data = []
+    header = []
+    for path_sel in path:
+        data_read, header_read = pyfits.getdata(path_sel, header=True)
+        if data_read.ndim == 2:
+            data_read = np.expand_dims(data_read, axis=0)
+        elif data_read.ndim != 3:
+            raise IOError('{0:s} is neither a cube nor a frame'.format(path_sel))
+        data.append(data_read)
+        header.append(header_read) 
+        if silent is not True:
+            printandlog('Read file ' + path_sel + '.')
+
+    if len(data) == 1:
+        # Remove data and header from list
+        data = data[0]
+        header = header[0]
+        
+    return data, header
+
+###############################################################################
+# write_fits_files
+###############################################################################
+
+def write_fits_files(data, path, header=False, silent=False):
+    ''' 
+    Write FITS-files
+     
+    Input:
+        data: image data cube or list of image data cubes to write to FITS-files
+        path: string or list of strings specifying paths to write FITS-files to
+        header: headers or list of headers to write to FITS-files; if set to False
+              no header will be written (default=False)
+        silent: if True do not output message stating which file is written 
+                (default = False)
+
+    Note:
+        If data, header and path are lists of unequal length, the redundant 
+        list elements are ignored, meaning that files may not be written or
+        that headers may not be used.
+               
+    File written by Rob van Holstein
+    Function status: verified             
+    '''
+
+    # Prepare input to be processed
+    if type(path) == str:
+        path = [path]
+    
+    if type(data) == np.ndarray:
+        data = [data]
+
+    if type(header) == pyfits.header.Header:
+        header = [header]
+
+    if header == False:
+        # Write FITS-files without headers
+        for data_sel, path_sel in zip(data, path):
+            hdu = pyfits.PrimaryHDU()
+            hdu.data = data_sel.astype(np.float32)
+            hdu.writeto(path_sel, overwrite=True, output_verify='silentfix+ignore')
+            if silent is not True:
+                printandlog('Wrote file ' + path_sel + '.')
+    else:
+        # Write FITS-files with headers
+        for data_sel, header_sel, path_sel in zip(data, header, path):
+            hdu = pyfits.PrimaryHDU()
+            hdu.data = data_sel.astype(np.float32)
+            hdu.header = header_sel
+            hdu.writeto(path_sel, overwrite=True, output_verify='silentfix+ignore')
+            if silent is not True:
+                printandlog('Wrote file ' + path_sel + '.')
+
+###############################################################################
+# remove_bad_pixels
+###############################################################################
+
+def remove_bad_pixels(cube, master_bpm, sigmafiltering=True):
+    ''' 
+    Remove bad pixels from an image cube using the bad pixel map followed 
+    by optional sigma-filtering
+    
+    Input:
+        cube: image data cube to filtered for bad pixels
+        master_bpm: frame indicating location of bad pixels with 0's and good
+            pixels with 1's
+        sigma_filtering: if True remove bad pixels remaining after applying
+            master bad pixel map using sigma-filtering (default = True)
+    
+    Output:
+        cube_filtered: image data cube with bad pixels removed
+    
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Define size of side of filter kernel
+    filter_size = 5
+
+    # Round filter size up to nearest odd number for a symmetric filter kernel
+    filter_size = 2*(filter_size // 2) + 1
+    
+    # Remove bad pixels using the bad pixel map
+    cube_median = ndimage.filters.median_filter(cube, size=(1, filter_size, \
+                                                            filter_size))
+    cube_filtered = cube_median + master_bpm * (cube - cube_median)
+    
+    if sigmafiltering == True:
+        # Define threshold factor for sigma filtering
+        factor_threshold = 5
+        
+        # Prepare weights to compute mean without central pixel using convolution
+        kernel = np.ones((1, filter_size, filter_size)) / (filter_size**2 - 1)
+        kernel[0, filter_size//2, filter_size//2] = 0
+        
+        # Calculate local standard deviation using convolution
+        cube_mean = ndimage.filters.convolve(cube_filtered, kernel)
+        cube_EX2 = ndimage.filters.convolve(cube_filtered**2, kernel)
+        cube_std = np.sqrt(cube_EX2 - cube_mean**2)
+        
+        # Compute threshold map for removal of pixels
+        cube_threshold = factor_threshold*cube_std                             
+        
+        # Determine difference of image data with the local median
+        cube_difference = np.abs(cube_filtered - cube_median)
+        
+        # Replace bad pixels by values in median filtered images
+        cube_filtered[cube_difference > cube_threshold] = \
+        cube_median[cube_difference > cube_threshold]
+            
+    return cube_filtered
+
+###############################################################################
+# process_sky_frames
+###############################################################################
+
+def process_sky_frames(path_sky_files, master_bpm, sigmafiltering=True):
+    '''
+    Create a master sky-frame from the SKY-files
+    
+    Input:
+        path_sky_files: string or list of strings specifying paths of SKY-files
+        master_bpm: frame indicating location of bad pixels with 0's and good
+            pixels with 1's
+        sigmafiltering: if True remove bad pixels remaining after applying
+            master bad pixel map using sigma-filtering (default = True)
+
+    Output:
+        frame_master_sky: master sky frame
+    
+    File written by Rob van Holstein; based on function by Christian Ginski
+    Function status: verified       
+    '''
+       
+    # Read sky frames
+    cube_sky_raw = read_fits_files(path_sky_files, silent=True)[0]
+   
+    if type(cube_sky_raw) == list:
+        # Make a single image cube from list of image cubes or frames
+        cube_sky_raw = np.vstack(cube_sky_raw)
+  
+    # Remove bad pixels of each frame
+    cube_sky_filtered = remove_bad_pixels(cube=cube_sky_raw, master_bpm=master_bpm, sigmafiltering=sigmafiltering)
+
+    # Compute median of sky frames
+    frame_master_sky = np.median(cube_sky_filtered, axis=0)
+            
+    printandlog('\nThe master sky was created out of {0:d} raw SKY-frame(s).\n'\
+                .format(cube_sky_raw.shape[0]))
+    
+    return frame_master_sky
+
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #@
@@ -649,11 +859,13 @@ def check_sort_data_create_directories():
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+
+
 ###############################################################################
 # perform_preprocessing
 ###############################################################################
 
-def perform_preprocessing(recompute=False):
+def perform_preprocessing(sigmafiltering_sky=True, recompute=False):
     '''
     
     Input:
@@ -664,6 +876,8 @@ def perform_preprocessing(recompute=False):
     File written by Rob van Holstein; based on function by Christian Ginski
     Function status: 
     '''
+    
+    
     
     # Process paths
     static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_H.fits')
@@ -680,15 +894,27 @@ def perform_preprocessing(recompute=False):
 
     path_object_files, path_sky_files, path_center_files, path_flux_files, \
     path_sky_flux_files = check_sort_data_create_directories()
-    
-    # Processing the sky files for the object files
-    printandlog('\n###############################################################################')
-    printandlog('# Processing SKY files for OBJECT-files')
-    printandlog('###############################################################################') 
 
     if recompute:
-        mastersky = reduce_sky_cubes(path_sky_files)   
-                                
+        if any(path_sky_files):
+            # Process the sky files for the object files
+            printandlog('\n###############################################################################')
+            printandlog('# Processing SKY files for OBJECT-files')
+            printandlog('###############################################################################') 
+    
+            frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, \
+                                                 master_bpm=master_bpm, \
+                                             sigmafiltering=sigmafiltering_sky)
+            
+            # Write master sky-frame
+            write_fits_files(data=frame_master_sky, path=os.path.join(path_sky_dir\
+                             , name_file_root + 'master_sky.fits'), header=False, silent=False)
+    
+        else:
+            frame_master_sky = np.zeros((1024, 2048))
+                    
+        mastersky = frame_master_sky
+        
     # Creating reduced center frames and obtaining center values
     printandlog('\n###############################################################################')
     printandlog('# Processing CENTER-files')
@@ -715,13 +941,24 @@ def perform_preprocessing(recompute=False):
         write_fits_files(data=np.stack(single_sum), path=os.path.join(path_preprocessed_dir, 'single_sum.fits'), header=False)
         write_fits_files(data=np.stack(single_diff), path=os.path.join(path_preprocessed_dir, 'single_diff.fits'), header=False)
 
-    # Processing the sky files for the flux files
-    printandlog('\n###############################################################################')
-    printandlog('# Processing SKY-files for FLUX-files')
-    printandlog('###############################################################################') 
+    if recompute:
+        if any(path_sky_flux_files):
+            # Process the sky files for the flux files
+            printandlog('\n###############################################################################')
+            printandlog('# Processing SKY-files for FLUX-files')
+            printandlog('###############################################################################') 
+    
+            frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, \
+                                                 master_bpm=master_bpm, \
+                                             sigmafiltering=sigmafiltering_sky)
+            
+            # Write master sky-frame
+            write_fits_files(data=frame_master_sky_flux, path=os.path.join(path_sky_flux_dir\
+                             , name_file_root + 'master_sky_flux.fits'), header=False, silent=False)
 
-#TODO: function to process sky files for flux files
-
+        else:
+            frame_master_sky_flux = np.zeros((1024, 2048))
+                    
     # Processing the flux files
     printandlog('\n###############################################################################')
     printandlog('# Processing FLUX-files')
@@ -732,91 +969,22 @@ def perform_preprocessing(recompute=False):
 
     return single_sum, single_diff, header_array
 
-###############################################################################
-# process_sky_frames
-###############################################################################
-
-def process_sky_frames(path_sky_files):
-    '''
-    Creates a master sky-frame from the SKY-files
-    
-    Input:
-        path_sky_files: list of paths of SKY-files
-        
-    Output:
-        frame_master_sky: master sky frame
-    
-    File written by Rob van Holstein; based on function by Christian Ginski
-    Function status:        
-    '''
-    
-    if len(path_sky_files)==0:
-        print('Warning, there is no sky files. We will use an empty sky array')
-        return np.zeros((1024,1024))
-    print('Reading the sky files:')
-    darks = []
-    ndarks= 0 
-    for sky_file in path_sky_files:
-        scidata = pyfits.getdata(sky_file)        
-        if len(scidata.shape) == 3:# this is a cube
-            ndarks = ndarks + scidata.shape[0]
-            for i in range(scidata.shape[0]):
-                darks.append(scidata[i,:,:])
-        elif len(scidata.shape) == 2:# this is a frame
-            ndarks = ndarks + 1
-            darks.append(scidata)
-        else:
-            raise IOError('Input format of {0:s} is neither a cube nor a frame'.format(sky_file))
-    dark = np.median(np.array(darks),axis=0)
-    print('The master sky was created out of {0:d} raw sky or background frames'.format(ndarks))
-    pyfits.writeto(os.path.join(path_sky_dir, "mastersky.fits"), dark, \
-                   header=pyfits.getheader(path_sky_files[0]), \
-                   output_verify="ignore",overwrite=True)
-    print('It was saved in {0:s}'.format(os.path.join(path_sky_dir, "mastersky.fits")))
-    return dark
 
 
 
 
 
 
-###############################################################################
-# reduce_sky_cubes
-###############################################################################
 
-def reduce_sky_cubes(sky_files):
-    """
-    Creates the master sky (or background) from a list of raw sky (background)
-    files. It saves it on the sky folder.
-    Input:
-        - sky_files: list of files for the sky
-    Output:
-        
-    """
-    if len(sky_files)==0:
-        print('Warning, there is no sky files. We will use an empty sky array')
-        return np.zeros((1024,1024))
-    print('Reading the sky files:')
-    darks = []
-    ndarks= 0 
-    for sky_file in sky_files:
-        scidata = pyfits.getdata(sky_file)        
-        if len(scidata.shape) == 3:# this is a cube
-            ndarks = ndarks + scidata.shape[0]
-            for i in range(scidata.shape[0]):
-                darks.append(scidata[i,:,:])
-        elif len(scidata.shape) == 2:# this is a frame
-            ndarks = ndarks + 1
-            darks.append(scidata)
-        else:
-            raise IOError('Input format of {0:s} is neither a cube nor a frame'.format(sky_file))
-    dark = np.median(np.array(darks),axis=0)
-    print('The master sky was created out of {0:d} raw sky or background frames'.format(ndarks))
-    pyfits.writeto(os.path.join(path_sky_dir, "mastersky.fits"), dark, \
-                   header=pyfits.getheader(sky_files[0]), \
-                   output_verify="ignore",overwrite=True)
-    print('It was saved in {0:s}'.format(os.path.join(path_sky_dir, "mastersky.fits")))
-    return dark
+
+
+
+
+
+
+
+
+
 
 ###############################################################################
 # reduce_cube_IRDIS_flat_dark_bpm_shift
@@ -839,7 +1007,7 @@ def reduce_cube_IRDIS_flat_dark_bpm_shift(cube,header,flat,bpm,dark, offset_y, o
     
     average_cube = np.nan_to_num(average_cube)
 
-    median = nd.filters.median_filter(average_cube, size=5)    
+    median = ndimage.filters.median_filter(average_cube, size=5)    
     masked = average_cube * bpm
     median = median - median * bpm
     average_cube = median + masked    
@@ -847,7 +1015,7 @@ def reduce_cube_IRDIS_flat_dark_bpm_shift(cube,header,flat,bpm,dark, offset_y, o
     left = average_cube[:,0:1024]
     right = average_cube[:,1024:2048]
 
-    right = nd.shift(right, [offset_y, offset_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True) # beta pic J-band        
+    right = ndimage.shift(right, [offset_y, offset_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True) # beta pic J-band        
 
     pol = left - right
     intent = left + right    
@@ -861,8 +1029,8 @@ def reduce_cube_IRDIS_flat_dark_bpm_shift(cube,header,flat,bpm,dark, offset_y, o
     shift_x = (1024-1)/2 - star_x - x_dith
     shift_y = (1024-1)/2 - star_y - y_dith
 
-    pol = nd.shift(pol, [shift_y, shift_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True)
-    intent = nd.shift(intent, [shift_y, shift_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True)
+    pol = ndimage.shift(pol, [shift_y, shift_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True)
+    intent = ndimage.shift(intent, [shift_y, shift_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True)
 
     return pol, intent
 
@@ -944,7 +1112,7 @@ def create_clean_center_data(raw_center_images,masterflat,master_bpm,master_dark
 
         average_cube = (average_cube - master_dark)/masterflat
         average_cube = np.nan_to_num(average_cube)
-        median = nd.filters.median_filter(average_cube, size=5)    
+        median = ndimage.filters.median_filter(average_cube, size=5)    
         masked = average_cube * master_bpm
         median = median - median * master_bpm
         average_cube = median + masked    
@@ -1216,7 +1384,7 @@ def refine_spot_positions(scidata,spot_positions,box=10):
     for r in range(0,len(spot_positions)):
         y = spot_positions[r][1]
         x = spot_positions[r][0]
-        y_spot_refined,x_spot_refined = nd.measurements.center_of_mass(scidata[int(y-box):int(y+box),int(x-box):int(x+box)]-np.amin(scidata[int(y-box):int(y+box),int(x-box):int(x+box)]))   
+        y_spot_refined,x_spot_refined = ndimage.measurements.center_of_mass(scidata[int(y-box):int(y+box),int(x-box):int(x+box)]-np.amin(scidata[int(y-box):int(y+box),int(x-box):int(x+box)]))   
         refined_array.append((x_spot_refined+(x-box),y_spot_refined+(y-box)))
         #print y_spot_refined,x_spot_refined
         #pyfits.writeto(os.path.join("/home/ginski/Desktop/test/python_sphere_cneter_test/","center_mass" + str(r) + ".fits"), scidata[y-box:y+box,x-box:x+box], output_verify="ignore")    
@@ -1228,11 +1396,11 @@ def refine_spot_positions(scidata,spot_positions,box=10):
 
 def blob_detection_center_of_mass_array(scidata,refine_box=150):
     
-    y,x =  nd.measurements.center_of_mass(scidata)
+    y,x =  ndimage.measurements.center_of_mass(scidata)
     
     #print y,x    
     
-    y_refined,x_refined = nd.measurements.center_of_mass(scidata[int(y-refine_box):int(y+refine_box),int(x-refine_box):int(x+refine_box)])   
+    y_refined,x_refined = ndimage.measurements.center_of_mass(scidata[int(y-refine_box):int(y+refine_box),int(x-refine_box):int(x+refine_box)])   
     
     x_final = x_refined + (x-refine_box)     
     y_final = y_refined + (y-refine_box)    
@@ -2513,55 +2681,6 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, images_
     return frame_I_tot, frame_Q_phi, frame_U_phi, frame_I_pol, frame_AoLP, frame_DoLP, frame_q, frame_u, frame_AoLP_norm, frame_DoLP_norm
 
 ###############################################################################
-# write_fits_files
-###############################################################################
-
-def write_fits_files(data, path, header=False):
-    ''' 
-    Write FITS-files
-     
-    Input:
-        data: image data cube or list of image data cubes to write to FITS-files
-        path: string or list of strings specifying paths to write FITS-files to
-        header: headers or list of headers to write to FITS-files; if set to False
-              no header will be written (default=False)
-   
-    Note:
-        If data, header and path are lists of unequal length, the redundant 
-        list elements are ignored, meaning that files may not be written or
-        that headers may not be used.
-               
-    File written by Rob van Holstein
-    Function status: verified             
-    '''
-
-    # Prepare input to be processed
-    if type(path) == str:
-        path = [path]
-    
-    if type(data) == np.ndarray:
-        data = [data]
-
-    if type(header) == pyfits.header.Header:
-        header = [header]
-
-    if header == False:
-        # Write FITS-files without headers
-        for data_sel, path_sel in zip(data, path):
-            hdu = pyfits.PrimaryHDU()
-            hdu.data = data_sel.astype(np.float32)
-            hdu.writeto(path_sel, overwrite=True, output_verify='silentfix+ignore')
-            printandlog('Wrote file ' + path_sel)
-    else:
-        # Write FITS-files with headers
-        for data_sel, header_sel, path_sel in zip(data, header, path):
-            hdu = pyfits.PrimaryHDU()
-            hdu.data = data_sel.astype(np.float32)
-            hdu.header = header_sel
-            hdu.writeto(path_sel, overwrite=True, output_verify='silentfix+ignore')
-            printandlog('Wrote file ' + path_sel)
-
-###############################################################################
 # perform_postprocessing
 ###############################################################################
 
@@ -2950,7 +3069,7 @@ if os.path.exists(path_log_file):
 # Turn off pyfits FITS-warnings
 warnings.filterwarnings('ignore', category=UserWarning)
 
-single_sum, single_diff, header_array = perform_preprocessing(recompute=True)
+single_sum, single_diff, header_array = perform_preprocessing(sigmafiltering_sky=sigmafiltering_sky, recompute=True)
 
 perform_postprocessing(cube_single_sum=single_sum, cube_single_difference=single_diff, header=header_array, param_annulus_star=param_annulus_star, param_annulus_background=param_annulus_background, double_difference_type=double_difference_type, remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact, combination_method_polarization_images=combination_method_polarization_images, trimmed_mean_proportiontocut_polarization_images=trimmed_mean_proportiontocut_polarization_images, combination_method_total_intensity_images=combination_method_total_intensity_images, trimmed_mean_proportiontocut_total_intensity_images=trimmed_mean_proportiontocut_total_intensity_images, images_north_up=images_north_up, create_images_DoLP_AoLP_q_u_norm=create_images_DoLP_AoLP_q_u_norm)
 
