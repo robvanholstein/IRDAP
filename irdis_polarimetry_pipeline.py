@@ -11,13 +11,17 @@
 target_name = 'TEST'
 date_obs = '0000'
 path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup'
-path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\IRDIS'
+path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
 
 # Options for pre-processing
+skip_preprocessing = False
 
+#TODO: Write parts of readme
 #TODO: Keep this or always do sigmafiltering? If keep then write part README
 sigmafiltering_sky = True
-
+sigmafiltering_object = True
+sigmafiltering_flux = True
+param_annulus_background_flux = 'large annulus'
 
 save_preprocessed_data = True
 
@@ -399,11 +403,11 @@ def check_sort_data_create_directories():
     save_preprocessed_data are global variables to the function.
     
     Output:
-        path_object_files: path to raw OBJECT-files
-        path_sky_files: path to raw SKY-files for OBJECT
-        path_center_files: path to raw CENTER-files
-        path_flux_files: path to raw FLUX-files
-        path_sky_flux_files: path to raw SKY-files for FLUX
+        path_object_files: list of paths to raw OBJECT-files
+        path_sky_files: list of paths to raw SKY-files for OBJECT
+        path_center_files: list of paths to raw CENTER-files
+        path_flux_files: list of paths to raw FLUX-files
+        path_sky_flux_files: list of paths to raw SKY-files for FLUX
     
     File written by Rob van Holstein; based on function by Christian Ginski
     Function status: verified
@@ -756,17 +760,17 @@ def write_fits_files(data, path, header=False, silent=False):
 # remove_bad_pixels
 ###############################################################################
 
-def remove_bad_pixels(cube, master_bpm, sigmafiltering=True):
+def remove_bad_pixels(cube, frame_master_bpm, sigmafiltering=True):
     ''' 
     Remove bad pixels from an image cube using the bad pixel map followed 
-    by optional sigma-filtering
+    by optional repeated sigma-filtering
     
     Input:
         cube: image data cube to filtered for bad pixels
-        master_bpm: frame indicating location of bad pixels with 0's and good
+        frame_master_bpm: frame indicating location of bad pixels with 0's and good
             pixels with 1's
         sigma_filtering: if True remove bad pixels remaining after applying
-            master bad pixel map using sigma-filtering (default = True)
+            master bad pixel map using repeated sigma-filtering (default = True)
     
     Output:
         cube_filtered: image data cube with bad pixels removed
@@ -775,53 +779,66 @@ def remove_bad_pixels(cube, master_bpm, sigmafiltering=True):
     Function status: verified
     '''
 
-    # Define size of side of filter kernel
-    filter_size = 5
+    # Define size of side of kernel for median filter
+    filter_size_median = 5
 
     # Round filter size up to nearest odd number for a symmetric filter kernel
-    filter_size = 2*(filter_size // 2) + 1
+    filter_size_median = 2*(filter_size_median // 2) + 1
     
     # Remove bad pixels using the bad pixel map
-    cube_median = ndimage.filters.median_filter(cube, size=(1, filter_size, \
-                                                            filter_size))
-    cube_filtered = cube_median + master_bpm * (cube - cube_median)
+    cube_median = ndimage.filters.median_filter(cube, size=(1, filter_size_median, \
+                                                            filter_size_median))
+    cube_filtered = cube_median + frame_master_bpm * (cube - cube_median)
     
     if sigmafiltering == True:
         # Define threshold factor for sigma filtering
         factor_threshold = 5
         
-        # Prepare weights to compute mean without central pixel using convolution
-        kernel = np.ones((1, filter_size, filter_size)) / (filter_size**2 - 1)
-        kernel[0, filter_size//2, filter_size//2] = 0
+        # Define maximum number of iterations and counters for while-loop
+        maximum_iterations = 10
+        number_pixels_replaced = 1
+        iteration_counter = 0
         
-        # Calculate local standard deviation using convolution
-        cube_mean = ndimage.filters.convolve(cube_filtered, kernel)
-        cube_EX2 = ndimage.filters.convolve(cube_filtered**2, kernel)
-        cube_std = np.sqrt(cube_EX2 - cube_mean**2)
-        
-        # Compute threshold map for removal of pixels
-        cube_threshold = factor_threshold*cube_std                             
-        
-        # Determine difference of image data with the local median
-        cube_difference = np.abs(cube_filtered - cube_median)
-        
-        # Replace bad pixels by values in median filtered images
-        cube_filtered[cube_difference > cube_threshold] = \
-        cube_median[cube_difference > cube_threshold]
+        # Prepare weights to compute mean without central pixel using convolution       
+        filter_size = 7
+        kernel = np.ones((1, filter_size, filter_size)) / (filter_size**2 - 9)
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                kernel[0, filter_size//2 + i, filter_size//2 + j] = 0
+
+        while number_pixels_replaced > 0 and iteration_counter < maximum_iterations:                       
+            # Calculate local standard deviation using convolution
+            cube_mean = ndimage.filters.convolve(cube_filtered, kernel)
+            cube_EX2 = ndimage.filters.convolve(cube_filtered**2, kernel)
+            cube_std = np.sqrt(cube_EX2 - cube_mean**2)
             
+            # Compute threshold map for removal of pixels
+            cube_threshold = factor_threshold*cube_std                             
+            
+            # Determine difference of image data with the local median
+            cube_difference = np.abs(cube_filtered - cube_median)
+            
+            # Replace bad pixels by values in median filtered images
+            pixels_to_replace = cube_difference > cube_threshold
+            cube_filtered[pixels_to_replace] = cube_median[pixels_to_replace]
+            
+            # Compute number of pixels replaced and update number of iterations
+            number_pixels_replaced = np.count_nonzero(pixels_to_replace)  
+            iteration_counter += 1
+           
     return cube_filtered
 
 ###############################################################################
 # process_sky_frames
 ###############################################################################
 
-def process_sky_frames(path_sky_files, master_bpm, sigmafiltering=True):
+def process_sky_frames(path_sky_files, frame_master_bpm, sigmafiltering=True):
     '''
     Create a master sky-frame from the SKY-files
     
     Input:
         path_sky_files: string or list of strings specifying paths of SKY-files
-        master_bpm: frame indicating location of bad pixels with 0's and good
+        frame_master_bpm: frame indicating location of bad pixels with 0's and good
             pixels with 1's
         sigmafiltering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
@@ -834,14 +851,14 @@ def process_sky_frames(path_sky_files, master_bpm, sigmafiltering=True):
     '''
        
     # Read sky frames
-    cube_sky_raw = read_fits_files(path_sky_files, silent=True)[0]
+    cube_sky_raw = read_fits_files(path=path_sky_files, silent=True)[0]
    
     if type(cube_sky_raw) == list:
         # Make a single image cube from list of image cubes or frames
         cube_sky_raw = np.vstack(cube_sky_raw)
   
     # Remove bad pixels of each frame
-    cube_sky_filtered = remove_bad_pixels(cube=cube_sky_raw, master_bpm=master_bpm, sigmafiltering=sigmafiltering)
+    cube_sky_filtered = remove_bad_pixels(cube=cube_sky_raw, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
 
     # Compute median of sky frames
     frame_master_sky = np.median(cube_sky_filtered, axis=0)
@@ -850,6 +867,95 @@ def process_sky_frames(path_sky_files, master_bpm, sigmafiltering=True):
                 .format(cube_sky_raw.shape[0]))
     
     return frame_master_sky
+
+###############################################################################
+# process_object_frames
+###############################################################################
+
+def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm, frame_master_sky, offset_y, offset_x, star_x, star_y, sigmafiltering=True):
+    '''
+    Process the OBJECT frames by subtracting the background, flat-fielding, 
+    removing bad pixels, computing the mean over the NDIT's, centering and
+    computing the single sum and difference images
+    
+    Input:
+        path_object_files: list of paths to raw OBJECT-files
+        frame_master_flat: master flat frame
+        frame_master_bpm: frame indicating location of bad pixels with 0's and good
+            pixels with 1's
+        frame_master_sky: master sky frame for OBJECT-files
+# TODO: CENTERING VARIABLES HERE
+        sigmafiltering: if True remove bad pixels remaining after applying
+            master bad pixel map using sigma-filtering (default = True)
+       
+    Output:
+        cube_single_sum: cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^- intensity images
+        cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
+        header: list of FITS-headers of raw science frames   
+                
+    File written by Rob van Holstein; based on function by Christian Ginski
+    Function status: verified
+    '''
+    
+    # Create empty lists to store processed images and headers in
+    list_single_sum = []
+    list_single_difference = []
+    header = []
+    printandlog('')
+
+    for i, path_sel in enumerate(path_object_files):
+        # Read data and header from file
+        cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
+
+        # Filter master flat for zeros and NaN's
+        frame_master_flat = np.nan_to_num(frame_master_flat)
+        frame_master_flat[frame_master_flat == 0] = 1
+            
+        # Subtract background and divide by master flat
+        cube_bgsubtr_flatfielded = (cube_sel - frame_master_sky) / frame_master_flat
+
+        # Remove bad pixels of each frame
+        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+
+        # Compute mean over NDIT frames
+        frame_mean = np.mean(cube_badpixel_filtered, axis=0)
+
+        # Separate left and right part of image
+        frame_left = frame_mean[:, :1024]
+        frame_right = frame_mean[:, 1024:]
+
+        # Retrieve dithering shifts in x- and y-direction from header
+        x_dith = header_sel["HIERARCH ESO INS1 DITH POSX"]
+        y_dith = header_sel["HIERARCH ESO INS1 DITH POSY"]
+        
+        #TODO: The centering routines should immediately output the shifts (but without the dithering offsets)
+        # Compute shift for left and right images
+        shift_x_left = 511.5 - star_x - x_dith
+        shift_y_left = 511.5 - star_y - y_dith
+        shift_x_right = shift_x_left + offset_x
+        shift_y_right = shift_y_left + offset_y
+        
+        # Shift left and right images to center
+        frame_left = ndimage.shift(frame_left, [shift_y_left, shift_x_left], order=3, mode='constant', cval=0.0, prefilter=True)   
+        frame_right = ndimage.shift(frame_right, [shift_y_right, shift_x_right], order=3, mode='constant', cval=0.0, prefilter=True)   
+
+        # Create single difference and sum image
+        frame_single_sum = frame_left + frame_right
+        frame_single_difference = frame_left - frame_right
+        
+        # Append single sum and difference images and header
+        list_single_sum.append(frame_single_sum)
+        list_single_difference.append(frame_single_difference)
+        header.append(header_sel)
+        
+        # Print which file has been processed
+        printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(path_sel))
+    
+    # Convert lists of single sum and difference images to image cubes
+    cube_single_sum = np.stack(list_single_sum)
+    cube_single_difference = np.stack(list_single_difference)    
+
+    return cube_single_sum, cube_single_difference, header
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -861,11 +967,97 @@ def process_sky_frames(path_sky_files, master_bpm, sigmafiltering=True):
 
 
 
+
+###############################################################################
+# process_flux_frames
+###############################################################################
+
+def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, frame_master_sky_flux, param_annulus_background, sigmafiltering=True):
+    '''
+    Create a master flux-frame from the FLUX-files
+    
+    Input:
+        path_flux_files: list of paths to raw FLUX-files
+        frame_master_flat: master flat frame
+        frame_master_bpm: frame indicating location of bad pixels with 0's and good
+            pixels with 1's
+        frame_master_sky_flux: master sky frame for FLUX-files
+        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            width: width (pixels)
+            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+        sigmafiltering: if True remove bad pixels remaining after applying
+            master bad pixel map using sigma-filtering (default = True)
+       
+    Output:
+        frame_master_flux: master flux frame
+                
+    File written by Rob van Holstein
+    Function status: 
+    '''
+      
+    # Read flux frames
+    cube_flux_raw = read_fits_files(path=path_flux_files, silent=True)[0]
+   
+    if type(cube_flux_raw) == list:
+        # Make a single image cube from list of image cubes or frames
+        cube_flux_raw = np.vstack(cube_flux_raw)
+        
+    # Filter master flat for zeros and NaN's
+    frame_master_flat = np.nan_to_num(frame_master_flat)
+    frame_master_flat[frame_master_flat == 0] = 1
+        
+    # Subtract background and divide by master flat
+    cube_bgsubtr_flatfielded = (cube_flux_raw - frame_master_sky_flux) / frame_master_flat
+
+    # Remove bad pixels of each frame
+    cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+
+    # Separate left and right part of images
+    cube_left = cube_badpixel_filtered[:, :, :1024]
+    cube_right = cube_badpixel_filtered[:, :, 1024:]
+
+    #TODO: The flux images should be centered using cross-correlation, similar to non-coro data
+    # Compute shift for left and right images
+    shift_x_left = 67.0
+    shift_y_left = 21.0
+    shift_x_right = 66.0
+    shift_y_right = 32.0       
+    
+    # Shift left and right images to center
+    cube_left_centered = np.zeros(cube_left.shape)
+    cube_right_centered = np.zeros(cube_right.shape)
+    
+    for i, (frame_left, frame_right) in enumerate(zip(cube_left, cube_right)):
+        cube_left_centered[i, :, :] = ndimage.shift(frame_left, [shift_y_left, shift_x_left], order=3, mode='constant', cval=0.0, prefilter=True)   
+        cube_right_centered[i, :, :] = ndimage.shift(frame_right, [shift_y_right, shift_x_right], order=3, mode='constant', cval=0.0, prefilter=True)   
+    
+    # Compute mean over NDIT frames
+    frame_left = np.mean(cube_left_centered, axis=0)
+    frame_right = np.mean(cube_right_centered, axis=0)
+    
+    # Sum two images
+    frame_flux = frame_left + frame_right
+
+    # Determine background and subtract it
+    frame_master_flux, background = subtract_background(cube=frame_flux, param_annulus_background=param_annulus_background)
+    printandlog('\nSubtracted background in master flux image = ' + str(background))
+       
+    printandlog('\nThe master flux was created out of {0:d} raw FLUX-frame(s).\n'\
+                .format(cube_flux_raw.shape[0]))
+
+    return frame_master_flux
+
+
+
 ###############################################################################
 # perform_preprocessing
 ###############################################################################
 
-def perform_preprocessing(sigmafiltering_sky=True, recompute=False):
+def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True, sigmafiltering_object=True, sigmafiltering_flux=True, save_preprocessed_data=False):
     '''
     
     Input:
@@ -877,15 +1069,23 @@ def perform_preprocessing(sigmafiltering_sky=True, recompute=False):
     Function status: 
     '''
     
+    ###############################################################################
+    # 
+    ###############################################################################
     
+    #TODO: Make master flats for Y and Ks.
     
     # Process paths
     static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_H.fits')
     static_bpm = os.path.join(path_static_flat_badpixelmap, 'master_badpix.fits')
 
     # Loading Static Calibration Frames
-    masterflat = pyfits.getdata(static_flat)    
-    master_bpm = pyfits.getdata(static_bpm)
+    frame_master_flat = pyfits.getdata(static_flat)    
+    frame_master_bpm = pyfits.getdata(static_bpm)
+
+    ###############################################################################
+    # Checking and sorting data and creating directories 
+    ###############################################################################
     
     # Check and sort data and create directories
     printandlog('\n###############################################################################')
@@ -895,168 +1095,149 @@ def perform_preprocessing(sigmafiltering_sky=True, recompute=False):
     path_object_files, path_sky_files, path_center_files, path_flux_files, \
     path_sky_flux_files = check_sort_data_create_directories()
 
-    if recompute:
-        if any(path_sky_files):
-            # Process the sky files for the object files
-            printandlog('\n###############################################################################')
-            printandlog('# Processing SKY files for OBJECT-files')
-            printandlog('###############################################################################') 
+    ###############################################################################
+    # Computing master sky for object images
+    ###############################################################################
     
-            frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, \
-                                                 master_bpm=master_bpm, \
-                                             sigmafiltering=sigmafiltering_sky)
-            
-            # Write master sky-frame
-            write_fits_files(data=frame_master_sky, path=os.path.join(path_sky_dir\
-                             , name_file_root + 'master_sky.fits'), header=False, silent=False)
-    
-        else:
-            frame_master_sky = np.zeros((1024, 2048))
-                    
-        mastersky = frame_master_sky
+    if any(path_sky_files):
+        # Process the sky files for the object files
+        printandlog('\n###############################################################################')
+        printandlog('# Processing SKY files for OBJECT-files')
+        printandlog('###############################################################################') 
+
+        frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering_sky)
         
+        # Write master sky-frame
+        write_fits_files(data=frame_master_sky, path=os.path.join(path_sky_dir, name_file_root + 'master_sky.fits'), header=False, silent=False)
+    
+    else:
+        # Create a master sky frame with only zeros
+        frame_master_sky = np.zeros((1024, 2048))
+
+    ###############################################################################
+    # Reducing center files and extracting center coordinates
+    ###############################################################################
+    
     # Creating reduced center frames and obtaining center values
     printandlog('\n###############################################################################')
     printandlog('# Processing CENTER-files')
     printandlog('###############################################################################') 
     
-    if recompute:
-        create_clean_center_data(path_center_files,masterflat,master_bpm,mastersky)
+    create_clean_center_data(path_center_files,frame_master_flat,frame_master_bpm,frame_master_sky)
     
+    #TODO: I think it is best to remove the variable recompute, as we can now save
+    # the single sum and single difference images to be used in post processing.
+    # Centering is the most difficult part, so the one thing you want to re-run
+    # is the centering so no need to save the center coordinates then.
+    recompute=True
     offset_x, offset_y, star_x, star_y = do_centering(recompute=recompute,\
                                         centering_method = "Python native")
+        
+    ###############################################################################
+    # Creating reduced and centered single-sum and -difference images
+    ###############################################################################
     
-    # Creating reduced and centered single sum/difference images and attached headers
+    # Create reduced and centerd single-sum and -difference images
     printandlog('\n###############################################################################')
-    printandlog('# Pre-processing OBJECT-files')
+    printandlog('# Processing OBJECT-files')
     printandlog('###############################################################################') 
 
-    single_sum, single_diff, header_array = irdis_dpi_reduction_loop_flat_dark_badpix_rotation(\
-        path_object_files, masterflat, master_bpm, mastersky, offset_y, offset_x, star_x, star_y)  
-    
+    cube_single_sum, cube_single_difference, header = process_object_frames(path_object_files=path_object_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, offset_y=offset_y, offset_x=offset_x, star_x=star_x, star_y=star_y, sigmafiltering=sigmafiltering_object)
+       
     if save_preprocessed_data == True:
         # Write preprocessed cubes of single-sum and single-difference images 
-        # in the 'preprocessed' folder so that the preprocessing can be skipped 
-        # when re-running the pipeline.
-        write_fits_files(data=np.stack(single_sum), path=os.path.join(path_preprocessed_dir, 'single_sum.fits'), header=False)
-        write_fits_files(data=np.stack(single_diff), path=os.path.join(path_preprocessed_dir, 'single_diff.fits'), header=False)
+        printandlog('\nSaving pre-processed data so that pre-processing can be skipped the next time.\n')
+        write_fits_files(data=cube_single_sum, path=os.path.join(path_preprocessed_dir, 'cube_single_sum.fits'), header=False, silent=False)
+        write_fits_files(data=cube_single_difference, path=os.path.join(path_preprocessed_dir, 'cube_single_difference.fits'), header=False, silent=False)
 
-    if recompute:
-        if any(path_sky_flux_files):
-            # Process the sky files for the flux files
-            printandlog('\n###############################################################################')
-            printandlog('# Processing SKY-files for FLUX-files')
-            printandlog('###############################################################################') 
+        # Write path of object files to a .txt-file to be able to read headers
+        with open(os.path.join(path_preprocessed_dir, 'path_object_files.txt'), 'w') as fh:
+            for path_sel in path_object_files:
+                fh.write('%s\n' % path_sel)
+        printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, 'path_object_files.txt') + '.')
+
+
+    ###############################################################################
+    # Computing master sky for flux images
+    ###############################################################################
     
-            frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, \
-                                                 master_bpm=master_bpm, \
-                                             sigmafiltering=sigmafiltering_sky)
-            
-            # Write master sky-frame
-            write_fits_files(data=frame_master_sky_flux, path=os.path.join(path_sky_flux_dir\
-                             , name_file_root + 'master_sky_flux.fits'), header=False, silent=False)
+    if any(path_sky_flux_files):
+        # Process the sky files for the flux files
+        printandlog('\n###############################################################################')
+        printandlog('# Processing SKY-files for FLUX-files')
+        printandlog('###############################################################################') 
 
-        else:
-            frame_master_sky_flux = np.zeros((1024, 2048))
-                    
-    # Processing the flux files
-    printandlog('\n###############################################################################')
-    printandlog('# Processing FLUX-files')
-    printandlog('###############################################################################') 
+        frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering_sky)
+        
+        # Write master sky-frame
+        write_fits_files(data=frame_master_sky_flux, path=os.path.join(path_sky_flux_dir, name_file_root + 'master_sky_flux.fits'), header=False, silent=False)
 
-#TODO: function to process flux files and save results
-#TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional
-
-    return single_sum, single_diff, header_array
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###############################################################################
-# reduce_cube_IRDIS_flat_dark_bpm_shift
-###############################################################################
-
-def reduce_cube_IRDIS_flat_dark_bpm_shift(cube,header,flat,bpm,dark, offset_y, offset_x, star_x, star_y):
-
-    if np.shape(cube)[0] > 1:
-        average_cube = np.average(cube,axis=0)
     else:
-        average_cube = cube
-
-    if len(np.shape(average_cube)) == 3:    
-        average_cube = np.squeeze(average_cube,axis=0)
+        # Create a master sky frame with only zeros
+        frame_master_sky_flux = np.zeros((1024, 2048))
     
-    if len(np.shape(dark)) == 3:    
-        dark = np.squeeze(dark,axis=0)    
+    ###############################################################################
+    # Computing master flux image
+    ###############################################################################
+            
+    if any(path_flux_files):
+        # Print that we process the flux files
+        printandlog('\n###############################################################################')
+        printandlog('# Processing FLUX-files')
+        printandlog('###############################################################################') 
 
-    average_cube = (average_cube - dark)/flat
-    
-    average_cube = np.nan_to_num(average_cube)
+        # Define and print annulus to determine the background from
+        if type(param_annulus_background_flux) == tuple or type(param_annulus_background_flux) == list:
+            printandlog('\nThe background will be determined with a user-defined annulus or several \nuser-defined annuli:')
+            if type(param_annulus_background_flux) == tuple:
+                printandlog(param_annulus_background_flux)
+            elif type(param_annulus_background_flux) == list:
+                for x in param_annulus_background_flux:
+                    printandlog(x)
+        elif param_annulus_background_flux == 'large annulus':
+            #TODO: When process_flux_frames is finished, check if background annulus is not too large
+            param_annulus_background_flux = (511.5, 511.5, 320, 60, 0, 360)
+            printandlog('\nThe background will be determined with a star-centered annulus located \nfar away from the star:')
+            printandlog(param_annulus_background_flux)
 
-    median = ndimage.filters.median_filter(average_cube, size=5)    
-    masked = average_cube * bpm
-    median = median - median * bpm
-    average_cube = median + masked    
+        # Processthe flux files
+        frame_master_flux = process_flux_frames(path_flux_files=path_flux_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky_flux=frame_master_sky_flux, param_annulus_background=param_annulus_background_flux, sigmafiltering=sigmafiltering_flux)
 
-    left = average_cube[:,0:1024]
-    right = average_cube[:,1024:2048]
+        # Write master flux-frame
+        write_fits_files(data=frame_master_flux, path=os.path.join(path_flux_dir, name_file_root + 'master_flux.fits'), header=False, silent=False)
 
-    right = ndimage.shift(right, [offset_y, offset_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True) # beta pic J-band        
+#TODO: update function to process flux files to include centering by cross-correlation
+#TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star?
 
-    pol = left - right
-    intent = left + right    
+    return cube_single_sum, cube_single_difference, header
 
-    #pol = remove_IRDIS_stripes_reduced(pol)
-    #intent = remove_IRDIS_stripes_reduced(intent)
 
-    x_dith = header["HIERARCH ESO INS1 DITH POSX"]
-    y_dith = header["HIERARCH ESO INS1 DITH POSY"]
 
-    shift_x = (1024-1)/2 - star_x - x_dith
-    shift_y = (1024-1)/2 - star_y - y_dith
 
-    pol = ndimage.shift(pol, [shift_y, shift_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True)
-    intent = ndimage.shift(intent, [shift_y, shift_x], output=None, order=3, mode='constant', cval=0.0, prefilter=True)
 
-    return pol, intent
 
-###############################################################################
-# irdis_dpi_reduction_loop_flat_dark_badpix_rotation
-###############################################################################
 
-def irdis_dpi_reduction_loop_flat_dark_badpix_rotation(object_files,masterflat, master_bpm, mastersky, offset_y, offset_x, star_x, star_y):
 
-    single_sum = []
-    single_diff = []
-    header_array = []
 
-    for f in object_files:
-            data_cube = pyfits.getdata(f)
-            header = pyfits.getheader(f)
-            reduced_image, int_image = reduce_cube_IRDIS_flat_dark_bpm_shift(data_cube, header, masterflat, master_bpm, mastersky, offset_y, offset_x, star_x, star_y)
-            header_array.append(header)
-            single_sum.append(int_image)
-            single_diff.append(reduced_image)
 
-    return single_sum, single_diff, header_array
 
-###############################################################################
-# do_centering
-###############################################################################
+
+
+
+
+
+
+
+
+
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@
+#@    Functions to reduce center frames and find center positions
+#@   
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 def do_centering(recompute=False,centering_method = "Python native",path_pipeline=None):
     
@@ -1084,15 +1265,7 @@ def do_centering(recompute=False,centering_method = "Python native",path_pipelin
     
     return offset_x, offset_y, star_x, star_y
 
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@
-#@    Functions to reduce center frames and find center positions
-#@   
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-def create_clean_center_data(raw_center_images,masterflat,master_bpm,master_dark):
+def create_clean_center_data(raw_center_images,frame_master_flat,frame_master_bpm,master_dark):
     """
     Input:
         - List of OBJECT,CENTER filenames.
@@ -1110,11 +1283,11 @@ def create_clean_center_data(raw_center_images,masterflat,master_bpm,master_dark
         if len(np.shape(master_dark)) == 3:    
             master_dark = np.squeeze(master_dark,axis=0)    
 
-        average_cube = (average_cube - master_dark)/masterflat
+        average_cube = (average_cube - master_dark)/frame_master_flat
         average_cube = np.nan_to_num(average_cube)
         median = ndimage.filters.median_filter(average_cube, size=5)    
-        masked = average_cube * master_bpm
-        median = median - median * master_bpm
+        masked = average_cube * frame_master_bpm
+        median = median - median * frame_master_bpm
         average_cube = median + masked    
         new_filename = os.path.join(path_center_dir,\
                     os.path.basename(f).replace('.fits','_reduced.fits'))
@@ -2729,7 +2902,7 @@ def perform_postprocessing(cube_single_sum, cube_single_difference, header, para
     File written by Rob van Holstein
     Function status: verified      
     '''
-    
+
     ###############################################################################
     # Define annulus for star polarization and background
     ###############################################################################
@@ -3055,28 +3228,72 @@ A non-zero measured star polarization then indicates the star is truly \npolariz
 ###############################################################################
 ###############################################################################
 
-printandlog('\n###############################################################################')
-printandlog('# Starting data reduction')
-printandlog('###############################################################################') 
+# Turn off pyfits FITS-warnings
+warnings.filterwarnings('ignore', category=UserWarning)
 
 # Define path of log file and delete it if it already exists
 path_log_file = os.path.join(path_main_dir, name_file_root + 'LOG.txt')
 
-if os.path.exists(path_log_file):
+if os.path.exists(path_log_file) == False:
+    # Start log file
+    printandlog('\n###############################################################################')
+    printandlog('# Starting pre-processing')
+    printandlog('###############################################################################') 
+elif os.path.exists(path_log_file) == True and skip_preprocessing == False:
+    # Empty existing log file and start writing
     open(path_log_file, 'w').close()
-    printandlog('\nWARNING, the previous log file has been overwritten.')
+    printandlog('\n###############################################################################')
+    printandlog('# Starting pre-processing')
+    printandlog('###############################################################################') 
+    printandlog('\nWARNING, the previous log file has been deleted.')
+elif os.path.exists(path_log_file) == True and skip_preprocessing == True:
+    # Remove all lines concerned with the post-processing from the log file
+    log_file_lines = [x.rstrip('\n') for x in open(path_log_file, 'r')]
+    log_file_lines = log_file_lines[:log_file_lines.index('# Starting post-processing') - 1]
+    open(path_log_file, 'w').close()
+    for line in log_file_lines:                            
+        print(line, file=open(path_log_file, 'a'))
+   
+if skip_preprocessing == False:
+    # Pre-process raw data
+    cube_single_sum, cube_single_difference, header = perform_preprocessing(param_annulus_background_flux=param_annulus_background_flux, sigmafiltering_sky=sigmafiltering_sky, sigmafiltering_object=sigmafiltering_object, sigmafiltering_flux=sigmafiltering_flux, save_preprocessed_data=save_preprocessed_data)
+    
+    # Print that post-processing starts
+    printandlog('\n###############################################################################')
+    printandlog('# Starting post-processing')
+    printandlog('###############################################################################') 
+                
+elif skip_preprocessing == True:
+    # Define paths to read pre-processed data and headers from
+    path_cube_single_sum = os.path.join(path_preprocessed_dir, 'cube_single_sum.fits')
+    path_cube_single_difference = os.path.join(path_preprocessed_dir, 'cube_single_difference.fits')
+    path_object_files_text = os.path.join(path_preprocessed_dir, 'path_object_files.txt')
+   
+    if os.path.exists(path_cube_single_sum) and os.path.exists(path_cube_single_difference) and os.path.exists(path_object_files_text):
+        # Print that post-processing starts
+        printandlog('\n###############################################################################')
+        printandlog('# Starting post-processing')
+        printandlog('###############################################################################') 
+        printandlog('\nSkipping pre-processing and reading pre-processed data and headers.\n')
+        
+        # Read pre-processed single-sum and difference- images        
+        cube_single_sum = read_fits_files(path=path_cube_single_sum, silent=False)[0]
+        cube_single_difference = read_fits_files(path=path_cube_single_difference, silent=False)[0] 
 
-# Turn off pyfits FITS-warnings
-warnings.filterwarnings('ignore', category=UserWarning)
+        # Read headers
+        header = [pyfits.getheader(x.rstrip('\n')) for x in open(path_object_files_text, 'r')]
+        printandlog('Read headers from OBJECT-files specified in ' + path_object_files_text + '.')
+    
+    else:
+        raise IOError('The files ' + path_cube_single_sum + ', ' + path_cube_single_difference + ' and/or ' + path_object_files_text + ' do not exist. Set skip_preprocessing to False and save_preprocessed_data to True to perform the pre-processing of the raw data and save the results.')
 
-single_sum, single_diff, header_array = perform_preprocessing(sigmafiltering_sky=sigmafiltering_sky, recompute=True)
-
-perform_postprocessing(cube_single_sum=single_sum, cube_single_difference=single_diff, header=header_array, param_annulus_star=param_annulus_star, param_annulus_background=param_annulus_background, double_difference_type=double_difference_type, remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact, combination_method_polarization_images=combination_method_polarization_images, trimmed_mean_proportiontocut_polarization_images=trimmed_mean_proportiontocut_polarization_images, combination_method_total_intensity_images=combination_method_total_intensity_images, trimmed_mean_proportiontocut_total_intensity_images=trimmed_mean_proportiontocut_total_intensity_images, images_north_up=images_north_up, create_images_DoLP_AoLP_q_u_norm=create_images_DoLP_AoLP_q_u_norm)
+# Perform post-processing of data           
+perform_postprocessing(cube_single_sum=cube_single_sum, cube_single_difference=cube_single_difference, header=header, param_annulus_star=param_annulus_star, param_annulus_background=param_annulus_background, double_difference_type=double_difference_type, remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact, combination_method_polarization_images=combination_method_polarization_images, trimmed_mean_proportiontocut_polarization_images=trimmed_mean_proportiontocut_polarization_images, combination_method_total_intensity_images=combination_method_total_intensity_images, trimmed_mean_proportiontocut_total_intensity_images=trimmed_mean_proportiontocut_total_intensity_images, images_north_up=images_north_up, create_images_DoLP_AoLP_q_u_norm=create_images_DoLP_AoLP_q_u_norm)
 
 # Print time elapsed
 time_end = time.time()
 d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
-print('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
+printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
 
                
 
