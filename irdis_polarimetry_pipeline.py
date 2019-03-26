@@ -957,17 +957,6 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
 
     return cube_single_sum, cube_single_difference, header
 
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@
-#@    Functions being worked on by Rob
-#@   
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-
-
 ###############################################################################
 # process_flux_frames
 ###############################################################################
@@ -1051,6 +1040,19 @@ def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, fr
 
     return frame_master_flux
 
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@
+#@    Main pre-processing function being worked on
+#@   
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+
+
+
 
 
 ###############################################################################
@@ -1070,20 +1072,6 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
     '''
     
     ###############################################################################
-    # 
-    ###############################################################################
-    
-    #TODO: Make master flats for Y and Ks.
-    
-    # Process paths
-    static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_H.fits')
-    static_bpm = os.path.join(path_static_flat_badpixelmap, 'master_badpix.fits')
-
-    # Loading Static Calibration Frames
-    frame_master_flat = pyfits.getdata(static_flat)    
-    frame_master_bpm = pyfits.getdata(static_bpm)
-
-    ###############################################################################
     # Checking and sorting data and creating directories 
     ###############################################################################
     
@@ -1094,6 +1082,29 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
 
     path_object_files, path_sky_files, path_center_files, path_flux_files, \
     path_sky_flux_files = check_sort_data_create_directories()
+
+    ###############################################################################
+    # Read static master flat and bad pixel map
+    ###############################################################################
+    
+    #TODO: Make master flats for Y and Ks. 
+    # Determine filter used
+    filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+    
+    if filter_used == 'FILT_BBF_Y':
+        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_Y.fits')
+    elif filter_used == 'FILT_BBF_J':
+        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_J.fits')
+    elif filter_used == 'FILT_BBF_H':
+        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_H.fits')
+    elif filter_used == 'FILT_BBF_Ks':
+        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_Ks.fits')
+    
+    # Read static flat
+    frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
+
+    # Read static bad pixel map
+    frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_flat_badpixelmap, 'master_badpix.fits'), silent=True)[0])
 
     ###############################################################################
     # Computing master sky for object images
