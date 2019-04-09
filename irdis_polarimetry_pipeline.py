@@ -11,24 +11,28 @@
 target_name = 'TEST'
 date_obs = '0000'
 path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup'
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau'
 path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
 
 # Options for pre-processing
 skip_preprocessing = False
-
-#TODO: Write parts of readme
-#TODO: Keep this or always do sigmafiltering? If keep then write part README
-sigmafiltering_sky = True
-sigmafiltering_object = True
-sigmafiltering_flux = True
+sigmafiltering = False
+centering_method = 'center frames' # 'center frames', 'gaussian', 'cross-correlation', 'manual'
+centering_subtract_object = True
+center_coordinates = (477, 521, 1503, 511) # 'default'
+param_centering = (12, 7, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
+collapse_ndit = True
+plot_centering_sub_images = True
+center_coordinates_flux = () # or list of center coordinates if different for multiple frames
 param_annulus_background_flux = 'large annulus'
-
 save_preprocessed_data = True
 
 # Options for post-processing
 double_difference_type = 'standard'
 remove_vertical_band_detector_artefact = True
-param_annulus_star = 'ao residuals'
+param_annulus_star = [(511.5, 511.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
+                      (511.5, 511.5, 50, 20, -175, -95)] # GQ Lup
+#param_annulus_star = (515, 477, 0, 11, 0, 360)
 param_annulus_background = 'large annulus'
 combination_method_polarization_images = 'trimmed mean'
 trimmed_mean_proportiontocut_polarization_images = 0.10
@@ -37,10 +41,28 @@ trimmed_mean_proportiontocut_total_intensity_images = 0.10
 images_north_up = True
 create_images_DoLP_AoLP_q_u_norm = True
 
+
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\HD 98922 Coronagraphic ContH'
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\46P'
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\HD 98800 Non-coronagraphic'
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\DZ Cha Non-Coronagraphic'
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau FT POSANG CENTERING'
+#param_centering = (12, 4, 30000) # Coords need to be accurate within a few pixels; for manual without dithering
+#centering_manual_coordinates = (476, 525, 1502, 515) # Need to be integer DZ Cha
+#centering_manual_coordinates = (531, 538, 1557, 527) # Need to be integer HD 98800 Wrong star
+#centering_manual_coordinates = (508, 513, 1534, 503) # Need to be integer HD 98800 Right star
+#centering_manual_coordinates = (477, 521, 1503, 511)
+#centering_manual_coordinates = (477-8, 521+8, 1503+8, 511-8)
+#centering_manual_coordinates = (496, 536, 1521, 526) # 46P bad efficiency
+#centering_manual_coordinates = (501, 511, 1527, 501) # 46P
+#centering_manual_coordinates = (477, 521, 1503, 511) # default
+#centering_manual_coordinates = (476, 521, 1501, 510) # gg tau
+#param_annulus_star = (511.5, 511.5, 0, 25, 0, 360)
+
+
 #TODO: turn combination_method_polarization_images and trimmed_mean_proportiontocut_polarization_images
 # into a single variable (also for the total intensity ones)? Instead of trimmed mean, give a number, 
 # also for mean can probably give 0 (should test it though).
-
 
 ###############################################################################
 # README
@@ -228,23 +250,20 @@ import os
 import glob
 import time
 import datetime
-import math
-import subprocess
 import warnings
 import numpy as np
-import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
 from scipy.ndimage.interpolation import rotate
-from scipy.ndimage.filters import gaussian_filter
 from scipy import interpolate
 from scipy import optimize
 from scipy import ndimage
 from scipy.stats import trim_mean
 from astropy.modeling import models, fitting
-from astropy.modeling.models import custom_model
-
-#import pdb # for debugging
+from astropy.stats import sigma_clipped_stats
+from skimage.transform import rotate as rotateskimage
+from skimage.feature import register_translation
 
 ###############################################################################
 # Start taking time
@@ -275,7 +294,7 @@ if remove_vertical_band_detector_artefact not in [True, False]:
     raise ValueError('\'remove_vertical_band_detector_artefact\' should be either True or False.')   
 
 #TODO: Add checks of specific values of param_annulus_star/background
-#      Check how an annulus believes when it is cut off by the edge of the image
+#      Check how an annulus behaves when it is cut off by the edge of the image
 if type(param_annulus_star) not in [str, tuple, list]:
     raise TypeError('\'param_annulus_star\' should be \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
@@ -339,7 +358,10 @@ pupil_offset = 135.99
     
 # Define true North correction (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
 true_north_correction = -1.75
-
+    
+# Define mean solar day (s)
+msd = 86400
+    
 # Define the base of the name of each file to be generated
 name_file_root = target_name.replace(' ', '_') + '_' + date_obs.replace(' ', '_') + '_'
 
@@ -392,20 +414,26 @@ def printandlog(single_object):
 # check_sort_data_create_directories
 ###############################################################################
 
-def check_sort_data_create_directories():
+#TODO: Add text to centering method and save_processed data in docstring
+def check_sort_data_create_directories(save_preprocessed_data, centering_method):
     '''
     Check the FITS-headers of the data in the raw directory, sort the data and
     create directories to write processed data to.
     
+    Input:
+        centering_method:
+        save_preprocessed_data: 
+        
     Note that path_raw_dir, path_sky_dir, path_center_dir, path_flux_dir, 
-    path_sky_flux_dir, path_preprocessed_dir, path_reduced_dir, 
-    path_reduced_star_pol_subtr_dir and 
-    save_preprocessed_data are global variables to the function.
+    path_sky_flux_dir, path_preprocessed_dir, path_reduced_dir and 
+    path_reduced_star_pol_subtr_dir are global variables to the function.
     
     Output:
         path_object_files: list of paths to raw OBJECT-files
         path_sky_files: list of paths to raw SKY-files for OBJECT
         path_center_files: list of paths to raw CENTER-files
+        path_object_center_files: list of paths to raw OBJECT-files to be 
+            subtracted from raw CENTER-files
         path_flux_files: list of paths to raw FLUX-files
         path_sky_flux_files: list of paths to raw SKY-files for FLUX
     
@@ -440,12 +468,18 @@ def check_sort_data_create_directories():
     if not all([x['ESO DPR TYPE'] in ['OBJECT', 'SKY', 'OBJECT,CENTER', 'OBJECT,FLUX'] for x in header]):
         raise IOError('One or more files are not of type OBJECT, SKY, OBJECT,CENTER or OBJECT,FLUX.')
         
+    if len(set([x['ESO INS4 COMB ROT'] for x in header])) != 1:
+        raise IOError('The data provided use different tracking modes.')
+
+    if not header[0]['ESO INS4 COMB ROT'] in ['FIELD', 'PUPIL']:
+        raise IOError('The tracking mode used is not field-tracking or pupil-tracking.')
+        
     if not all([x['ESO INS4 OPTI8 NAME'] == 'H_NIR' for x in header]):
         raise IOError('One or more files do not have the NIR half-wave plate inserted.')
     
     if len(set([x['ESO INS1 FILT ID'] for x in header])) != 1:
         raise IOError('The data provided use different filters.')
-    
+
     if not header[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
         raise IOError('The filter used is not broadband Y, J, H or Ks. Narrowband filters will be supported in the near future.')
     
@@ -528,7 +562,6 @@ def check_sort_data_create_directories():
         
         if not all([x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header_center]):
             raise IOError('One or more CENTER-files use a NIR neutral density filter different from that of the OBJECT-files.')
-    
     else:
         #TODO: Change statement here when centering part of pipeline is finished
         printandlog('\nWARNING, there are no CENTER-files. Centering of the OBJECT-files will be done \nby cross-correlation or from manual input.')
@@ -536,20 +569,29 @@ def check_sort_data_create_directories():
     # Print that headers have been checked and passed all checks
     printandlog('\nThe FITS-headers of the raw data have passed all checks.')
         
-    # Create list of file paths for each file type
+    # Create list of file paths for each file type and mjd at half time for object- and center-files
     path_object_files = []
+    mjd_half_object = []
     path_sky_files = []
     path_center_files = []
+    mjd_half_center = []
     path_flux_files = []
     path_sky_flux_files = [] 
     path_imcompatible_files = []
-    
+
     # Sort file paths according to file type 
     for file_sel, header_sel in zip(path_raw_files, header):
     
         if header_sel['ESO DPR TYPE'] == 'OBJECT':
             path_object_files.append(file_sel)
     
+            # Calculate mean Julian date halfway the exposure 
+            NDIT = header_sel['ESO DET NDIT']
+            mjd = header_sel['MJD-OBS']
+            file_execution_time = NDIT * (0.938 + object_exposure_time) + 2.4
+            mjd_half_object.append(mjd + 0.5 * file_execution_time / msd)
+            
+            
         elif header_sel['ESO DPR TYPE'] == 'SKY' and \
            header_sel['EXPTIME'] == object_exposure_time and \
            header_sel['ESO INS4 FILT2 NAME'] == object_nd_filter:
@@ -559,7 +601,13 @@ def check_sort_data_create_directories():
            header_sel['EXPTIME'] == object_exposure_time and \
            header_sel['ESO INS4 FILT2 NAME'] == object_nd_filter:
             path_center_files.append(file_sel)
-    
+            
+            # Calculate mean Julian date halfway the exposure 
+            NDIT = header_sel['ESO DET NDIT']
+            mjd = header_sel['MJD-OBS']
+            file_execution_time = NDIT * (0.938 + object_exposure_time) + 1.4
+            mjd_half_center.append(mjd + 0.5 * file_execution_time / msd)
+
         elif header_sel['ESO DPR TYPE'] == 'OBJECT,FLUX':
             path_flux_files.append(file_sel)
     
@@ -570,7 +618,14 @@ def check_sort_data_create_directories():
     
         else:
             path_imcompatible_files.append(file_sel)
-            
+
+    # Find object-files that are closest in time to center-files
+    path_object_center_files = []
+    
+    for mjd_half_center_sel in mjd_half_center:
+        index = np.argmin(np.abs(np.array(mjd_half_object) - np.array(mjd_half_center_sel)))
+        path_object_center_files.append(path_object_files[index])
+         
     # Print number of files for each file type
     printandlog('\nNumber of files found for each file type:')
     printandlog('OBJECT (O):         ' + str(len(path_object_files)))
@@ -584,7 +639,11 @@ def check_sort_data_create_directories():
         printandlog('\nWARNING, one or more files do not fall under any of the file type categories listed above and will be ignored:')
         for file_sel in path_imcompatible_files:
             printandlog('{0:s}'.format(file_sel))
-        
+     
+    # Raise error when there are no center files, but they are required by the selected centering method
+    if centering_method in ['center frames', 'center frames + cross-correlation'] and not any(path_center_files):
+        raise IOError('centering_method = \'{0:s}\', but there are no CENTER-files provided.'.format(centering_method))
+
     # Create directories to write processed data to
     directories_created = []
     directories_already_existing = []
@@ -617,7 +676,7 @@ def check_sort_data_create_directories():
         else:
             directories_already_existing.append(path_sky_flux_dir)
        
-    if save_preprocessed_data == True:
+    if save_preprocessed_data == True or centering_method in ['gaussian', 'cross-correlation']:
         if not os.path.exists(path_preprocessed_dir):
             os.makedirs(path_preprocessed_dir)
             directories_created.append(path_preprocessed_dir)
@@ -648,7 +707,7 @@ def check_sort_data_create_directories():
         for directory_sel in directories_already_existing:
             printandlog('{0:s}'.format(directory_sel))
     
-    return path_object_files, path_sky_files, path_center_files, path_flux_files, path_sky_flux_files
+    return path_object_files, path_sky_files, path_center_files, path_object_center_files, path_flux_files, path_sky_flux_files
 
 ###############################################################################
 # read_fits_files
@@ -762,11 +821,11 @@ def write_fits_files(data, path, header=False, silent=False):
 
 def remove_bad_pixels(cube, frame_master_bpm, sigmafiltering=True):
     ''' 
-    Remove bad pixels from an image cube using the bad pixel map followed 
-    by optional repeated sigma-filtering
+    Remove bad pixels from an image cube or frame using the bad pixel map
+    followed by optional repeated sigma-filtering
     
     Input:
-        cube: image data cube to filtered for bad pixels
+        cube: image data cube or frame to filtered for bad pixels
         frame_master_bpm: frame indicating location of bad pixels with 0's and good
             pixels with 1's
         sigma_filtering: if True remove bad pixels remaining after applying
@@ -779,6 +838,11 @@ def remove_bad_pixels(cube, frame_master_bpm, sigmafiltering=True):
     Function status: verified
     '''
 
+    # If the input is a frame turn it into a cube
+    cube_ndim = cube.ndim
+    if cube_ndim == 2:
+        cube = np.expand_dims(cube, axis=0)
+        
     # Define size of side of kernel for median filter
     filter_size_median = 5
 
@@ -825,7 +889,11 @@ def remove_bad_pixels(cube, frame_master_bpm, sigmafiltering=True):
             # Compute number of pixels replaced and update number of iterations
             number_pixels_replaced = np.count_nonzero(pixels_to_replace)  
             iteration_counter += 1
-           
+    
+    # If the input is a frame turn the resulting cube back into a frame
+    if cube_ndim == 2:
+        cube_filtered = np.squeeze(cube_filtered)
+       
     return cube_filtered
 
 ###############################################################################
@@ -846,7 +914,7 @@ def process_sky_frames(path_sky_files, frame_master_bpm, sigmafiltering=True):
     Output:
         frame_master_sky: master sky frame
     
-    File written by Rob van Holstein; based on function by Christian Ginski
+    File written by Rob van Holstein; based on a function by Christian Ginski
     Function status: verified       
     '''
        
@@ -863,16 +931,681 @@ def process_sky_frames(path_sky_files, frame_master_bpm, sigmafiltering=True):
     # Compute median of sky frames
     frame_master_sky = np.median(cube_sky_filtered, axis=0)
             
-    printandlog('\nThe master sky was created out of {0:d} raw SKY-frame(s).\n'\
+    printandlog('\nThe master sky was created out of {0:d} raw SKY-frame(s).'\
                 .format(cube_sky_raw.shape[0]))
     
     return frame_master_sky
 
 ###############################################################################
+# compute_fwhm_separation
+###############################################################################
+
+def compute_fwhm_separation(filter_used):
+    '''
+    Compute theoretical full width half maximum (FWHM) of point spread function
+    of IRDIS and separation of satellite spots in CENTER-files
+    
+    Input:
+        filter_used: string of filter from header 'ESO INS1 FILT ID'
+        
+    Output:
+        fwhm: full width half maximum (pixels)
+        separation: separation of satellite spots (pixels)
+    
+    File written by Rob van Holstein; based on a function by Julien Milli
+    Function status: verified
+    '''
+
+    # Define diameter of telescope primary mirror M1 (m)
+    D_telescope = 8.2
+    
+    # Define pixel scale of IRDIS detector ("/px)
+    pixel_scale = 12.25e-3
+
+    # Define approximate separation of satellite spots (pixels) and filter central wavelength and bandwidth (m)
+    if filter_used == 'FILT_BBF_Y':
+        separation = 31.0
+        lambda_c = 1043e-9
+        delta_lambda = 140e-9
+    elif filter_used == 'FILT_BBF_J':
+        separation = 37.4
+        lambda_c = 1245e-9
+        delta_lambda = 240e-9
+    elif filter_used == 'FILT_BBF_H':
+        separation = 48.5
+        lambda_c = 1625e-9
+        delta_lambda = 290e-9
+    elif filter_used == 'FILT_BBF_Ks':
+        separation = 64.5
+        lambda_c = 2182e-9
+        delta_lambda = 300e-9
+
+    # Compute theoretical full width half maximum
+    fwhm = np.rad2deg((lambda_c + 0.5*delta_lambda) / D_telescope) * 3600 / pixel_scale
+
+    return fwhm, separation
+
+###############################################################################
+# process_center_frames
+###############################################################################
+
+def process_center_frames(path_center_files, path_object_center_files, frame_master_flat, frame_master_bpm, frame_master_sky, centering_subtract_object=True, center_coordinates=(477, 521, 1503, 511), sigmafiltering=True):
+    '''
+    Process the CENTER frames by subtracting the background, flat-fielding, 
+    removing bad pixels and computing the mean over the NDIT's
+    
+    Input:
+        path_center_files: list of paths to raw CENTER-files
+        path_object_center_files: list of paths to raw OBJECT-files to be 
+            subtracted from raw CENTER-files
+        frame_master_flat: master flat frame
+        frame_master_bpm: frame indicating location of bad pixels with 0's and good
+            pixels with 1's
+        frame_master_sky: master sky frame for OBJECT- (or CENTER)-files
+        centering_subtract_object: if True subtract the OBJECT-file taken
+            closest in time from the CENTER-file (default = True). When the 
+            difference between the image orientations of the CENTER- and 
+            OBJECT-frames is large (i.e. difference in derotator position angle 
+            for field-tracking and difference in parallactic angle for pupil-
+            tracking), the OBJECT-frame will be rotated around the initial 
+            guess of the centers as defined by center_coordinates before 
+            subtracting it from the CENTER-file.
+        center_coordinates: length-4-tuple with initial guess of center coordinates
+            x_left: initial guess of x-coordinate of center of left frame half
+            y_left: initial guess of y-coordinate of center of left frame half
+            x_right: initial guess of x-coordinate of center of right frame half
+            y_right: initial guess of y-coordinate of center of right frame half
+            Note that the center coordinates are defined in the complete frame, 
+            i.e. with both detector halves (pixels; 0-based). The default value 
+            is (477, 521, 1503, 511). 
+       
+    Output:
+        list_frame_center_processed: list of processed center frames
+        header: list of headers of center files
+                
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Print if and how background is subtracted
+    if centering_subtract_object == True:
+        printandlog('\nSubtracting OBJECT-file closest in time from CENTER-file(s).')
+    else:
+        if np.array_equal(frame_master_sky, np.zeros((1024, 2048))):
+            printandlog('\nNot subtracting background from CENTER-file(s).')
+        else:
+            printandlog('\nSubtracting master sky from CENTER-file(s).')
+     
+    # Determine tracking mode used
+    tracking_mode_used = pyfits.getheader(path_center_files[0])['ESO INS4 COMB ROT']
+
+    # Determine filter and tracking mode used
+    filter_used = pyfits.getheader(path_center_files[0])['ESO INS1 FILT ID']
+                 
+    # Create empty lists to store processed images and headers in
+    list_frame_center_processed = []
+    header = []
+
+    for (path_center_sel, path_object_sel) in zip(path_center_files, path_object_center_files):
+        # Read data and header from file
+        cube_center, header_center = read_fits_files(path=path_center_sel, silent=True)
+    
+        if centering_subtract_object == True:
+            # Use OBJECT-file closest in time to CENTER-file as backround
+            cube_object, header_object = read_fits_files(path=path_object_sel, silent=True)
+           
+            # Compute mean of frames and shift for dithering
+            frame_background = np.mean(cube_object, axis=0)
+            shift_x_dith = -header_object['ESO INS1 DITH POSX']
+            shift_y_dith = -header_object['ESO INS1 DITH POSY']
+            frame_background = ndimage.shift(frame_background, [shift_y_dith, shift_x_dith], order=3, mode='constant', cval=0.0, prefilter=True)   
+
+            # Compute theoretical full width half maximum and separation of satellite spots
+            fwhm, separation = compute_fwhm_separation(filter_used)
+            
+            # Compute maximum allowable image rotation before rotating the object-frame (deg)
+            max_image_rotation = np.rad2deg(0.3*fwhm / separation)
+            
+            if tracking_mode_used == 'FIELD':
+                # Determine derotator image position angle of center- and object-frame
+                rot_angle_center = np.deg2rad(header_center['ESO INS4 DROT2 POSANG'])
+                rot_angle_object = np.deg2rad(header_object['ESO INS4 DROT2 POSANG'])
+            
+            elif tracking_mode_used == 'PUPIL':
+                # Determine parallactic angle of center- and object-frame
+                rot_angle_center = np.deg2rad(compute_mean_angle([header_center['ESO TEL PARANG START'], header_center['ESO TEL PARANG END']]))           
+                rot_angle_object = np.deg2rad(compute_mean_angle([header_object['ESO TEL PARANG START'], header_object['ESO TEL PARANG END']]))
+            
+            # Determine difference between image rotation angles of center- and object-frame (deg)
+            delta_rot_angle = np.rad2deg(np.arctan2(np.sin(rot_angle_center - rot_angle_object), np.cos(rot_angle_center - rot_angle_object)))
+            
+            if np.abs(delta_rot_angle) > max_image_rotation:
+                # Remove bad pixels from background frame and cut into two halves
+                printandlog('\nRotating OBJECT-frame around initial guess of center before subtracting it \nfrom CENTER-file.')
+                frame_background = remove_bad_pixels(cube=frame_background, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+                frame_background_left = frame_background[:, :1024]
+                frame_background_right = frame_background[:, 1024:]
+                
+                # Rotate frame halves about estimated centers and append them together again
+                frame_background_left = rotateskimage(frame_background_left, delta_rot_angle, center=(center_coordinates[0], center_coordinates[1]), order=3)
+                frame_background_right = rotateskimage(frame_background_right, delta_rot_angle, center=(center_coordinates[2] - 1024, center_coordinates[3]), order=3)
+                frame_background = np.append(frame_background_left, frame_background_right, axis=1)
+
+        else:
+            # Use the master sky frame as background
+            frame_background = frame_master_sky 
+
+        # Subtract background and divide by master flat
+        cube_bgsubtr_flatfielded = (cube_center - frame_background) / frame_master_flat
+        
+        # Remove bad pixels of each frame
+        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+        
+        # Compute mean over NDIT frames
+        frame_mean = np.mean(cube_badpixel_filtered, axis=0)
+
+        # Append reduced images and headers
+        list_frame_center_processed.append(frame_mean)
+        header.append(header_center)
+        
+    return list_frame_center_processed, header
+
+###############################################################################
+# fit_2d_gaussian
+###############################################################################
+    
+def fit_2d_gaussian(frame, x0=None, y0=None, x_stddev=1.0, y_stddev=1.0, theta=0.0, crop_radius=None, sigfactor=None, saturation_level=None):
+    '''
+    Fit a 2D-Gaussian to an image frame and return the center coordinates
+    
+    Input:
+        frame: image frame to fit Gaussian to
+        x0: center x-coordinate of sub-image used to fit Gaussian (pixels). Must be
+            integer. If None, the center of the frame is used. Ignored when
+            crop_radius is None (default = None).
+        y0: center y-coordinate of sub-image used to fit Gaussian (pixels). Must be
+            integer. If None, the center of the frame is used. Ignored when
+            crop_radius is None (default = None).
+        x_stddev: standard deviation in x-direction of Gaussian before rotating
+            by theta (default = 1.0)
+        y_stddev: standard deviation in y-direction of Gaussian before rotating
+            by theta (default = 1.0)
+        theta: rotation angle of Gaussian in rad, positive clockwise
+            (default = 0.0)
+        crop_radius: half the length of side of square cropped sub-images used 
+            to fit Gaussian to (pixels). Must be integer. If None, the complete 
+            frame is used for the fitting and the values of x0 and y0 are 
+            ignored (default = None).
+        sigfactor: all sub-image pixels with values smaller than 
+            sigfactor*standard deviation are replaced by random Gaussian noise 
+            to mask them for fitting the 2D Gaussian. If None, no pixels are
+            replaced by Gaussian noise (default = None).
+        saturation_level: all pixels within the smallest circle encompassing 
+            the pixels with a value equal to or higher than saturation_level 
+            are ignored when fitting the 2D Gaussian. We use a circle because
+            strongly saturated pixels in the peak of the PSF often have values 
+            lower than the saturation level. If None, no pixels are ignored 
+            (default = None).
+  
+    Output:
+        x_fit: x-coordinate of center of fitted Gaussian in complete frame (pixels)
+        y_fit: y-coordinate of center of fitted Gaussian in complete frame (pixels)
+        x_fit_sub_image: x-coordinate of center of fitted Gaussian in sub-image frame (pixels)
+        y_fit_sub_image: y-coordinate of center of fitted Gaussian in sub-image frame (pixels)
+        sub_image: cropped sub-image frame used to fit Gaussian to
+                
+    File written by Rob van Holstein; based on a function by Julien Milli
+    Function status: verified
+    '''
+
+    # Check input and raise errors
+    if frame.ndim != 2:
+        raise ValueError('frame should be a 2-dimensional array.')
+    if type(crop_radius) != int and crop_radius is not None:
+        raise TypeError('crop_radius must be integer or None.') 
+    if type(x0) not in [int, np.int32, np.int64] and y0 is not None:
+        raise TypeError('x0 must be integer or None.')
+    if type(y0) not in [int, np.int32, np.int64] and x0 is not None:
+        raise TypeError('y0 must be integer or None.')
+
+    # Set approximate center coordinates to center of frame if not specified
+    if x0 is None:
+        x0 = frame.shape[-1] // 2
+    if y0 is None:
+        y0 = frame.shape[-2] // 2
+    
+    # Set saturation level to infinity if not specified
+    if saturation_level is None:
+        saturation_level = np.inf
+
+    if crop_radius is None:
+        # Use complete frame
+        sub_image = np.copy(frame)
+    else:
+        # Cut out sub-image around center
+        sub_image = np.copy(frame[y0 - crop_radius:y0 + crop_radius, \
+                          x0 - crop_radius:x0 + crop_radius])
+                
+    # Create grid of x- and y-coordinates  
+    y, x = np.mgrid[:sub_image.shape[-2], :sub_image.shape[-1]]
+    
+    # Determine position of maximum value in sub-image
+    max_sub_image = np.max(sub_image)
+    y_max, x_max = np.where(sub_image == max_sub_image)
+
+    # If the maximum value is found on multiple pixels, take the position of first pixel
+    if len(x_max) > 1:
+        x_max = x_max[0]
+        y_max = y_max[0]
+  
+    if sigfactor is not None:
+        # Replace all values smaller than sigfactor*standard deviation by random Gaussian noise
+        clipmed, clipstd = sigma_clipped_stats(sub_image, sigma=2)[1:]
+        indices_background = np.where(sub_image <= clipmed + sigfactor*clipstd)
+        subimnoise = np.random.randn(sub_image.shape[0], sub_image.shape[1])*clipstd
+        sub_image[indices_background] = subimnoise[indices_background]
+
+    # Determine accurate coordinates of center by fitting a 2D Gaussian              
+    p_init1 = models.Gaussian2D(amplitude=max_sub_image, x_mean=int(x_max), y_mean=int(y_max), \
+                                x_stddev=x_stddev, y_stddev=y_stddev, theta=theta)
+    fit_p = fitting.LevMarLSQFitter()
+    p1 = fit_p(p_init1, x, y, sub_image, maxiter=1000, acc=1e-08)
+    x_fit_sub_image = p1.x_mean[0]
+    y_fit_sub_image = p1.y_mean[0]
+
+    # Compute radial distances from center of saturated pixels
+    radius = np.sqrt((x - x_fit_sub_image)**2 + (y - y_fit_sub_image)**2)
+    radius_saturation = radius[sub_image >= saturation_level]
+    
+    if any(radius_saturation) == True:
+        # Mask all pixels within the smallest centered circle encompassing all saturated pixels
+        mask_saturated = radius <= np.max(radius_saturation)
+    
+        # Remove saturated pixels
+        indices_not_saturated = np.where(~mask_saturated)
+        x = x[indices_not_saturated]
+        y = y[indices_not_saturated]
+        sub_image_masked = sub_image[indices_not_saturated]
+    
+        # Set saturated pixels to NaN in sub-image for plotting
+        sub_image[mask_saturated] = np.nan
+    
+        # Determine accurate coordinates of center by fitting a 2D Gaussian to the sub-image without saturated pixels              
+        p_init2 = models.Gaussian2D(amplitude=max_sub_image, x_mean=x_fit_sub_image, y_mean=y_fit_sub_image, \
+                 x_stddev=x_stddev, y_stddev=y_stddev, theta=theta)
+        p2 = fit_p(p_init2, x, y, sub_image_masked, maxiter=1000, acc=1e-08)
+        x_fit_sub_image = p2.x_mean[0]
+        y_fit_sub_image = p2.y_mean[0]
+   
+    # Compute spot coordinates in coordinates of complete image
+    if crop_radius is None:      
+        x_fit = x_fit_sub_image
+        y_fit = y_fit_sub_image
+    else:
+        x_fit = x0 - crop_radius + x_fit_sub_image
+        y_fit = y0 - crop_radius + y_fit_sub_image
+
+    return x_fit, y_fit, x_fit_sub_image, y_fit_sub_image, sub_image
+
+###############################################################################
+# find_center_coordinates
+###############################################################################
+    
+def find_center_coordinates(list_frame_center_processed, path_processed_center_files, center_coordinates=(477, 521, 1503, 511), param_centering=(12, 7, 30000)):
+    '''
+    Find coordinates of star center from processed CENTER frames. The function
+    shows the fitted coordinates of the satellite spots in an image and writes
+    a REG-file that indicates the fitted centers and that can be loaded as a 
+    region in the FITS-files of the processed center frames.
+    
+    Input:
+        list_frame_center_processed: list of processed center frames
+        path_processed_center_files: list of paths to processed CENTER files
+        center_coordinates: length-4-tuple with initial guess of center coordinates
+            x_left: initial guess of x-coordinate of center of left frame half
+            y_left: initial guess of y-coordinate of center of left frame half
+            x_right: initial guess of x-coordinate of center of right frame half
+            y_right: initial guess of y-coordinate of center of right frame half
+            Note that the center coordinates are defined in the complete frame, 
+            i.e. with both detector halves (pixels; 0-based). The default value 
+            is (477, 521, 1503, 511). 
+        param_centering: length-3-tuple with parameters for centering:
+            crop_radius: half the length of side of square cropped sub-images used 
+                to fit Gaussian to (pixels). Must be integer. If None, the complete 
+                frame is used for the fitting and center_coordinates is ignored.
+            sigfactor: all sub-image pixels with values smaller than 
+                sigfactor*standard deviation are replaced by random Gaussian noise 
+                to mask them for fitting the 2D Gaussian. If None, no pixels are
+                replaced by Gaussian noise.
+            saturation_level: all pixels within the smallest circle encompassing 
+                the pixels with a value equal to or higher than saturation_level 
+                are ignored when fitting the 2D Gaussian. We use a circle because
+                strongly saturated pixels in the peak of the PSF often have values 
+                lower than saturation_level. If None, no pixels are ignored.
+            The default value of param_centering is (12, 7, 30000).
+                
+    Output:
+        center_coordinates: a length-4-tuple with the determined center 
+        coordinates (pixels): (x_left, y_left, x_right, y_right)
+                
+    File written by Rob van Holstein; based on functions by Julien Milli and 
+    Christian Ginski
+    Function status: verified
+    '''
+
+    # Read centering parameters
+    x_center_0 = np.array([center_coordinates[0], center_coordinates[2]])
+    y_center_0 = np.array([center_coordinates[1], center_coordinates[3]])
+    crop_radius = param_centering[0]
+    sigfactor = param_centering[1]
+    saturation_level = param_centering[2]
+    
+    # Subtract 1024 from the right x-coordinate to make it valid for a frame half
+    x_center_0[1] -= 1024
+   
+    # Read headers
+    header = [pyfits.getheader(x) for x in path_processed_center_files]
+    
+    # Determine filter used
+    filter_used = header[0]['ESO INS1 FILT ID']
+    
+    # Compute theoretical full width half maximum and separation of satellite spots
+    fwhm, separation = compute_fwhm_separation(filter_used)
+    
+    # Set NaN-vales in color map to gray 
+    cmap = mpl.cm.CMRmap
+    cmap.set_bad(color='gray')
+
+    # Create zero arrays to save fitted center coordinates in
+    x_center_fit = np.zeros((len(list_frame_center_processed), 2))
+    y_center_fit = np.copy(x_center_fit)  
+            
+    # For each frame
+    for i, (frame_sel, header_sel, path_sel) in enumerate(zip(list_frame_center_processed, header, path_processed_center_files)):       
+        # Cut frame into a left and right half
+        frame_halves = [frame_sel[:, :1024], frame_sel[:, 1024:]]
+
+        # Determine waffle pattern used ('x' or '+')
+        waffle_pattern = header_sel['ESO OCS WAFFLE ORIENT']
+        
+        # Define approximate position angles of spots
+        if waffle_pattern == 'x':
+            position_angle = np.deg2rad(np.array([45., 135., 225., 315.]))
+            titles_sub_image = ['upper right', 'upper left', 'lower left', 'lower right']
+        else:
+            printandlog('\nWARNING, waffle pattern is \'+\'. Correct functioning of centering not tested.')
+            position_angle = np.deg2rad(np.array([0., 90., 180., 270.]))
+            titles_sub_image = ['right', 'top', 'left', 'bottom']
+        
+        # Initiate plot to show sub-images used to fit coordinates of satellite spots
+        path_plot_sub_images = os.path.splitext(path_sel)[0] + '.png'
+        printandlog('\nCreating plot ' + path_plot_sub_images + '\nshowing sub-images of satellite spots with fitted coordinates.')
+        fig, axs = plt.subplots(nrows=2, ncols=4, sharex=True, sharey=True, subplot_kw={'xticks': [], 'yticks': []}, figsize=(8, 4.3)) 
+        title_main = 'center_coordinates = %s' % (center_coordinates,)
+        if center_coordinates == (477, 521, 1503, 511):
+            title_main += ' (default)'
+        title_main += '\nparam_centering = %s' % (param_centering,)         
+        if param_centering == (12, 7, 30000):
+            title_main += ' (default)'
+        fig.suptitle(title_main, horizontalalignment='center')
+        fig.subplots_adjust(top=0.7)
+        sub_image_position = [[(0, 1), (0, 0), (1, 0), (1, 1)], [(0, 3), (0, 2), (1, 2), (1, 3)]]
+        
+        # Create zero arrays to save fitted spot coordinates in 
+        x_fit = np.zeros((2, 4))
+        y_fit = np.zeros((2, 4))
+            
+        # For each frame half
+        for j, (frame_half, x_center_0_sel, y_center_0_sel) in enumerate(zip(frame_halves, x_center_0, y_center_0)):           
+            for k, angle in enumerate(zip(position_angle)):
+                # Determine approximate coordinates of satellite spots          
+                x_spot_0 = int(np.round(x_center_0_sel + np.cos(angle) * separation))
+                y_spot_0 = int(np.round(y_center_0_sel + np.sin(angle) * separation))
+
+                # Determine accurate coordinates of satellite spots by fitting a 2D Gaussian           
+                x_fit[j, k], y_fit[j, k], x_fit_sub_image, y_fit_sub_image, sub_image = fit_2d_gaussian(frame=frame_half, x0=x_spot_0, y0=y_spot_0, \
+                x_stddev=1.1*fwhm, y_stddev=0.63*fwhm, theta=angle, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)
+
+                # Plot sub-images used
+                axs[sub_image_position[j][k]].imshow(sub_image, cmap=cmap, origin='lower',interpolation='nearest')
+                axs[sub_image_position[j][k]].plot(x_fit_sub_image, y_fit_sub_image, 'rx', markersize=50/crop_radius)
+                axs[sub_image_position[j][k]].set_title(titles_sub_image[k])
+
+        # Add 1024 to the x-coordinates of the satellite spots on the right frame half to make the values valid for complete frame    
+        x_fit[1, :] += 1024         
+        
+        # Compute gradients and constants of lines between opposite spots
+        a13 = (y_fit[:, 0] - y_fit[:, 2]) / (x_fit[:, 0] - x_fit[:, 2])          
+        b13 = y_fit[:, 0] - a13*x_fit[:, 0]
+        a24 = (y_fit[:, 1] - y_fit[:, 3]) / (x_fit[:, 1] - x_fit[:, 3])
+        b24 = y_fit[:, 1] - a24*x_fit[:, 1]
+
+        # Compute center coordinates from intersection of lines
+        x_center_fit[i, :] = (b24 - b13) / (a13 - a24)
+        y_center_fit[i, :] = a13*x_center_fit[i, :] + b13
+                        
+        # Make titles for left and right half and show sub-images of satellite spots
+        ext = []
+        for j in range(4):
+            ext.append([axs[0, j].get_window_extent().x0, axs[0, j].get_window_extent().width])
+        inv = fig.transFigure.inverted()
+        width_left = ext[0][0] + (ext[1][0] + ext[1][1] - ext[0][0]) / 2
+        left_center = inv.transform((width_left, 1))
+        width_right = ext[2][0] + (ext[3][0] + ext[3][1] - ext[2][0]) / 2
+        right_center = inv.transform((width_right, 1))
+        plt.figtext(left_center[0], 0.81, 'Left frame half', va='center', ha='center', size=12)
+        plt.figtext(right_center[0], 0.81, 'Right frame half', va='center', ha='center', size=12)
+        plt.savefig(path_plot_sub_images, dpi = 300, bbox_inches = 'tight')
+        plt.show()
+               
+        # Write REG-file with fitted lines and circles indicating centers to use with FITS-files of processed center frames
+        path_reg_file = os.path.splitext(path_sel)[0] + '.reg'
+        f = open(path_reg_file, 'w')
+        f.write("global color=green dashlist=8 3 width=1 font='helvetica 10 normal roman' select=1 highlite=1 dash=0 fixed=0 edit=1 move=0 delete=1 include=1 source=1\n")
+        f.write("physical\n")
+        f.write('circle({0:8.2f}, {1:8.2f}, 2.5)\n'.format(x_center_fit[i, 0] + 1, y_center_fit[i, 0] + 1))
+        f.write('line({0:8.2f}, {1:8.2f}, {2:8.2f}, {3:8.2f})\n'.format(x_fit[0, 0] + 1, y_fit[0, 0] + 1, x_fit[0, 2] + 1, y_fit[0, 2] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[0, 0] + 1, y_fit[0, 0] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[0, 2] + 1, y_fit[0, 2] + 1))
+        f.write('line({0:8.2f}, {1:8.2f}, {2:8.2f}, {3:8.2f})\n'.format(x_fit[0, 1] + 1, y_fit[0, 1] + 1, x_fit[0, 3] + 1, y_fit[0, 3] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[0, 1] + 1, y_fit[0, 1] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[0, 3] + 1, y_fit[0, 3] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 2.5)\n'.format(x_center_fit[i, 1] + 1, y_center_fit[i, 1] + 1))
+        f.write('line({0:8.2f}, {1:8.2f}, {2:8.2f}, {3:8.2f})\n'.format(x_fit[1, 0] + 1, y_fit[1, 0] + 1, x_fit[1, 2] + 1, y_fit[1, 2] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 0] + 1, y_fit[1, 0] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 2] + 1, y_fit[1, 2] + 1))
+        f.write('line({0:8.2f}, {1:8.2f}, {2:8.2f}, {3:8.2f})\n'.format(x_fit[1, 1] + 1, y_fit[1, 1] + 1, x_fit[1, 3] + 1, y_fit[1, 3] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 1] + 1, y_fit[1, 1] + 1))
+        f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 3] + 1, y_fit[1, 3] + 1))        
+        f.close()  
+        printandlog('\nWrote file ' + path_reg_file + '\nwhich can be loaded as a region in DS9 and shows the fitted coordinates of the \nsatellite spots and the center.')
+        
+    # Print center coordinates found
+    max_path_length = max([len(os.path.basename(x)) for x in path_processed_center_files])
+    separator_top = ' '*(max_path_length - 9)
+    printandlog('\nMeasured center coordinates per file (pixels):')
+    printandlog('File name' + separator_top + '    x_left    y_left    x_right    y_right')
+    for i, path_sel in enumerate(path_processed_center_files):
+        separator = ' '*(max_path_length - len(os.path.basename(path_sel)))
+        printandlog(os.path.basename(path_sel) + separator + '    %.2f    %.2f    %.2f    %.2f' % (x_center_fit[i, 0], y_center_fit[i, 0], x_center_fit[i, 1], y_center_fit[i, 1]))    
+    
+    # Compute mean of fitted center coordinates    
+    x_center = np.mean(x_center_fit, axis=0)
+    y_center = np.mean(y_center_fit, axis=0)
+
+    if len(list_frame_center_processed) > 1:
+        # Compute standard deviation of fitted center coordinates
+        x_center_std = np.std(x_center_fit, ddof=1, axis=0)
+        y_center_std = np.std(y_center_fit, ddof=1, axis=0)
+
+        # Print mean center coordinates with error
+        separator = ' '*max([len('%.2f' % x) for x in np.append(x_center_std, y_center_std)])
+        printandlog('\nFinal center coordinates (pixels):')
+        printandlog('x_left' + separator + '         y_left' + separator + '         x_right' + separator + '         y_right')
+        printandlog('%.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f' % (x_center[0], x_center_std[0], y_center[0], y_center_std[0], x_center[1], x_center_std[1], y_center[1], y_center_std[1]))    
+        
+        # Print warning if there is significant deviation among the center coordinates found
+        if any(np.append(x_center_std, y_center_std) > 0.5):
+            printandlog('\nWARNING, for at least one of the fitted center coordinates the standard \ndeviation is larger than 0.5 pixel.')
+    else:
+        # Print mean center coordinates without error
+        printandlog('\nFinal center coordinates (pixels):')
+        printandlog('x_left    y_left    x_right    y_right')
+        printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center[0], y_center[0], x_center[1], y_center[1]))    
+
+    # Assemble output
+    center_coordinates = (x_center[0], y_center[0], x_center[1], y_center[1])
+    
+    return center_coordinates
+
+
+
+
+
+
+
+
+
+
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@
+#@    Main pre-processing function being worked on
+#@   
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+
+
+################################################################################
+## process_object_frames
+################################################################################
+#
+#def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm, frame_master_sky, centering_method='cross-correlation', center_coordinates=[], sigmafiltering=True):
+#    '''
+#    Process the OBJECT frames by subtracting the background, flat-fielding, 
+#    removing bad pixels, computing the mean over the NDIT's, centering and
+#    computing the single sum and difference images
+#    
+#    Input:
+#        path_object_files: list of paths to raw OBJECT-files
+#        frame_master_flat: master flat frame
+#        frame_master_bpm: frame indicating location of bad pixels with 0's and good
+#            pixels with 1's
+#        frame_master_sky: master sky frame for OBJECT-files
+## TODO: CENTERING VARIABLES HERE
+#        sigmafiltering: if True remove bad pixels remaining after applying
+#            master bad pixel map using sigma-filtering (default = True)
+#       
+#    Output:
+#        cube_single_sum: cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^- intensity images
+#        cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
+#        header: list of FITS-headers of raw science frames   
+#                
+#    File written by Rob van Holstein; based on function by Christian Ginski
+#    Function status: verified
+#    '''
+#    
+#    # Print centering method selected
+#    if centering_method == 'center frames':
+#        printandlog('\nCentering OBJECT-files with center coordinates found from CENTER-file(s).')
+#    elif centering_method == 'center frames + cross-correlation':
+#        #TODO: Rephrase print statement after finishing function
+#        printandlog('\nCentering OBJECT-files with center coordinates found from CENTER-file(s) followed by cross-correlation.')
+#    elif centering_method == 'cross-correlation':
+#        #TODO: Rephrase print statement after finishing function
+#        printandlog('\nCentering OBJECT-files using cross-correlation.')
+#    elif centering_method == 'manual':
+#        printandlog('\nCentering OBJECT-files with user-provided center coordinates.')
+#
+#    # Read center coordinates
+#    x_center_left, y_center_left, x_center_right, y_center_right = center_coordinates
+#    
+#    # Subtract 1024 from the right x-coordinate to make it valid for a frame half
+#    x_center_right -= 1024
+#
+#    # Create empty lists to store processed images and headers in
+#    list_single_sum = []
+#    list_single_difference = []
+#    header = []
+#    printandlog('')
+#
+#    for i, path_sel in enumerate(path_object_files):
+#        # Read data and header from file
+#        cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
+#            
+#        # Subtract background and divide by master flat
+#        cube_bgsubtr_flatfielded = (cube_sel - frame_master_sky) / frame_master_flat
+#
+#        # Remove bad pixels of each frame
+#        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+#
+#        # Compute mean over NDIT frames
+#        frame_mean = np.mean(cube_badpixel_filtered, axis=0)
+#
+#        # Separate left and right part of image
+#        frame_left = frame_mean[:, :1024]
+#        frame_right = frame_mean[:, 1024:]
+#
+#        # Retrieve dithering shifts in x- and y-direction from header
+#        x_dith = header_sel["HIERARCH ESO INS1 DITH POSX"]
+#        y_dith = header_sel["HIERARCH ESO INS1 DITH POSY"]
+#        
+#        if centering_method in ['center frames', 'manual']:
+#            # Compute shift for left and right images
+#            shift_x_left = 511.5 - x_center_left - x_dith
+#            shift_y_left = 511.5 - y_center_left - y_dith
+#            shift_x_right = 511.5 - x_center_right - x_dith
+#            shift_y_right = 511.5 - y_center_right - y_dith
+#        else:
+#            #TODO: Somehow do cross-correlation
+#            dummy_var = 5
+#            dummy_var += 1
+#        
+#        # Shift left and right images to center
+#        frame_left = ndimage.shift(frame_left, [shift_y_left, shift_x_left], order=3, mode='constant', cval=0.0, prefilter=True)   
+#        frame_right = ndimage.shift(frame_right, [shift_y_right, shift_x_right], order=3, mode='constant', cval=0.0, prefilter=True)   
+#
+#        # Create single difference and sum image
+#        frame_single_sum = frame_left + frame_right
+#        frame_single_difference = frame_left - frame_right
+#        
+#        # Append single sum and difference images and header
+#        list_single_sum.append(frame_single_sum)
+#        list_single_difference.append(frame_single_difference)
+#        header.append(header_sel)
+#        
+#        # Print which file has been processed
+#        printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(path_sel))
+#    
+#    # Convert lists of single sum and difference images to image cubes
+#    cube_single_sum = np.stack(list_single_sum)
+#    cube_single_difference = np.stack(list_single_difference)    
+#
+#    return cube_single_sum, cube_single_difference, header
+
+###############################################################################
+# create_sub_image
+###############################################################################
+    
+def create_sub_image(frame, x0, y0, crop_radius):
+
+    if crop_radius is None:
+        # Use complete frame
+        sub_image = np.copy(frame)
+    else:
+        # Cut out sub-image around center
+        sub_image = np.copy(frame[y0 - crop_radius:y0 + crop_radius, \
+                          x0 - crop_radius:x0 + crop_radius])
+    return sub_image
+
+###############################################################################
 # process_object_frames
 ###############################################################################
 
-def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm, frame_master_sky, offset_y, offset_x, star_x, star_y, sigmafiltering=True):
+def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm, frame_master_sky, sigmafiltering=True, centering_method='center frames', center_coordinates=(477, 521, 1503, 511), param_centering=(12, 7, 30000), collapse_ndit=True, plot_centering_sub_images=True):
     '''
     Process the OBJECT frames by subtracting the background, flat-fielding, 
     removing bad pixels, computing the mean over the NDIT's, centering and
@@ -897,51 +1630,159 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
     Function status: verified
     '''
     
-    # Create empty lists to store processed images and headers in
+    # Print centering method selected
+    if centering_method == 'center frames':
+        printandlog('\nCentering OBJECT-files with center coordinates found from CENTER-file(s):')
+        printandlog(center_coordinates)
+    elif centering_method == 'gaussian':
+        #TODO: Rephrase print statement after finishing function
+        printandlog('\nCentering OBJECT-files by fitting a 2D Gaussian.')
+    elif centering_method == 'cross-correlation':
+        #TODO: Rephrase print statement after finishing function
+        printandlog('\nCentering OBJECT-files using cross-correlation.')
+    elif centering_method == 'manual':
+        printandlog('\nCentering OBJECT-files with user-provided center coordinates:')
+        printandlog(center_coordinates)
+
+    # Assemble center coordinates in two arrays and subtract 1024 from the right x-coordinate to make it valid for a frame half
+    x_center_0 = np.array([center_coordinates[0], center_coordinates[2] - 1024])
+    y_center_0 = np.array([center_coordinates[1], center_coordinates[3]])
+ 
+    # Create zero arrays and empty lists
+    list_frame_number = []
+    list_file_number = []
+    list_shift_x = [[], []]
+    list_shift_y = [[], []]
     list_single_sum = []
     list_single_difference = []
     header = []
-    printandlog('')
 
+    if centering_method in ['gaussian', 'cross-correlation']:
+        #  Read centering parameters
+        crop_radius, sigfactor, saturation_level = param_centering
+
+        # Determine filter used and compute theoretical full width half maximum
+        filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+        fwhm = compute_fwhm_separation(filter_used)[0]
+    
+    if centering_method in ['gaussian', 'cross-correlation'] and plot_centering_sub_images == True:
+        # Create empty lists
+        list_x_fit_sub_image = [[], []]
+        list_y_fit_sub_image = [[], []]
+        list_sub_image = [[], []]
+                        
+    if centering_method == 'cross-correlation':
+        # Create zero arrays
+        x_fit_template = np.zeros(2)
+        y_fit_template = np.zeros(2)
+        x_fit_sub_image_template = np.zeros(2)
+        y_fit_sub_image_template = np.zeros(2)
+        list_sub_image_template = []
+        
+    printandlog('')
+    
     for i, path_sel in enumerate(path_object_files):
         # Read data and header from file
         cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
+        
+        #TODO: Remove bad frames based on list of indices provided by the user
+                
+        if collapse_ndit == True or centering_method in ['center frames', 'manual']:
+            # Compute mean over NDIT frames
+            cube_sel = np.mean(cube_sel, axis=0, keepdims=True)  
 
-        # Filter master flat for zeros and NaN's
-        frame_master_flat = np.nan_to_num(frame_master_flat)
-        frame_master_flat[frame_master_flat == 0] = 1
-            
         # Subtract background and divide by master flat
         cube_bgsubtr_flatfielded = (cube_sel - frame_master_sky) / frame_master_flat
 
         # Remove bad pixels of each frame
         cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
 
-        # Compute mean over NDIT frames
-        frame_mean = np.mean(cube_badpixel_filtered, axis=0)
+        # Create zero arrays to save centered images in
+        cube_left_centered = np.zeros((cube_badpixel_filtered.shape[-3], cube_badpixel_filtered.shape[-2], int(cube_badpixel_filtered.shape[-1] / 2)))
+        cube_right_centered = np.copy(cube_left_centered)
 
-        # Separate left and right part of image
-        frame_left = frame_mean[:, :1024]
-        frame_right = frame_mean[:, 1024:]
+        if centering_method in ['center frames', 'manual']:
+            # Retrieve dithering shifts in x- and y-direction from header
+            x_dith = header_sel['ESO INS1 DITH POSX']
+            y_dith = header_sel['ESO INS1 DITH POSY']
+            
+            # Compute x- and y-shifts for left and right images
+            list_shift_x[0].append(511.5 - x_dith - x_center_0[0])
+            list_shift_y[0].append(511.5 - y_dith - y_center_0[0])
+            list_shift_x[1].append(511.5 - x_dith - x_center_0[1])
+            list_shift_y[1].append(511.5 - y_dith - y_center_0[1])
 
-        # Retrieve dithering shifts in x- and y-direction from header
-        x_dith = header_sel["HIERARCH ESO INS1 DITH POSX"]
-        y_dith = header_sel["HIERARCH ESO INS1 DITH POSY"]
+        # For each frame in the cube
+        for j, frame_sel in enumerate(cube_badpixel_filtered):        
+            # Separate left and right part of image
+            frame_left = frame_sel[:, :1024]
+            frame_right = frame_sel[:, 1024:]
+
+            # Save file number and frame number of cube 
+            #TODO: Adapt number according to original frame number, not after deleting it
+            list_file_number.append(i)
+            list_frame_number.append(j)
+
+            if centering_method in ['gaussian', 'cross-correlation']:
+                # Assembly the frame halves in a list
+                frame_halves = [frame_left, frame_right]           
+
+                # For each frame half
+                for k, (frame_half, x_center_0_sel, y_center_0_sel) in enumerate(zip(frame_halves, x_center_0, y_center_0)):
+                    if centering_method == 'gaussian':
+                        # Determine accurate coordinates of star position fitting a Gaussian           
+                        x_fit, y_fit, x_fit_sub_image, y_fit_sub_image, sub_image = \
+                        fit_2d_gaussian(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, x_stddev=fwhm, y_stddev=fwhm, \
+                                        theta=0.0, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)
         
-        #TODO: The centering routines should immediately output the shifts (but without the dithering offsets)
-        # Compute shift for left and right images
-        shift_x_left = 511.5 - star_x - x_dith
-        shift_y_left = 511.5 - star_y - y_dith
-        shift_x_right = shift_x_left + offset_x
-        shift_y_right = shift_y_left + offset_y
-        
-        # Shift left and right images to center
-        frame_left = ndimage.shift(frame_left, [shift_y_left, shift_x_left], order=3, mode='constant', cval=0.0, prefilter=True)   
-        frame_right = ndimage.shift(frame_right, [shift_y_right, shift_x_right], order=3, mode='constant', cval=0.0, prefilter=True)   
+                        # Compute shift in x- and y-directions
+                        list_shift_x[k].append(511.5 - x_fit)
+                        list_shift_y[k].append(511.5 - y_fit)
+
+                    elif centering_method == 'cross-correlation':
+                        if i == 0 and j == 0:
+                            # Center frame halves of first frame by fitting a Gaussian
+                            if k == 0:
+                                printandlog('Creating templates for left and right images from first image frame.\n')
+                            x_fit_template[k], y_fit_template[k], x_fit_sub_image_template[k], y_fit_sub_image_template[k] = \
+                            fit_2d_gaussian(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, x_stddev=fwhm, y_stddev=fwhm, \
+                                            theta=0.0, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)[:4]
+                             
+                            # Create template sub-image
+                            list_sub_image_template.append(create_sub_image(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, crop_radius=crop_radius))
+                    
+                        # Create sub-image to cross-correlate with template sub-image
+                        sub_image = create_sub_image(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, crop_radius=crop_radius)
+                        
+                        # Determine required shift of image by cross-correlation with template
+                        x_shift_fit, y_shift_fit = register_translation(list_sub_image_template[k], sub_image, upsample_factor=10)[0]
+                           
+                        # Compute shift in x- and y-directions
+                        list_shift_x[k].append(511.5 - x_fit_template[k] + x_shift_fit)
+                        list_shift_y[k].append(511.5 - y_fit_template[k] + y_shift_fit)   
+    
+                        if plot_centering_sub_images == True:
+                            # Compute fit position in coordinates of sub-image                   
+                            x_fit_sub_image = x_fit_sub_image_template[k] - x_shift_fit
+                            y_fit_sub_image = y_fit_sub_image_template[k] - y_shift_fit
+                            
+                    if plot_centering_sub_images == True:
+                        # Append sub-image and its fitted coordinates to lists
+                        list_x_fit_sub_image[k].append(x_fit_sub_image)
+                        list_y_fit_sub_image[k].append(y_fit_sub_image)
+                        list_sub_image[k].append(sub_image)
+
+            # Shift left and right images to center
+            cube_left_centered[j, :, :] = np.expand_dims(ndimage.shift(frame_left, [list_shift_y[0][-1], list_shift_x[0][-1]], order=3, mode='constant', cval=0.0, prefilter=True), axis=0)   
+            cube_right_centered[j, :, :] = np.expand_dims(ndimage.shift(frame_right, [list_shift_y[1][-1], list_shift_x[1][-1]], order=3, mode='constant', cval=0.0, prefilter=True), axis=0)  
+       
+        # Compute mean images of left and right image cubes
+        frame_left_centered = np.mean(cube_left_centered, axis=0)
+        frame_right_centered = np.mean(cube_right_centered, axis=0)
 
         # Create single difference and sum image
-        frame_single_sum = frame_left + frame_right
-        frame_single_difference = frame_left - frame_right
+        frame_single_sum = frame_left_centered + frame_right_centered
+        frame_single_difference = frame_left_centered - frame_right_centered
         
         # Append single sum and difference images and header
         list_single_sum.append(frame_single_sum)
@@ -950,7 +1791,71 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
         
         # Print which file has been processed
         printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(path_sel))
-    
+ 
+    if centering_method in ['gaussian', 'cross-correlation']:
+        # Define function to plot centering shifts
+        def plot_centering_shifts(data, x_y, left_right):
+            font_size = 10
+            plot_name = name_file_root + 'centering_shift_' + x_y + '_' + left_right + '.png'            
+            path_plot = os.path.join(path_preprocessed_dir, plot_name)
+            printandlog('\nCreating plot ' + path_plot + ' \nshowing the shifts in the ' + 'x' + '-direction of the ' + 'right' + ' frame halves as a function \nof frame number.')
+            x_max = len(data) + 1
+            plt.figure(figsize = (4.7, 3.0))
+            plt.plot(np.arange(1, x_max), data, '-ok')
+            ax = plt.gca()
+            ax.set_xlabel(r'Image', fontsize=font_size)
+            ax.tick_params(axis = 'x', labelsize=font_size)
+            ax.set_xlim([0, x_max])
+            ax.set_ylabel(r'Shift ' + x_y + ' ' + left_right + ' (pixels)', fontsize=font_size)
+            ax.tick_params(axis='y', labelsize=font_size)  
+            ax.grid()
+            plt.tight_layout()
+            plt.savefig(path_plot, dpi=300, bbox_inches='tight')
+            plt.show()
+            
+        # Plot centering shifts in x- and y-direction of left and right frame halves
+        plot_centering_shifts(data=np.array(list_shift_x[0]), x_y='x', left_right='left')
+        plot_centering_shifts(data=np.array(list_shift_y[0]), x_y='y', left_right='left')
+        plot_centering_shifts(data=np.array(list_shift_x[1]), x_y='x', left_right='right')
+        plot_centering_shifts(data=np.array(list_shift_y[1]), x_y='y', left_right='right') 
+        
+    if centering_method in ['gaussian', 'cross-correlation'] and plot_centering_sub_images == True:
+        # Compute number of figures, rows and figure size
+        number_frames_max = 10
+        height_frame = 3.05
+        width_figure = 4.7
+        number_frames = len(list_sub_image[0])
+        number_figures = int(np.ceil(number_frames / number_frames_max))
+        number_rows_nominal = int(np.ceil(number_frames / number_figures))
+        number_rows = np.ones(number_figures, dtype=int)*number_rows_nominal
+        number_rows[-1] = int(number_frames - (number_figures - 1)*number_rows_nominal)
+        height_figure = number_rows*height_frame
+       
+        # Plot sub-images used to determine center coordinates
+        cmap = mpl.cm.CMRmap
+        cmap.set_bad(color='gray')
+        for i in range(number_figures):
+            if number_figures == 1:
+                plot_name = name_file_root + 'centering_sub_images.png'            
+            else:
+                plot_name = name_file_root + 'centering_sub_images_' + str(i + 1) + '.png'            
+            path_plot = os.path.join(path_preprocessed_dir, plot_name)
+            printandlog('\nCreating plot ' + path_plot + ' \nshowing the sub-images of each frame and the center coordinates fitted.')
+            fig, axs = plt.subplots(nrows=number_rows[i], ncols=2, sharex=True, sharey=True, \
+                                    subplot_kw={'xticks': [], 'yticks': []}, figsize=(width_figure, height_figure[i]))
+            fig.subplots_adjust(top=0.7)
+            axs[0, 0].set_title('Left frame halves')
+            axs[0, 1].set_title('Right frame halves')
+            for j in range(number_rows[i]):
+                j2 = j + number_rows[i]*i
+                if j2 < number_frames:
+                    axs[j, 0].set_ylabel(str(j2 + 1) + ': file ' + str(list_file_number[j2] + 1) + ' frame ' + str(list_frame_number[j2] + 1))
+                    for k in range(2):
+                        axs[j, k].imshow(list_sub_image[k][j2], cmap=cmap, origin='lower',interpolation='nearest')
+                        axs[j, k].plot(list_x_fit_sub_image[k][j2], list_y_fit_sub_image[k][j2], 'rx', markersize=50/crop_radius)
+            plt.savefig(path_plot, dpi=300, bbox_inches='tight')
+            plt.show()
+
     # Convert lists of single sum and difference images to image cubes
     cube_single_sum = np.stack(list_single_sum)
     cube_single_difference = np.stack(list_single_difference)    
@@ -995,10 +1900,6 @@ def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, fr
         # Make a single image cube from list of image cubes or frames
         cube_flux_raw = np.vstack(cube_flux_raw)
         
-    # Filter master flat for zeros and NaN's
-    frame_master_flat = np.nan_to_num(frame_master_flat)
-    frame_master_flat[frame_master_flat == 0] = 1
-        
     # Subtract background and divide by master flat
     cube_bgsubtr_flatfielded = (cube_flux_raw - frame_master_sky_flux) / frame_master_flat
 
@@ -1040,15 +1941,6 @@ def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, fr
 
     return frame_master_flux
 
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@
-#@    Main pre-processing function being worked on
-#@   
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
 
 
 
@@ -1059,9 +1951,8 @@ def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, fr
 # perform_preprocessing
 ###############################################################################
 
-def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True, sigmafiltering_object=True, sigmafiltering_flux=True, save_preprocessed_data=False):
+def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, centering_method='center frames', centering_subtract_object=True, center_coordinates=(477, 521, 1503, 511), param_centering='default', collapse_ndit=True, plot_centering_sub_images=True, save_preprocessed_data=False):
     '''
-    
     Input:
         
         
@@ -1070,6 +1961,7 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
     File written by Rob van Holstein; based on function by Christian Ginski
     Function status: 
     '''
+
     
     ###############################################################################
     # Checking and sorting data and creating directories 
@@ -1080,8 +1972,8 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
     printandlog('# Checking and sorting data and creating directories')
     printandlog('###############################################################################') 
 
-    path_object_files, path_sky_files, path_center_files, path_flux_files, \
-    path_sky_flux_files = check_sort_data_create_directories()
+    path_object_files, path_sky_files, path_center_files, path_object_center_files, \
+    path_flux_files, path_sky_flux_files = check_sort_data_create_directories(save_preprocessed_data=save_preprocessed_data, centering_method=centering_method)
 
     ###############################################################################
     # Read static master flat and bad pixel map
@@ -1090,7 +1982,8 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
     #TODO: Make master flats for Y and Ks. 
     # Determine filter used
     filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
-    
+
+    # Read static master flat    
     if filter_used == 'FILT_BBF_Y':
         path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_Y.fits')
     elif filter_used == 'FILT_BBF_J':
@@ -1100,8 +1993,11 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
     elif filter_used == 'FILT_BBF_Ks':
         path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_Ks.fits')
     
-    # Read static flat
     frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
+    
+    # Filter master flat for zeros and NaN's
+    frame_master_flat = np.nan_to_num(frame_master_flat)
+    frame_master_flat[frame_master_flat == 0] = 1
 
     # Read static bad pixel map
     frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_flat_badpixelmap, 'master_badpix.fits'), silent=True)[0])
@@ -1113,12 +2009,13 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
     if any(path_sky_files):
         # Process the sky files for the object files
         printandlog('\n###############################################################################')
-        printandlog('# Processing SKY files for OBJECT-files')
+        printandlog('# Processing SKY-files for OBJECT-files')
         printandlog('###############################################################################') 
 
-        frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering_sky)
+        frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
         
         # Write master sky-frame
+        printandlog('')
         write_fits_files(data=frame_master_sky, path=os.path.join(path_sky_dir, name_file_root + 'master_sky.fits'), header=False, silent=False)
     
     else:
@@ -1126,35 +2023,49 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
         frame_master_sky = np.zeros((1024, 2048))
 
     ###############################################################################
-    # Reducing center files and extracting center coordinates
+    # Processing center files and extracting center coordinates
     ###############################################################################
     
-    # Creating reduced center frames and obtaining center values
-    printandlog('\n###############################################################################')
-    printandlog('# Processing CENTER-files')
-    printandlog('###############################################################################') 
-    
-    create_clean_center_data(path_center_files,frame_master_flat,frame_master_bpm,frame_master_sky)
-    
-    #TODO: I think it is best to remove the variable recompute, as we can now save
-    # the single sum and single difference images to be used in post processing.
-    # Centering is the most difficult part, so the one thing you want to re-run
-    # is the centering so no need to save the center coordinates then.
-    recompute=True
-    offset_x, offset_y, star_x, star_y = do_centering(recompute=recompute,\
-                                        centering_method = "Python native")
+    if centering_method == 'center frames':
+        # Print that we process the center files
+        printandlog('\n###############################################################################')
+        printandlog('# Processing CENTER-files')
+        printandlog('###############################################################################')       
         
+#        # Define or read centering parameters and print them on screen
+#        if param_centering == 'default':
+#            printandlog('\nUsing the default centering parameters:')
+#            param_centering = (477, 521, 1503, 511, 12, 7, 30000)
+#        else:
+#            printandlog('\nUsing user-defined centering parameters:')
+#        printandlog(param_centering)
+#TODO: Remove 3 lines below
+#        separator_1 = ' '*(14 - len('%s'% param_centering[4]))
+#        printandlog('x_left    y_left    x_right    y_right    crop_radius   sigfactor')
+#        printandlog('%.2f    %.2f    %.2f    %.2f     %s    ' % param_centering[:5] + separator_1 + '%.1f' % param_centering[5])
+            
+        # Process the center files            
+        list_frame_center_processed, header_center = process_center_frames(path_center_files=path_center_files, path_object_center_files=path_object_center_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, centering_subtract_object=centering_subtract_object, center_coordinates=center_coordinates, sigmafiltering=sigmafiltering)
+    
+        # Write processed center frames
+        path_processed_center_files = [os.path.join(path_center_dir, os.path.splitext(os.path.basename(x))[0] + '_processed.fits') for x in path_center_files]
+        printandlog('')
+        write_fits_files(data=list_frame_center_processed, path=path_processed_center_files, header=header_center, silent=False)
+        
+        # Find center coordinates and replace values of center_coordinates
+        center_coordinates = find_center_coordinates(list_frame_center_processed=list_frame_center_processed, path_processed_center_files=path_processed_center_files, center_coordinates=center_coordinates, param_centering=param_centering)
+
     ###############################################################################
-    # Creating reduced and centered single-sum and -difference images
+    # Creating processed and centered single-sum and -difference images
     ###############################################################################
     
     # Create reduced and centerd single-sum and -difference images
     printandlog('\n###############################################################################')
     printandlog('# Processing OBJECT-files')
     printandlog('###############################################################################') 
-
-    cube_single_sum, cube_single_difference, header = process_object_frames(path_object_files=path_object_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, offset_y=offset_y, offset_x=offset_x, star_x=star_x, star_y=star_y, sigmafiltering=sigmafiltering_object)
-       
+      
+    cube_single_sum, cube_single_difference, header = process_object_frames(path_object_files=path_object_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, sigmafiltering=sigmafiltering, centering_method=centering_method, center_coordinates=center_coordinates, param_centering=param_centering, collapse_ndit=collapse_ndit, plot_centering_sub_images=plot_centering_sub_images)
+    
     if save_preprocessed_data == True:
         # Write preprocessed cubes of single-sum and single-difference images 
         printandlog('\nSaving pre-processed data so that pre-processing can be skipped the next time.\n')
@@ -1167,7 +2078,6 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
                 fh.write('%s\n' % path_sel)
         printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, 'path_object_files.txt') + '.')
 
-
     ###############################################################################
     # Computing master sky for flux images
     ###############################################################################
@@ -1178,9 +2088,10 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
         printandlog('# Processing SKY-files for FLUX-files')
         printandlog('###############################################################################') 
 
-        frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering_sky)
+        frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
         
         # Write master sky-frame
+        printandlog('')
         write_fits_files(data=frame_master_sky_flux, path=os.path.join(path_sky_flux_dir, name_file_root + 'master_sky_flux.fits'), header=False, silent=False)
 
     else:
@@ -1212,7 +2123,7 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
             printandlog(param_annulus_background_flux)
 
         # Processthe flux files
-        frame_master_flux = process_flux_frames(path_flux_files=path_flux_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky_flux=frame_master_sky_flux, param_annulus_background=param_annulus_background_flux, sigmafiltering=sigmafiltering_flux)
+        frame_master_flux = process_flux_frames(path_flux_files=path_flux_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky_flux=frame_master_sky_flux, param_annulus_background=param_annulus_background_flux, sigmafiltering=sigmafiltering)
 
         # Write master flux-frame
         write_fits_files(data=frame_master_flux, path=os.path.join(path_flux_dir, name_file_root + 'master_flux.fits'), header=False, silent=False)
@@ -1225,450 +2136,13 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering_sky=True
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@
-#@    Functions to reduce center frames and find center positions
-#@   
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-def do_centering(recompute=False,centering_method = "Python native",path_pipeline=None):
-    
-    switch = True
-    
-    if centering_method == "Python native":
-        switch = False    
-        offset_x, offset_y, star_x, star_y = IRDIS_centering_folder(recompute=recompute)
-    
-    if centering_method == "Linux SPHERE Pipeline":
-        switch = False
-        offset_x, offset_y, star_x, star_y = get_stellar_position_sphere_pipeline(path_pipeline)
-        star_x = star_x - 0.5
-        star_x = star_y - 0.5
-    
-    if centering_method == "Manual/external":
-        switch = False
-        offset_x = -1.41281338429
-        offset_y = 10.6449086743
-        star_x = 456.5
-        star_y = 550.6 
-    
-    if switch:
-        print("Warning, no valid centering method specified")
-    
-    return offset_x, offset_y, star_x, star_y
-
-def create_clean_center_data(raw_center_images,frame_master_flat,frame_master_bpm,master_dark):
-    """
-    Input:
-        - List of OBJECT,CENTER filenames.
-    Output:
-        -
-    """
-    print('Reading and reducing the OBJECT,CENTER frames')
-    for f in raw_center_images:
-        cube = pyfits.getdata(f)
-        header = pyfits.getheader(f)
-        if len(cube.shape) == 3:# this is a cube
-            average_cube = np.median(cube,axis=0)
-        elif len(cube.shape) == 2:# this is a frame
-            average_cube = cube            
-        if len(np.shape(master_dark)) == 3:    
-            master_dark = np.squeeze(master_dark,axis=0)    
-
-        average_cube = (average_cube - master_dark)/frame_master_flat
-        average_cube = np.nan_to_num(average_cube)
-        median = ndimage.filters.median_filter(average_cube, size=5)    
-        masked = average_cube * frame_master_bpm
-        median = median - median * frame_master_bpm
-        average_cube = median + masked    
-        new_filename = os.path.join(path_center_dir,\
-                    os.path.basename(f).replace('.fits','_reduced.fits'))
-        pyfits.writeto(new_filename,average_cube, header, \
-                       overwrite=True, output_verify = "ignore")    
-        print('Wrote {0:s}'.format(new_filename))
-    return
-
-
-def get_stellar_position_sphere_pipeline(path,dark,flat):
-    
-    path_center_dir = os.path.join(path,"center_frames") # make new folder for images
-    subprocess.call('mkdir ' + path_center_dir, shell=True)    
-    
-    center_images = []
-
-    for f in sorted(os.listdir(path)):
-
-            # das muss sortiert werden da listdir unsortierten inhalt gibt lst = os.listdir(whatever_directory)
-            #lst.sort()
-
-            f = os.path.join(path,f)
-
-            if os.path.isdir(f):
-                continue                # skips all directories
-
-            froot, ext = os.path.splitext(f)        #get the extension
-            # (froot is d:\pictures\2008\2008_11_01_family\img0001)
-            # (ext is fits)
-
-            if ext.lower() != '.fits':
-                continue                # skips all non fits files
-
-            dir_root, fname = os.path.split(froot)  #get the dir and base names
-            # (dir_root is d:\pictures\2008\2008_11_01_family, this is identical to path)
-            # (fname is img0001)
-
-            # we determine the size of the datacubes:
-
-            raw_file = pyfits.open(f)
-            header = raw_file[0].header
-           
-            if "HIERARCH ESO DPR TYPE" in header:
-                if header["HIERARCH ESO DPR TYPE"] == 'OBJECT,CENTER':
-                    center_images.append(f)
-            
-            raw_file.close()
-    
-    for k in range(0,len(center_images)):
-        #print "mv " + center_images[k] + " " + path_center_dir
-        subprocess.call("mv " + center_images[k] + " " + path_center_dir, shell=True)    
-    
-    center_images = []    
-    
-    for f in sorted(os.listdir(path_center_dir)):
-
-            # das muss sortiert werden da listdir unsortierten inhalt gibt lst = os.listdir(whatever_directory)
-            #lst.sort()
-
-            f = os.path.join(path_center_dir,f)
-
-            if os.path.isdir(f):
-                continue                # skips all directories
-
-            froot, ext = os.path.splitext(f)        #get the extension
-            # (froot is d:\pictures\2008\2008_11_01_family\img0001)
-            # (ext is fits)
-
-            if ext.lower() != '.fits':
-                continue                # skips all non fits files
-
-            dir_root, fname = os.path.split(froot)  #get the dir and base names
-            # (dir_root is d:\pictures\2008\2008_11_01_family, this is identical to path)
-            # (fname is img0001)
-
-            # we determine the size of the datacubes:
-           
-            center_images.append(f)
-
-    drh_file = open(os.path.join(path_center_dir,"input_center"),"w")   
-    
-    for i in range(0,len(center_images)):
-        drh_file.writelines(center_images[i] + " IRD_STAR_CENTER_WAFFLE_RAW\n")
-    
-    drh_file.close()    
-    
-    subprocess.call("esorex sph_ird_star_center input_center", cwd=path_center_dir ,shell=True)
-    
-    table_data = pyfits.open(os.path.join(path_center_dir,"star_center.fits"))
-    table = table_data[1].data
-    
-    left_x = []
-    left_y = []
-    right_x = []
-    right_y = []    
-    
-    for r in range(0,len(table)):
-        left_x.append(table[r][1])
-        left_y.append(table[r][2])
-        right_x.append(table[r][3])
-        right_y.append(table[r][4])
-        
-    left_x_average = np.average(np.array(left_x))
-    left_y_average = np.average(np.array(left_y))
-    right_x_average = np.average(np.array(right_x))    
-    right_y_average = np.average(np.array(right_y))
-    
-    left_x_deviation = np.ptp(np.array(left_x))
-    left_y_deviation = np.ptp(np.array(left_y))    
-    right_x_deviation = np.ptp(np.array(right_x))    
-    right_y_deviation = np.ptp(np.array(right_y))
-    
-    print(left_x_average - right_x_average) 
-    print(left_y_average - right_y_average)        
-    
-    print(left_x_average, left_y_average)
-    print(np.max([left_x_deviation,right_x_deviation]))    
-    print(np.max([left_y_deviation,right_y_deviation]))
-
-    print(left_x_deviation)  
-    print(left_y_deviation)
-    print(right_x_deviation)
-    print(right_y_deviation)         
-    
-    return left_x_average - right_x_average, left_y_average - right_y_average, left_x_average, left_y_average
-
-
-def fit_four_spots_array_input(scidata, spot_locations):
-
-    x_values = []    
-    y_values = []    
-    
-    sigma_x = 5
-    sigma_y = 2     
-    
-    for k in range(0,len(spot_locations)):
-
-        x_0 = spot_locations[k][0]
-        y_0 = spot_locations[k][1]
-
-        #assuming sorted input, upper left spot is 1, lower left spot is 4
-
-        if k == 0:        
-            theta = math.radians(135)
-        if k == 1:        
-            theta = math.radians(45)       
-        if k == 2:        
-            theta = math.radians(135)
-        if k == 3:        
-            theta = math.radians(45)       
-        
-        amplitude = np.max(scidata[int(y_0)-2:int(y_0)+2,int(x_0)-2:int(x_0)+2])
-        fit_x, fit_y, fit_array = fit_elliptical_gaussian(scidata,amplitude,x_0,y_0,sigma_x,sigma_y,theta)  
-        x_values.append(fit_x)
-        y_values.append(fit_y)
-        
-    
-    #print give_stellar_center(x_values, y_values)    
-    
-    return give_stellar_center(x_values, y_values)
-
-
-def IRDIS_get_center_get_offset(scidata, header):
-
-    #left:
-    x_corse, y_corse = blob_detection_center_of_mass_array(scidata[0:1024,0:1024],refine_box=150)
-    filtered_image = high_pass_header_dependent(scidata[0:1024,0:1024],header)
-    spot_positions = give_spot_positions(x_corse,y_corse,header)
-    refined_spot_positions = refine_spot_positions(filtered_image,spot_positions,box=10)
-    left_center = fit_four_spots_array_input(filtered_image, refined_spot_positions)
-    print("Centering left done")
-    
-    #right:    
-    x_corse, y_corse = blob_detection_center_of_mass_array(scidata[0:1024,1024:2048],refine_box=150)
-    filtered_image = high_pass_header_dependent(scidata[0:1024,1024:2048],header)
-    spot_positions = give_spot_positions(x_corse,y_corse,header)
-    refined_spot_positions = refine_spot_positions(filtered_image,spot_positions,box=10)
-    right_center = fit_four_spots_array_input(filtered_image, refined_spot_positions)
-    print("Centering right done")    
-    
-    offset_array = np.array(left_center) - np.array(right_center)    
-    
-    return offset_array[0], offset_array[1], left_center[0], left_center[1]
-
-
-def IRDIS_centering_folder(recompute=False):
-    """
-    Compute the center of each frame. It saves the result in a csv file.
-    Input:
-        - recompute: boolean. If False, then if the centering has already 
-        been computed, it only reads the result. If True, it recomputes the center.
-    Output:
-        - a dictionnary with the centers and offsets
-    """
-    
-    if os.path.isfile(os.path.join(path_center_dir,'centers.csv')) and recompute ==False:
-        pd_center = pd.read_csv(os.path.join(path_center_dir,'centers.csv'))
-        print('The center file {0:s} already exists: the centering will not be recomputed'.format(os.path.join(path_center_dir,'centers.csv')))
-    else:
-        offset_x_array = []
-        offset_y_array = []
-        star_x_array = []
-        star_y_array = []
-        center_reduced_files = glob.glob(os.path.join(path_center_dir,'*_reduced.fits'))
-        for f in center_reduced_files:
-            print('Centering the frame {0:s}'.format(f))
-            center_data = pyfits.getdata(f)
-            header = pyfits.getheader(f)
-            offset_x, offset_y, star_x, star_y = IRDIS_get_center_get_offset(center_data, header)
-            offset_x_array.append(offset_x)
-            offset_y_array.append(offset_y)
-            star_x_array.append(star_x)
-            star_y_array.append(star_y)
-        dico_center = {'xoffset':offset_x_array,'yoffset':offset_y_array,\
-                       'xstar':star_x_array,'ystar':star_y_array}
-        pd_center = pd.DataFrame(dico_center)
-        pd_center.to_csv(os.path.join(path_center_dir,'centers.csv'))
-
-    x_err = np.std(np.array(pd_center['xstar']))
-    y_err = np.std(np.array(pd_center['ystar']))
-    star_x_final = np.median(np.array(pd_center['xstar']))
-    star_y_final = np.median(np.array(pd_center['ystar']))
-    offset_x_final = np.median(np.array(pd_center['xoffset']))
-    offset_y_final = np.median(np.array(pd_center['yoffset']))
-    
-    if (x_err > 0.5) or (y_err > 0.5):
-        print("Warning the deviation of stellar position is larger than 0.5 pixel between images!")
-        print("x deviation: ", x_err)
-        print("y deviation: ", y_err)
-    print('The position of the central star was computed to be:')
-    print('X={0:.2f} px +/- {1:.2f}'.format(star_x_final,x_err))
-    print('Y={0:.2f} px +/- {1:.2f}'.format(star_y_final,y_err))    
-    return offset_x_final, offset_y_final, star_x_final, star_y_final
-
-
-def give_spot_positions(x_center,y_center,header):
-    
-    filter_band = header["HIERARCH ESO INS COMB IFLT"]
-
-    if filter_band == "BB_Ks": sep = 64.5
-    if filter_band == "DP_0_BB_K": sep = 64.5
-    if filter_band == "DP_0_BB_H": sep = 48.5    
-    if filter_band == "DP_0_BB_J": sep = 37.4
-    if filter_band == "DP_0_BB_Y": sep = 31.0    
-    
-    angle = math.radians(45)    
-        
-    spot1_x = x_center - math.cos(angle) * sep 
-    spot1_y = y_center + math.sin(angle) * sep
-    
-    spot2_x = x_center + math.cos(angle) * sep 
-    spot2_y = y_center + math.sin(angle) * sep
-    
-    spot3_x = x_center + math.cos(angle) * sep 
-    spot3_y = y_center - math.sin(angle) * sep
-    
-    spot4_x = x_center - math.cos(angle) * sep 
-    spot4_y = y_center - math.sin(angle) * sep
-    
-    return [(spot1_x,spot1_y),(spot2_x,spot2_y),(spot3_x,spot3_y),(spot4_x,spot4_y)]
-
-
-def refine_spot_positions(scidata,spot_positions,box=10):
-
-    refined_array = []
-
-    for r in range(0,len(spot_positions)):
-        y = spot_positions[r][1]
-        x = spot_positions[r][0]
-        y_spot_refined,x_spot_refined = ndimage.measurements.center_of_mass(scidata[int(y-box):int(y+box),int(x-box):int(x+box)]-np.amin(scidata[int(y-box):int(y+box),int(x-box):int(x+box)]))   
-        refined_array.append((x_spot_refined+(x-box),y_spot_refined+(y-box)))
-        #print y_spot_refined,x_spot_refined
-        #pyfits.writeto(os.path.join("/home/ginski/Desktop/test/python_sphere_cneter_test/","center_mass" + str(r) + ".fits"), scidata[y-box:y+box,x-box:x+box], output_verify="ignore")    
-        #imshow(scidata[y-box:y+box,x-box:x+box])
-        #waitforbuttonpress()
-
-    return refined_array   
-
-
-def blob_detection_center_of_mass_array(scidata,refine_box=150):
-    
-    y,x =  ndimage.measurements.center_of_mass(scidata)
-    
-    #print y,x    
-    
-    y_refined,x_refined = ndimage.measurements.center_of_mass(scidata[int(y-refine_box):int(y+refine_box),int(x-refine_box):int(x+refine_box)])   
-    
-    x_final = x_refined + (x-refine_box)     
-    y_final = y_refined + (y-refine_box)    
-    
-    return x_final, y_final
-
-
-def high_pass_header_dependent(image,header):
-    
-    filter_band = header["HIERARCH ESO INS COMB IFLT"]
-
-    if filter_band == "BB_Ks": n = 10
-    if filter_band == "DP_0_BB_K": n = 10
-    if filter_band == "DP_0_BB_H": n = 6    
-    if filter_band == "DP_0_BB_J": n = 5
-    if filter_band == "DP_0_BB_Y": n = 4    
-    
-    
-    blurred = gaussian_filter(image, sigma=n, truncate=6.1)    
-    
-    filtered_image = image - blurred
-    
-    return filtered_image
-
-def give_stellar_center(x_values, y_values):
-    
-    
-    m1 = (y_values[2] - y_values[0]) / (x_values[2] - x_values[0])
-    m2 = (y_values[1] - y_values[3]) / (x_values[1] - x_values[3])    
-    
-    n1 = y_values[2] - m1*x_values[2]
-    n2 = y_values[3] - m2*x_values[3]
-    
-    x_center = (n2 - n1) / (m1 - m2)
-    y_center = m1*x_center + n1    
-    
-    return x_center, y_center
-
-@custom_model
-def elliptical_gaussian(peak,x_0,y_0,theta,sigma_x,sigma_y):
-    
-    a = np.cos(theta) * np.cos(theta) / (2 * sigma_x * sigma_x) + np.sin(theta) * np.sin(theta) / (2 * sigma_y * sigma_y)
-    b = -1* np.sin(2 * theta) / (4 * sigma_x * sigma_x) + np.sin(2 * theta) / (4 * sigma_y * sigma_y)
-    c = np.sin(theta) * np.sin(theta) / (2 * sigma_x * sigma_x) + np.cos(theta) * np.cos(theta) / (2 * sigma_y * sigma_y)    
-    
-    exponent = -1*(a*(x-x_0)*(x-x_0) - 2*b*(x-x_0)*(y-y_0) + c*(y-y_0)*(y-y_0))    
-    gaussian = peak * np.exp(exponent)
-    
-    return gaussian
-    
-
-def fit_elliptical_gaussian(z,peak,x_0,y_0,sigma_x,sigma_y,theta):
-    
-    x_length = z.shape[1]
-    center_x = x_length/2
-    y_length = z.shape[0]    
-    center_y = y_length/2    
-    
-    y, x = np.mgrid[:y_length, :x_length]
-    
-    #amplitude is the max count value of the PSF, x_0 and y_0 is the first guess, gamma is the fwhm of the moffat, alpha is something like the slope
-    p_init = models.Gaussian2D(peak,x_0,y_0,sigma_x,sigma_y,theta)
-    #p_init.amplitude.fixed = True
-    p_init.theta.fixed = True
-    fit_p = fitting.LevMarLSQFitter()
-        
-    with warnings.catch_warnings():
-    # Ignore model linearity warning from the fitter
-        warnings.simplefilter('ignore')
-        p = fit_p(p_init, x, y, z)
-    
-    #print fit_p.fit_info["cov_x"]
-    #print p
-    
-    x_fit = p.x_mean[0]
-    y_fit = p.y_mean[0]    
-    
-    return x_fit, y_fit, p(x,y)
-
-
-
-
-
-
+#TODO: prepare parts of code + empty functions to do flux stuff
+#TODO: Clean up function + write docstrings, and assemble repeated parts in functions; check print statements (i.e. specifying complete or half frame for center coordinates)
+#TODO: Write parts README
+#TODO: Commit to Github
+#TODO: Clean to-do-list Evernote 
+#TODO: Send Jos and Christian e-mail Github and pipeline
+#TODO: Send Julien e-mail that pipeline has been updated
 
 
 
@@ -2119,7 +2593,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = -0.008303978181252019                                      
         Delta_der = 156.0584333408133
         d_CI = 0.9894796343284551
-                                                                
+
     elif filter_used == 'FILT_BBF_H':
         Delta_UT = 174.998748608
         Delta_M4 = 174.998748608
@@ -2339,9 +2813,6 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum, cube_I_U_doub
         NDIT[i] = header_sel['ESO DET NDIT']
         derotator_position_angle[i] = header_sel['ESO INS4 DROT2 POSANG']
         dates[i] = header_sel['DATE'][:10]
-
-    # Define mean solar day (s)
-    msd = 86400
     
     # Define a Julian date with respect to noon at Paranal and round it to night number 
     # (Paranal is 70 deg in longitude or a fraction 0.2 away from Greenwich and mjd is
@@ -2868,7 +3339,7 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, images_
 # perform_postprocessing
 ###############################################################################
 
-def perform_postprocessing(cube_single_sum, cube_single_difference, header, param_annulus_star, param_annulus_background, double_difference_type='standard', remove_vertical_band_detector_artefact=True, combination_method_polarization_images='trimmed mean', trimmed_mean_proportiontocut_polarization_images=0.1, combination_method_total_intensity_images='trimmed mean', trimmed_mean_proportiontocut_total_intensity_images=0.1, images_north_up=True, create_images_DoLP_AoLP_q_u_norm=False):
+def perform_postprocessing(cube_single_sum, cube_single_difference, header, param_annulus_star='ao residuals', param_annulus_background='large annulus', double_difference_type='standard', remove_vertical_band_detector_artefact=True, combination_method_polarization_images='trimmed mean', trimmed_mean_proportiontocut_polarization_images=0.1, combination_method_total_intensity_images='trimmed mean', trimmed_mean_proportiontocut_total_intensity_images=0.1, images_north_up=True, create_images_DoLP_AoLP_q_u_norm=False):
     '''
     Perform post-processing of data and save final images to FITS-files
     
@@ -2883,6 +3354,11 @@ def perform_postprocessing(cube_single_sum, cube_single_difference, header, para
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            If string 'ao residuals' the annulus will automatically determined and 
+            be star-centered and located over the AO residuals. The inner radius 
+            and width of the annulus will depend on the filter used. If 
+            'star aperture' a small aparture located at the position of
+            the central star will be used.
         param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
@@ -2890,6 +3366,9 @@ def perform_postprocessing(cube_single_sum, cube_single_difference, header, para
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            If string 'large annulus' the annulus will be star-centered and 
+            located far away from the star with an inner radius of 360 pixels
+            and a width of 60 pixels.
         double_difference_type: type of double difference to be computed, either
         'standard' or 'normalized' (see van Holstein et al. 2019; default = 'standard')
         remove_vertical_band_detector_artefact: If True remove the vertical band detector artefact seen in 
@@ -3267,8 +3746,8 @@ elif os.path.exists(path_log_file) == True and skip_preprocessing == True:
    
 if skip_preprocessing == False:
     # Pre-process raw data
-    cube_single_sum, cube_single_difference, header = perform_preprocessing(param_annulus_background_flux=param_annulus_background_flux, sigmafiltering_sky=sigmafiltering_sky, sigmafiltering_object=sigmafiltering_object, sigmafiltering_flux=sigmafiltering_flux, save_preprocessed_data=save_preprocessed_data)
-    
+    cube_single_sum, cube_single_difference, header = perform_preprocessing(param_annulus_background_flux=param_annulus_background_flux, sigmafiltering=sigmafiltering, centering_method=centering_method, centering_subtract_object=centering_subtract_object, center_coordinates=center_coordinates, param_centering=param_centering, collapse_ndit=collapse_ndit, plot_centering_sub_images=plot_centering_sub_images, save_preprocessed_data=save_preprocessed_data)
+
     # Print that post-processing starts
     printandlog('\n###############################################################################')
     printandlog('# Starting post-processing')
