@@ -8,8 +8,8 @@
 ###############################################################################
 
 # Definition of target name, observation date and paths
-target_name = 'TEST'
-date_obs = '0000'
+target_name = 'TEST' # TODO: READ target name from header
+date_obs = '0000' #TODO: read from headers
 path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup'
 #path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau'
 path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
@@ -17,14 +17,22 @@ path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_p
 # Options for pre-processing
 skip_preprocessing = False
 sigmafiltering = False
-centering_method = 'center frames' # 'center frames', 'gaussian', 'cross-correlation', 'manual'
+centering_method_object = 'gaussian' # 'center frames', 'gaussian', 'cross-correlation', 'manual'
 centering_subtract_object = True
-center_coordinates = (477, 521, 1503, 511) # 'default'
-param_centering = (12, 7, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
-collapse_ndit = True
+center_coordinates_object = (477, 521, 1503, 511) # 'default'
+#param_centering_object = (12, 7, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
+param_centering_object = (12, None, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
+collapse_ndit = False
 plot_centering_sub_images = True
 center_coordinates_flux = () # or list of center coordinates if different for multiple frames
+
+
+# Flux
+centering_method_flux = 'gaussian' # 'gaussian', 'manual'
+center_coordinates_flux = (444, 490, 1469, 479)
+param_centering_flux = (12, None, 30000)
 param_annulus_background_flux = 'large annulus'
+
 save_preprocessed_data = True
 
 # Options for post-processing
@@ -415,13 +423,13 @@ def printandlog(single_object):
 ###############################################################################
 
 #TODO: Add text to centering method and save_processed data in docstring
-def check_sort_data_create_directories(save_preprocessed_data, centering_method):
+def check_sort_data_create_directories(save_preprocessed_data, centering_method_object):
     '''
     Check the FITS-headers of the data in the raw directory, sort the data and
     create directories to write processed data to.
     
     Input:
-        centering_method:
+        centering_method_object:
         save_preprocessed_data: 
         
     Note that path_raw_dir, path_sky_dir, path_center_dir, path_flux_dir, 
@@ -589,8 +597,7 @@ def check_sort_data_create_directories(save_preprocessed_data, centering_method)
             NDIT = header_sel['ESO DET NDIT']
             mjd = header_sel['MJD-OBS']
             file_execution_time = NDIT * (0.938 + object_exposure_time) + 2.4
-            mjd_half_object.append(mjd + 0.5 * file_execution_time / msd)
-            
+            mjd_half_object.append(mjd + 0.5 * file_execution_time / msd)    
             
         elif header_sel['ESO DPR TYPE'] == 'SKY' and \
            header_sel['EXPTIME'] == object_exposure_time and \
@@ -639,10 +646,10 @@ def check_sort_data_create_directories(save_preprocessed_data, centering_method)
         printandlog('\nWARNING, one or more files do not fall under any of the file type categories listed above and will be ignored:')
         for file_sel in path_imcompatible_files:
             printandlog('{0:s}'.format(file_sel))
-     
+
     # Raise error when there are no center files, but they are required by the selected centering method
-    if centering_method in ['center frames', 'center frames + cross-correlation'] and not any(path_center_files):
-        raise IOError('centering_method = \'{0:s}\', but there are no CENTER-files provided.'.format(centering_method))
+    if centering_method_object == 'center frames' and not any(path_center_files):
+        raise IOError('centering_method = \'{0:s}\', but there are no CENTER-files provided.'.format(centering_method_object))
 
     # Create directories to write processed data to
     directories_created = []
@@ -676,7 +683,7 @@ def check_sort_data_create_directories(save_preprocessed_data, centering_method)
         else:
             directories_already_existing.append(path_sky_flux_dir)
        
-    if save_preprocessed_data == True or centering_method in ['gaussian', 'cross-correlation']:
+    if save_preprocessed_data == True or centering_method_object in ['gaussian', 'cross-correlation']:
         if not os.path.exists(path_preprocessed_dir):
             os.makedirs(path_preprocessed_dir)
             directories_created.append(path_preprocessed_dir)
@@ -1446,7 +1453,7 @@ def find_center_coordinates(list_frame_center_processed, path_processed_center_f
         
         # Print warning if there is significant deviation among the center coordinates found
         if any(np.append(x_center_std, y_center_std) > 0.5):
-            printandlog('\nWARNING, for at least one of the fitted center coordinates the standard \ndeviation is larger than 0.5 pixel.')
+            printandlog('\nWARNING, for at least one of the fitted center coordinates the standard \ndeviation is larger than 0.5 pixels.')
     else:
         # Print mean center coordinates without error
         printandlog('\nFinal center coordinates (pixels):')
@@ -1458,140 +1465,28 @@ def find_center_coordinates(list_frame_center_processed, path_processed_center_f
     
     return center_coordinates
 
-
-
-
-
-
-
-
-
-
-
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@
-#@    Main pre-processing function being worked on
-#@   
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-
-
-################################################################################
-## process_object_frames
-################################################################################
-#
-#def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm, frame_master_sky, centering_method='cross-correlation', center_coordinates=[], sigmafiltering=True):
-#    '''
-#    Process the OBJECT frames by subtracting the background, flat-fielding, 
-#    removing bad pixels, computing the mean over the NDIT's, centering and
-#    computing the single sum and difference images
-#    
-#    Input:
-#        path_object_files: list of paths to raw OBJECT-files
-#        frame_master_flat: master flat frame
-#        frame_master_bpm: frame indicating location of bad pixels with 0's and good
-#            pixels with 1's
-#        frame_master_sky: master sky frame for OBJECT-files
-## TODO: CENTERING VARIABLES HERE
-#        sigmafiltering: if True remove bad pixels remaining after applying
-#            master bad pixel map using sigma-filtering (default = True)
-#       
-#    Output:
-#        cube_single_sum: cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^- intensity images
-#        cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
-#        header: list of FITS-headers of raw science frames   
-#                
-#    File written by Rob van Holstein; based on function by Christian Ginski
-#    Function status: verified
-#    '''
-#    
-#    # Print centering method selected
-#    if centering_method == 'center frames':
-#        printandlog('\nCentering OBJECT-files with center coordinates found from CENTER-file(s).')
-#    elif centering_method == 'center frames + cross-correlation':
-#        #TODO: Rephrase print statement after finishing function
-#        printandlog('\nCentering OBJECT-files with center coordinates found from CENTER-file(s) followed by cross-correlation.')
-#    elif centering_method == 'cross-correlation':
-#        #TODO: Rephrase print statement after finishing function
-#        printandlog('\nCentering OBJECT-files using cross-correlation.')
-#    elif centering_method == 'manual':
-#        printandlog('\nCentering OBJECT-files with user-provided center coordinates.')
-#
-#    # Read center coordinates
-#    x_center_left, y_center_left, x_center_right, y_center_right = center_coordinates
-#    
-#    # Subtract 1024 from the right x-coordinate to make it valid for a frame half
-#    x_center_right -= 1024
-#
-#    # Create empty lists to store processed images and headers in
-#    list_single_sum = []
-#    list_single_difference = []
-#    header = []
-#    printandlog('')
-#
-#    for i, path_sel in enumerate(path_object_files):
-#        # Read data and header from file
-#        cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
-#            
-#        # Subtract background and divide by master flat
-#        cube_bgsubtr_flatfielded = (cube_sel - frame_master_sky) / frame_master_flat
-#
-#        # Remove bad pixels of each frame
-#        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
-#
-#        # Compute mean over NDIT frames
-#        frame_mean = np.mean(cube_badpixel_filtered, axis=0)
-#
-#        # Separate left and right part of image
-#        frame_left = frame_mean[:, :1024]
-#        frame_right = frame_mean[:, 1024:]
-#
-#        # Retrieve dithering shifts in x- and y-direction from header
-#        x_dith = header_sel["HIERARCH ESO INS1 DITH POSX"]
-#        y_dith = header_sel["HIERARCH ESO INS1 DITH POSY"]
-#        
-#        if centering_method in ['center frames', 'manual']:
-#            # Compute shift for left and right images
-#            shift_x_left = 511.5 - x_center_left - x_dith
-#            shift_y_left = 511.5 - y_center_left - y_dith
-#            shift_x_right = 511.5 - x_center_right - x_dith
-#            shift_y_right = 511.5 - y_center_right - y_dith
-#        else:
-#            #TODO: Somehow do cross-correlation
-#            dummy_var = 5
-#            dummy_var += 1
-#        
-#        # Shift left and right images to center
-#        frame_left = ndimage.shift(frame_left, [shift_y_left, shift_x_left], order=3, mode='constant', cval=0.0, prefilter=True)   
-#        frame_right = ndimage.shift(frame_right, [shift_y_right, shift_x_right], order=3, mode='constant', cval=0.0, prefilter=True)   
-#
-#        # Create single difference and sum image
-#        frame_single_sum = frame_left + frame_right
-#        frame_single_difference = frame_left - frame_right
-#        
-#        # Append single sum and difference images and header
-#        list_single_sum.append(frame_single_sum)
-#        list_single_difference.append(frame_single_difference)
-#        header.append(header_sel)
-#        
-#        # Print which file has been processed
-#        printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(path_sel))
-#    
-#    # Convert lists of single sum and difference images to image cubes
-#    cube_single_sum = np.stack(list_single_sum)
-#    cube_single_difference = np.stack(list_single_difference)    
-#
-#    return cube_single_sum, cube_single_difference, header
-
 ###############################################################################
 # create_sub_image
 ###############################################################################
     
 def create_sub_image(frame, x0, y0, crop_radius):
-
+    '''
+    Create a square sub-image by cropping it from an image frame
+    
+    Input:
+        frame: image frame to be cropped
+        x0: x-coordinate of center of sub-image
+        y0: y-coordinate of center of sub-image
+        crop_radius: half the length of the sides of the square sub-image. If
+            None the complete frame is returned as the sub-image.
+       
+    Output:
+        sub_image: sub-image
+                
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+    
     if crop_radius is None:
         # Use complete frame
         sub_image = np.copy(frame)
@@ -1608,19 +1503,63 @@ def create_sub_image(frame, x0, y0, crop_radius):
 def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm, frame_master_sky, sigmafiltering=True, centering_method='center frames', center_coordinates=(477, 521, 1503, 511), param_centering=(12, 7, 30000), collapse_ndit=True, plot_centering_sub_images=True):
     '''
     Process the OBJECT frames by subtracting the background, flat-fielding, 
-    removing bad pixels, computing the mean over the NDIT's, centering and
-    computing the single sum and difference images
+    removing bad pixels, centering, computing the mean over the NDIT's and
+    computing the single sum and difference images. 
     
     Input:
         path_object_files: list of paths to raw OBJECT-files
         frame_master_flat: master flat frame
-        frame_master_bpm: frame indicating location of bad pixels with 0's and good
-            pixels with 1's
+        frame_master_bpm: frame indicating location of bad pixels with 0's and 
+            good pixels with 1's
         frame_master_sky: master sky frame for OBJECT-files
-# TODO: CENTERING VARIABLES HERE
         sigmafiltering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
-       
+        centering_method: method to center the images. If 'center frames' or
+            'manual', use fixed coordinates as provided by center_coordinates. 
+            If 'gaussian', fit a 2D Gaussian to each frame. If 
+            'cross-correlation', fit a 2D Gaussian to the first frame and then
+            use cross-correlation to align (register) the other frames onto the 
+            centered first  frame. For 'gaussian' and 'cross-correlation' 
+            center_coordinates is used as initial guess of the center 
+            coordinates and the determined center coordinates are plotted for
+            each image (default = 'center frames').
+        center_coordinates: length-4-tuple with center coordinates
+            x_left: x-coordinate of center of left frame half
+            y_left: y-coordinate of center of left frame half
+            x_right: x-coordinate of center of right frame half
+            y_right: y-coordinate of center of right frame half
+            Note that the center coordinates are defined in the complete frame, 
+            i.e. with both detector halves (pixels; 0-based). The default value 
+            is (477, 521, 1503, 511).         
+        param_centering: length-3-tuple with parameters for centering:
+            crop_radius: half the length of the sides of the square cropped 
+                sub-images used to fit the 2D Gaussian to and used for 
+                cross-correlating the images (pixels). Must be integer. The 
+                sub-image is centered on the coordinates as provided by
+                center_coordinates. If None, the complete frame is used for the 
+                fitting and center_coordinates is ignored. The value of
+                crop_radius is also used to create the sub-images when
+                plot_centering_sub_images = True.
+            sigfactor: all sub-image pixels with values smaller than 
+                sigfactor*standard deviation are replaced by random Gaussian noise 
+                to mask them for fitting the 2D Gaussian. If None, no pixels are
+                replaced by Gaussian noise.
+            saturation_level: all pixels within the smallest circle encompassing 
+                the pixels with a value equal to or higher than saturation_level 
+                are ignored when fitting the 2D Gaussian. We use a circle because
+                strongly saturated pixels in the peak of the PSF often have values 
+                lower than saturation_level. If None, no pixels are ignored.
+            The default value of param_centering is (12, 7, 30000).
+        collapse_ndit: If True, compute the mean over the (NDIT) frames of a
+            file before subtracting the background, flat-fielding, bad pixel
+            removal and centering. If False, perform the above steps for each
+            frame and after that compute the mean over the frames 
+            (default = True).
+        plot_centering_sub_images: If True, plot the sub-images showing the 
+            center coordinates for each frame. The plots allow for checking
+            whether the centering is correct and to scan the data for frames 
+            with bad quality (default = True). 
+        
     Output:
         cube_single_sum: cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^- intensity images
         cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
@@ -1632,22 +1571,23 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
     
     # Print centering method selected
     if centering_method == 'center frames':
-        printandlog('\nCentering OBJECT-files with center coordinates found from CENTER-file(s):')
-        printandlog(center_coordinates)
+        printandlog('\nCentering frames with center coordinates found from CENTER-file(s):')
+        printandlog('(%.2f, %.2f, %.2f, %.2f)' % center_coordinates)
     elif centering_method == 'gaussian':
-        #TODO: Rephrase print statement after finishing function
-        printandlog('\nCentering OBJECT-files by fitting a 2D Gaussian.')
+        printandlog('\nCentering frames by fitting a 2D Gaussian.')
     elif centering_method == 'cross-correlation':
-        #TODO: Rephrase print statement after finishing function
-        printandlog('\nCentering OBJECT-files using cross-correlation.')
+        printandlog('\nCentering frames using cross-correlation.')
     elif centering_method == 'manual':
-        printandlog('\nCentering OBJECT-files with user-provided center coordinates:')
-        printandlog(center_coordinates)
+        printandlog('\nCentering frames with user-provided center coordinates:')
+        printandlog('(%.2f, %.2f, %.2f, %.2f)' % center_coordinates)
 
     # Assemble center coordinates in two arrays and subtract 1024 from the right x-coordinate to make it valid for a frame half
     x_center_0 = np.array([center_coordinates[0], center_coordinates[2] - 1024])
     y_center_0 = np.array([center_coordinates[1], center_coordinates[3]])
  
+    # Read centering parameters
+    crop_radius, sigfactor, saturation_level = param_centering
+
     # Create zero arrays and empty lists
     list_frame_number = []
     list_file_number = []
@@ -1658,14 +1598,11 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
     header = []
 
     if centering_method in ['gaussian', 'cross-correlation']:
-        #  Read centering parameters
-        crop_radius, sigfactor, saturation_level = param_centering
-
         # Determine filter used and compute theoretical full width half maximum
         filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
         fwhm = compute_fwhm_separation(filter_used)[0]
     
-    if centering_method in ['gaussian', 'cross-correlation'] and plot_centering_sub_images == True:
+    if plot_centering_sub_images == True:
         # Create empty lists
         list_x_fit_sub_image = [[], []]
         list_y_fit_sub_image = [[], []]
@@ -1684,10 +1621,10 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
     for i, path_sel in enumerate(path_object_files):
         # Read data and header from file
         cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
-        
+
         #TODO: Remove bad frames based on list of indices provided by the user
-                
-        if collapse_ndit == True or centering_method in ['center frames', 'manual']:
+
+        if collapse_ndit == True:
             # Compute mean over NDIT frames
             cube_sel = np.mean(cube_sel, axis=0, keepdims=True)  
 
@@ -1701,16 +1638,9 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
         cube_left_centered = np.zeros((cube_badpixel_filtered.shape[-3], cube_badpixel_filtered.shape[-2], int(cube_badpixel_filtered.shape[-1] / 2)))
         cube_right_centered = np.copy(cube_left_centered)
 
-        if centering_method in ['center frames', 'manual']:
-            # Retrieve dithering shifts in x- and y-direction from header
-            x_dith = header_sel['ESO INS1 DITH POSX']
-            y_dith = header_sel['ESO INS1 DITH POSY']
-            
-            # Compute x- and y-shifts for left and right images
-            list_shift_x[0].append(511.5 - x_dith - x_center_0[0])
-            list_shift_y[0].append(511.5 - y_dith - y_center_0[0])
-            list_shift_x[1].append(511.5 - x_dith - x_center_0[1])
-            list_shift_y[1].append(511.5 - y_dith - y_center_0[1])
+        # Retrieve dithering shifts in x- and y-direction from header
+        x_dith = int(header_sel['ESO INS1 DITH POSX'])
+        y_dith = int(header_sel['ESO INS1 DITH POSY'])
 
         # For each frame in the cube
         for j, frame_sel in enumerate(cube_badpixel_filtered):        
@@ -1722,55 +1652,73 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
             #TODO: Adapt number according to original frame number, not after deleting it
             list_file_number.append(i)
             list_frame_number.append(j)
+            
+            # Assembly the frame halves in a list
+            frame_halves = [frame_left, frame_right]           
 
-            if centering_method in ['gaussian', 'cross-correlation']:
-                # Assembly the frame halves in a list
-                frame_halves = [frame_left, frame_right]           
+            # For each frame half
+            for k, (frame_half, x_center_0_sel, y_center_0_sel) in enumerate(zip(frame_halves, x_center_0, y_center_0)):
+                if centering_method in ['center frames', 'manual']:           
+                    # Compute x- and y-shifts for left and right images
+                    list_shift_x[k].append(511.5 - x_center_0_sel - x_dith)
+                    list_shift_y[k].append(511.5 - y_center_0_sel - y_dith)
 
-                # For each frame half
-                for k, (frame_half, x_center_0_sel, y_center_0_sel) in enumerate(zip(frame_halves, x_center_0, y_center_0)):
-                    if centering_method == 'gaussian':
-                        # Determine accurate coordinates of star position fitting a Gaussian           
-                        x_fit, y_fit, x_fit_sub_image, y_fit_sub_image, sub_image = \
-                        fit_2d_gaussian(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, x_stddev=fwhm, y_stddev=fwhm, \
-                                        theta=0.0, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)
-        
-                        # Compute shift in x- and y-directions
-                        list_shift_x[k].append(511.5 - x_fit)
-                        list_shift_y[k].append(511.5 - y_fit)
-
-                    elif centering_method == 'cross-correlation':
-                        if i == 0 and j == 0:
-                            # Center frame halves of first frame by fitting a Gaussian
-                            if k == 0:
-                                printandlog('Creating templates for left and right images from first image frame.\n')
-                            x_fit_template[k], y_fit_template[k], x_fit_sub_image_template[k], y_fit_sub_image_template[k] = \
-                            fit_2d_gaussian(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, x_stddev=fwhm, y_stddev=fwhm, \
-                                            theta=0.0, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)[:4]
-                             
-                            # Create template sub-image
-                            list_sub_image_template.append(create_sub_image(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, crop_radius=crop_radius))
-                    
-                        # Create sub-image to cross-correlate with template sub-image
-                        sub_image = create_sub_image(frame=frame_half, x0=x_center_0_sel, y0=y_center_0_sel, crop_radius=crop_radius)
-                        
-                        # Determine required shift of image by cross-correlation with template
-                        x_shift_fit, y_shift_fit = register_translation(list_sub_image_template[k], sub_image, upsample_factor=10)[0]
-                           
-                        # Compute shift in x- and y-directions
-                        list_shift_x[k].append(511.5 - x_fit_template[k] + x_shift_fit)
-                        list_shift_y[k].append(511.5 - y_fit_template[k] + y_shift_fit)   
-    
-                        if plot_centering_sub_images == True:
-                            # Compute fit position in coordinates of sub-image                   
-                            x_fit_sub_image = x_fit_sub_image_template[k] - x_shift_fit
-                            y_fit_sub_image = y_fit_sub_image_template[k] - y_shift_fit
-                            
                     if plot_centering_sub_images == True:
-                        # Append sub-image and its fitted coordinates to lists
-                        list_x_fit_sub_image[k].append(x_fit_sub_image)
-                        list_y_fit_sub_image[k].append(y_fit_sub_image)
-                        list_sub_image[k].append(sub_image)
+                        # Create sub-image to show center coordinates in
+                        x_center_0_rounded = int(np.round(x_center_0_sel))
+                        y_center_0_rounded = int(np.round(y_center_0_sel))
+                        sub_image = create_sub_image(frame=frame_half, x0=x_center_0_rounded + x_dith, y0=y_center_0_rounded + y_dith, crop_radius=crop_radius)
+    
+                        # Compute center position in coordinates of sub-image 
+                        x_fit_sub_image = x_center_0_sel - x_center_0_rounded + crop_radius
+                        y_fit_sub_image = y_center_0_sel - y_center_0_rounded + crop_radius
+
+                elif centering_method == 'gaussian':
+                    # Determine accurate coordinates of star position fitting a Gaussian           
+                    x_fit, y_fit, x_fit_sub_image, y_fit_sub_image, sub_image = \
+                    fit_2d_gaussian(frame=frame_half, x0=x_center_0_sel + x_dith, y0=y_center_0_sel + y_dith, x_stddev=fwhm, y_stddev=fwhm, \
+                                    theta=0.0, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)
+    
+                    # Compute shift in x- and y-directions
+                    list_shift_x[k].append(511.5 - x_fit)
+                    list_shift_y[k].append(511.5 - y_fit)
+
+                elif centering_method == 'cross-correlation':
+                    if i == 0 and j == 0:
+                        # Center frame halves of first frame by fitting a Gaussian
+                        if k == 0:
+                            printandlog('Creating templates for left and right images from first image frame.\n')
+                        x_fit_template[k], y_fit_template[k], x_fit_sub_image_template[k], y_fit_sub_image_template[k] = \
+                        fit_2d_gaussian(frame=frame_half, x0=x_center_0_sel + x_dith, y0=y_center_0_sel + y_dith, x_stddev=fwhm, y_stddev=fwhm, \
+                                        theta=0.0, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)[:4]
+                        
+                        # Subtract dithering shifts from fitted template coordinates
+                        x_fit_template[k] -= x_dith
+                        y_fit_template[k] -= y_dith
+                        
+                        # Create template sub-image
+                        list_sub_image_template.append(create_sub_image(frame=frame_half, x0=x_center_0_sel + x_dith, y0=y_center_0_sel + y_dith, crop_radius=crop_radius))
+                
+                    # Create sub-image to cross-correlate with template sub-image
+                    sub_image = create_sub_image(frame=frame_half, x0=x_center_0_sel + x_dith, y0=y_center_0_sel + y_dith, crop_radius=crop_radius)
+                    
+                    # Determine required shift of image by cross-correlation with template
+                    x_shift_fit, y_shift_fit = register_translation(list_sub_image_template[k], sub_image, upsample_factor=10)[0]
+                       
+                    # Compute shift in x- and y-directions
+                    list_shift_x[k].append(511.5 - x_fit_template[k] + x_shift_fit - x_dith)
+                    list_shift_y[k].append(511.5 - y_fit_template[k] + y_shift_fit - y_dith)   
+
+                    if plot_centering_sub_images == True:
+                        # Compute fit position in coordinates of sub-image                   
+                        x_fit_sub_image = x_fit_sub_image_template[k] - x_shift_fit
+                        y_fit_sub_image = y_fit_sub_image_template[k] - y_shift_fit
+                        
+                if plot_centering_sub_images == True:
+                    # Append sub-image and its fitted coordinates to lists
+                    list_x_fit_sub_image[k].append(x_fit_sub_image)
+                    list_y_fit_sub_image[k].append(y_fit_sub_image)
+                    list_sub_image[k].append(sub_image)
 
             # Shift left and right images to center
             cube_left_centered[j, :, :] = np.expand_dims(ndimage.shift(frame_left, [list_shift_y[0][-1], list_shift_x[0][-1]], order=3, mode='constant', cval=0.0, prefilter=True), axis=0)   
@@ -1790,36 +1738,80 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
         header.append(header_sel)
         
         # Print which file has been processed
-        printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(path_sel))
- 
+        printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(os.path.basename(path_sel)))
+
+    # Convert lists of single sum and difference images to image cubes
+    cube_single_sum = np.stack(list_single_sum)
+    cube_single_difference = np.stack(list_single_difference)    
+    
+    # Determine type of observations and assign directory to save plots in
+    observation_type = header_sel['ESO DPR TYPE']
+    if observation_type == 'OBJECT':
+        path_plots_dir = path_preprocessed_dir
+    elif observation_type == 'OBJECT,FLUX':
+         path_plots_dir = path_flux_dir
+       
     if centering_method in ['gaussian', 'cross-correlation']:
-        # Define function to plot centering shifts
-        def plot_centering_shifts(data, x_y, left_right):
-            font_size = 10
-            plot_name = name_file_root + 'centering_shift_' + x_y + '_' + left_right + '.png'            
-            path_plot = os.path.join(path_preprocessed_dir, plot_name)
-            printandlog('\nCreating plot ' + path_plot + ' \nshowing the shifts in the ' + 'x' + '-direction of the ' + 'right' + ' frame halves as a function \nof frame number.')
-            x_max = len(data) + 1
-            plt.figure(figsize = (4.7, 3.0))
-            plt.plot(np.arange(1, x_max), data, '-ok')
-            ax = plt.gca()
-            ax.set_xlabel(r'Image', fontsize=font_size)
-            ax.tick_params(axis = 'x', labelsize=font_size)
-            ax.set_xlim([0, x_max])
-            ax.set_ylabel(r'Shift ' + x_y + ' ' + left_right + ' (pixels)', fontsize=font_size)
-            ax.tick_params(axis='y', labelsize=font_size)  
-            ax.grid()
-            plt.tight_layout()
-            plt.savefig(path_plot, dpi=300, bbox_inches='tight')
-            plt.show()
+        # Convert lists of shifts to arrays of center coordinates
+        x_center = 511.5 - np.array(list_shift_x).T
+        y_center = 511.5 - np.array(list_shift_y).T
+       
+        # Add 1024 to the x-coordinates of the right frame half to make the values valid for complete frame
+        x_center[:, 1] += 1024 
+
+        # Compute mean of determined center coordinates    
+
+        x_center_mean = np.mean(x_center, axis=0)
+        y_center_mean = np.mean(y_center, axis=0)
+
+        if len(x_center[:, 0]) > 1:
+            # Define function to plot determined center coordinates
+            def plot_center_coordinates(data, x_y, left_right):
+                font_size = 10
+                plot_name = name_file_root + 'center_coordinates_' + x_y + '_' + left_right + '.png'            
+                path_plot = os.path.join(path_plots_dir, plot_name)
+                printandlog('\nCreating plot ' + path_plot + ' \nshowing the center coordinates in the ' + x_y + '-direction of the ' + left_right + ' frame halves as \na function of frame number.')
+                x_max = len(data) + 1
+                plt.figure(figsize = (4.7, 3.0))
+                plt.plot(np.arange(1, x_max), data, '-ok')
+                ax = plt.gca()
+                ax.set_xlabel(r'Image', fontsize=font_size)
+                ax.tick_params(axis = 'x', labelsize=font_size)
+                ax.set_xlim([0, x_max])
+                ax.set_ylabel(x_y + ' ' + left_right + ' (pixels)', fontsize=font_size)
+                ax.tick_params(axis='y', labelsize=font_size)  
+                ax.ticklabel_format(useOffset=False, axis='y')
+                ax.grid()
+                plt.tight_layout()
+                plt.savefig(path_plot, dpi=300, bbox_inches='tight')
+                plt.show()
             
-        # Plot centering shifts in x- and y-direction of left and right frame halves
-        plot_centering_shifts(data=np.array(list_shift_x[0]), x_y='x', left_right='left')
-        plot_centering_shifts(data=np.array(list_shift_y[0]), x_y='y', left_right='left')
-        plot_centering_shifts(data=np.array(list_shift_x[1]), x_y='x', left_right='right')
-        plot_centering_shifts(data=np.array(list_shift_y[1]), x_y='y', left_right='right') 
+            # Plot center coordinates in x- and y-direction of left and right frame halves
+            plot_center_coordinates(data=x_center[:, 0], x_y='x', left_right='left')
+            plot_center_coordinates(data=y_center[:, 0], x_y='y', left_right='left')
+            plot_center_coordinates(data=x_center[:, 1], x_y='x', left_right='right')
+            plot_center_coordinates(data=y_center[:, 1], x_y='y', left_right='right') 
         
-    if centering_method in ['gaussian', 'cross-correlation'] and plot_centering_sub_images == True:
+            # Compute standard deviation of determined center coordinates
+            x_center_std = np.std(x_center, ddof=1, axis=0)
+            y_center_std = np.std(y_center, ddof=1, axis=0)
+    
+            # Print mean center coordinates with error
+            separator = ' '*max([len('%.2f' % x) for x in np.append(x_center_std, y_center_std)])
+            printandlog('\nMean center coordinates (pixels):')
+            printandlog('x_left' + separator + '         y_left' + separator + '         x_right' + separator + '         y_right')
+            printandlog('%.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f' % (x_center_mean[0], x_center_std[0], y_center_mean[0], y_center_std[0], x_center_mean[1], x_center_std[1], y_center_mean[1], y_center_std[1]))    
+            
+            # Print warning if there is significant deviation among the center coordinates found
+            if any(np.append(x_center_std, y_center_std) > 0.5):
+                printandlog('\nWARNING, for at least one of the fitted center coordinates the standard \ndeviation is larger than 0.5 pixels.')
+        else:
+            # Print mean center coordinates without error
+            printandlog('\nCenter coordinates (pixels):')
+            printandlog('x_left    y_left    x_right    y_right')
+            printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center_mean[0], y_center_mean[0], x_center_mean[1], y_center_mean[1]))   
+        
+    if plot_centering_sub_images == True:
         # Compute number of figures, rows and figure size
         number_frames_max = 10
         height_frame = 3.05
@@ -1839,43 +1831,115 @@ def process_object_frames(path_object_files, frame_master_flat, frame_master_bpm
                 plot_name = name_file_root + 'centering_sub_images.png'            
             else:
                 plot_name = name_file_root + 'centering_sub_images_' + str(i + 1) + '.png'            
-            path_plot = os.path.join(path_preprocessed_dir, plot_name)
+            path_plot = os.path.join(path_plots_dir, plot_name)
             printandlog('\nCreating plot ' + path_plot + ' \nshowing the sub-images of each frame and the center coordinates fitted.')
             fig, axs = plt.subplots(nrows=number_rows[i], ncols=2, sharex=True, sharey=True, \
                                     subplot_kw={'xticks': [], 'yticks': []}, figsize=(width_figure, height_figure[i]))
             fig.subplots_adjust(top=0.7)
-            axs[0, 0].set_title('Left frame halves')
-            axs[0, 1].set_title('Right frame halves')
-            for j in range(number_rows[i]):
-                j2 = j + number_rows[i]*i
-                if j2 < number_frames:
-                    axs[j, 0].set_ylabel(str(j2 + 1) + ': file ' + str(list_file_number[j2] + 1) + ' frame ' + str(list_frame_number[j2] + 1))
-                    for k in range(2):
-                        axs[j, k].imshow(list_sub_image[k][j2], cmap=cmap, origin='lower',interpolation='nearest')
-                        axs[j, k].plot(list_x_fit_sub_image[k][j2], list_y_fit_sub_image[k][j2], 'rx', markersize=50/crop_radius)
+            if len(x_center[:, 0]) > 1:
+                axs[0, 0].set_title('Left frame halves')
+                axs[0, 1].set_title('Right frame halves')
+                for j in range(number_rows[i]):
+                    j2 = j + number_rows[i]*i
+                    if j2 < number_frames:
+                        axs[j, 0].set_ylabel(str(j2 + 1) + ': file ' + str(list_file_number[j2] + 1) + ' frame ' + str(list_frame_number[j2] + 1))
+                        for k in range(2):
+                            axs[j, k].imshow(list_sub_image[k][j2], cmap=cmap, origin='lower',interpolation='nearest')
+                            axs[j, k].plot(list_x_fit_sub_image[k][j2], list_y_fit_sub_image[k][j2], 'gx', markersize=50/crop_radius)
+            else:
+                axs[0].set_title('Left frame halves')
+                axs[1].set_title('Right frame halves')
+                axs[0].set_ylabel(str(1) + ': file ' + str(list_file_number[0] + 1) + ' frame ' + str(list_frame_number[0] + 1))
+                for k in range(2):
+                    axs[k].imshow(list_sub_image[k][0], cmap=cmap, origin='lower',interpolation='nearest')
+                    axs[k].plot(list_x_fit_sub_image[k][0], list_y_fit_sub_image[k][0], 'gx', markersize=50/crop_radius)
             plt.savefig(path_plot, dpi=300, bbox_inches='tight')
             plt.show()
-
-    # Convert lists of single sum and difference images to image cubes
-    cube_single_sum = np.stack(list_single_sum)
-    cube_single_difference = np.stack(list_single_difference)    
-
+    
     return cube_single_sum, cube_single_difference, header
 
 ###############################################################################
-# process_flux_frames
-###############################################################################
-
-def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, frame_master_sky_flux, param_annulus_background, sigmafiltering=True):
+# compute_annulus_values
+###############################################################################    
+    
+def compute_annulus_values(cube, param):
     '''
-    Create a master flux-frame from the FLUX-files
+    Obtain values of an image cube in an annulus (cube can have more than 
+    3 dimensions; the cut is made in the last 2 dimensions)
     
     Input:
-        path_flux_files: list of paths to raw FLUX-files
-        frame_master_flat: master flat frame
-        frame_master_bpm: frame indicating location of bad pixels with 0's and good
-            pixels with 1's
-        frame_master_sky_flux: master sky frame for FLUX-files
+        cube: image cube or frame to obtain values from
+        param: (list of) length-6-tuple(s) with parameters to generate annulus coordinates:
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            width: width (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            
+    Output:
+        values_annulus: values of the image cube in the annulus
+        frame_annulus: frame showing the annulus used to obtain the values
+        
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Create meshgrid coordinates to construct annulus on
+    x = np.arange(0, cube.shape[-1])
+    y = np.arange(0, cube.shape[-2])
+    xm, ym = np.meshgrid(x, y)
+
+    # Create empty arrays for x- and y-coordinates
+    coord_x_tot = np.array([])
+    coord_y_tot = np.array([])
+    
+    # Make sure param is a list of tuples
+    if type(param) == tuple:
+        param = [param]
+
+    for param_sel in param:
+        coord_center_x, coord_center_y, inner_radius, width, start_angle, end_angle = param_sel
+        outer_radius = inner_radius + width
+
+        start_angle = np.mod(start_angle, 360)
+        end_angle = np.mod(end_angle, 360)
+        
+        # Of each pixel calculate radius and angle in range [0, 360)
+        radius = np.sqrt((xm - coord_center_x)**2 + (ym - coord_center_y)**2)
+        angle = np.mod(np.rad2deg(np.arctan2(coord_center_x - xm, ym - coord_center_y)), 360)
+           
+        # Select pixels that satisfy provided requirements
+        if start_angle < end_angle:
+            coord_y, coord_x = np.nonzero(np.logical_and(np.logical_and(radius >= inner_radius, radius < outer_radius), np.logical_and(angle >= start_angle, angle < end_angle)))
+        else:
+            coord_y1, coord_x1 = np.nonzero(np.logical_and(np.logical_and(radius >= inner_radius, radius < outer_radius), np.logical_and(angle >= start_angle, angle < 360)))
+            coord_y2, coord_x2 = np.nonzero(np.logical_and(np.logical_and(radius >= inner_radius, radius < outer_radius), np.logical_and(angle >= 0, angle < end_angle)))
+            coord_y, coord_x = np.hstack([coord_y1, coord_y2]), np.hstack([coord_x1, coord_x2])
+        
+        # Append coordinates to final coordinate arrays
+        coord_x_tot = np.append(coord_x_tot, coord_x).astype(np.int)
+        coord_y_tot = np.append(coord_y_tot, coord_y).astype(np.int)
+        
+    # Determine values 
+    values_annulus = cube[..., coord_y_tot, coord_x_tot]
+ 
+    # Create map with annulus coordinates
+    frame_annulus = np.zeros(cube.shape[-2:], dtype = np.float32)
+    frame_annulus[coord_y_tot, coord_x_tot] = 1.0
+
+    return values_annulus, frame_annulus
+
+###############################################################################
+# subtract_background
+###############################################################################
+
+def subtract_background(cube, param_annulus_background):   
+    '''
+    Subtract background from cube or frame
+     
+    Input:
+        cube: image cube or frame to subtract background from
         param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
@@ -1883,75 +1947,133 @@ def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, fr
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+
+    Output:
+        cube_background_subtracted: image cube or frame with background subtracted
+        background: float or array of background values for each image
+   
+    File written by Rob van Holstein
+    Function status: verified   
+    '''
+
+    # Determine background in frame or cube and subtract it
+    if cube.ndim == 2:
+        background = np.median(compute_annulus_values(cube=cube, param=param_annulus_background)[0])
+        cube_background_subtracted = cube - background
+    elif cube.ndim == 3:
+        background = np.median(compute_annulus_values(cube=cube, param=param_annulus_background)[0], axis=1)
+        cube_background_subtracted = cube - background[:, np.newaxis, np.newaxis] 
+   
+    return cube_background_subtracted, background
+
+###############################################################################
+# process_flux_frames
+###############################################################################
+
+def process_flux_frames(path_flux_files, frame_master_flat, frame_master_bpm, frame_master_sky_flux, param_annulus_background, sigmafiltering=True, centering_method='gaussian', center_coordinates=(444, 490, 1469, 479), param_centering=(12, None, 30000), collapse_ndit=False, plot_centering_sub_images=True):
+    '''
+    Create a master flux-frame from the FLUX-files. Function performs the same
+    steps as process_object_frames, but only uses the single-sum (total 
+    intensity) image and additionally subtracts the background
+    
+    Input:
+        path_flux_files: list of paths to raw FLUX-files
+        frame_master_flat: master flat frame
+        frame_master_bpm: frame indicating location of bad pixels with 0's and 
+            good pixels with 1's
+        frame_master_sky_flux: master sky frame for FLUX-files
+        param_annulus_background: (list of) length-6-tuple(s) with parameters 
+            to generate annulus to measure and subtract background:
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            width: width (pixels)
+            start_angle: start angle of annulus sector (deg; 0 due right and
+                rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 due right and 
+                rotating counterclockwise)
         sigmafiltering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
-       
+        centering_method: method to center the images. If 'manual', use fixed 
+            coordinates as provided by center_coordinates. If 'gaussian', fit 
+            a 2D Gaussian to each frame. For 'gaussian' center_coordinates is 
+            used as initial guess of the center coordinates and the determined 
+            center coordinates are plotted for each image (default = 'gaussian').
+        center_coordinates: length-4-tuple with center coordinates
+            x_left: x-coordinate of center of left frame half
+            y_left: y-coordinate of center of left frame half
+            x_right: x-coordinate of center of right frame half
+            y_right: y-coordinate of center of right frame half
+            Note that the center coordinates are defined in the complete frame, 
+            i.e. with both detector halves (pixels; 0-based). The default value 
+            is (444, 490, 1469, 479).         
+        param_centering: length-3-tuple with parameters for centering:
+            crop_radius: half the length of the sides of the square cropped 
+                sub-images used to fit the 2D Gaussian to (pixels). Must be 
+                integer. The sub-image is centered on the coordinates as 
+                provided by center_coordinates. If None, the complete frame is 
+                used for the fitting and center_coordinates is ignored. The
+                value of crop_radius is also used to create the sub-images when
+                plot_centering_sub_images = True.
+            sigfactor: all sub-image pixels with values smaller than 
+                sigfactor*standard deviation are replaced by random Gaussian noise 
+                to mask them for fitting the 2D Gaussian. If None, no pixels are
+                replaced by Gaussian noise.
+            saturation_level: all pixels within the smallest circle encompassing 
+                the pixels with a value equal to or higher than saturation_level 
+                are ignored when fitting the 2D Gaussian. We use a circle because
+                strongly saturated pixels in the peak of the PSF often have values 
+                lower than saturation_level. If None, no pixels are ignored.
+            The default value of param_centering is (12, None, 30000).
+        collapse_ndit: If True, compute the mean over the (NDIT) frames of a
+            file before subtracting the background, flat-fielding, bad pixel
+            removal and centering. If False, perform the above steps for each
+            frame and after that compute the mean over the frames 
+            (default = False).
+        plot_centering_sub_images: If True, plot the sub-images showing the 
+            center coordinates for each frame. The plots allow for checking
+            whether the centering is correct and to scan the data for frames 
+            with bad quality (default = True). 
+        
     Output:
-        frame_master_flux: master flux frame
-                
+        frame_master_flux: master flux frame 
+        frame_annulus_background: frame showing annulus used to determine background
+            
     File written by Rob van Holstein
-    Function status: 
+    Function status: verified
     '''
-      
+
+    #TODO: Next 6 lines are just there for the final prinstatement. Update this part when implementing frame selection
     # Read flux frames
     cube_flux_raw = read_fits_files(path=path_flux_files, silent=True)[0]
    
     if type(cube_flux_raw) == list:
         # Make a single image cube from list of image cubes or frames
         cube_flux_raw = np.vstack(cube_flux_raw)
-        
-    # Subtract background and divide by master flat
-    cube_bgsubtr_flatfielded = (cube_flux_raw - frame_master_sky_flux) / frame_master_flat
+    
+    # Perform dark-subtraction, flat-fielding, bad pixel removal and centering
+    cube_single_sum = process_object_frames(path_object_files=path_flux_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky_flux, sigmafiltering=sigmafiltering, centering_method=centering_method, center_coordinates=center_coordinates, param_centering=param_centering, collapse_ndit=collapse_ndit, plot_centering_sub_images=plot_centering_sub_images)[0]
 
-    # Remove bad pixels of each frame
-    cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
-
-    # Separate left and right part of images
-    cube_left = cube_badpixel_filtered[:, :, :1024]
-    cube_right = cube_badpixel_filtered[:, :, 1024:]
-
-    #TODO: The flux images should be centered using cross-correlation, similar to non-coro data
-    # Compute shift for left and right images
-    shift_x_left = 67.0
-    shift_y_left = 21.0
-    shift_x_right = 66.0
-    shift_y_right = 32.0       
-    
-    # Shift left and right images to center
-    cube_left_centered = np.zeros(cube_left.shape)
-    cube_right_centered = np.zeros(cube_right.shape)
-    
-    for i, (frame_left, frame_right) in enumerate(zip(cube_left, cube_right)):
-        cube_left_centered[i, :, :] = ndimage.shift(frame_left, [shift_y_left, shift_x_left], order=3, mode='constant', cval=0.0, prefilter=True)   
-        cube_right_centered[i, :, :] = ndimage.shift(frame_right, [shift_y_right, shift_x_right], order=3, mode='constant', cval=0.0, prefilter=True)   
-    
-    # Compute mean over NDIT frames
-    frame_left = np.mean(cube_left_centered, axis=0)
-    frame_right = np.mean(cube_right_centered, axis=0)
-    
-    # Sum two images
-    frame_flux = frame_left + frame_right
+    # Compute flux frame as mean of single sum cube
+    frame_flux = np.mean(cube_single_sum, axis=0)
 
     # Determine background and subtract it
     frame_master_flux, background = subtract_background(cube=frame_flux, param_annulus_background=param_annulus_background)
     printandlog('\nSubtracted background in master flux image = ' + str(background))
        
+    # Create frame showing annulus used to determine background
+    frame_annulus_background = compute_annulus_values(cube=frame_flux, param=param_annulus_background)[1]
+    
     printandlog('\nThe master flux was created out of {0:d} raw FLUX-frame(s).\n'\
                 .format(cube_flux_raw.shape[0]))
 
-    return frame_master_flux
-
-
-
-
-
-
+    return frame_master_flux, frame_annulus_background
 
 ###############################################################################
 # perform_preprocessing
 ###############################################################################
 
-def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, centering_method='center frames', centering_subtract_object=True, center_coordinates=(477, 521, 1503, 511), param_centering='default', collapse_ndit=True, plot_centering_sub_images=True, save_preprocessed_data=False):
+def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, centering_method_object='center frames', centering_subtract_object=True, center_coordinates_object=(477, 521, 1503, 511), param_centering_object='default', centering_method_flux='gaussian', center_coordinates_flux=(444, 490, 1469, 479), param_centering_flux=(12, None, 30000), collapse_ndit=True, plot_centering_sub_images=True, save_preprocessed_data=False):
     '''
     Input:
         
@@ -1973,7 +2095,7 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, ce
     printandlog('###############################################################################') 
 
     path_object_files, path_sky_files, path_center_files, path_object_center_files, \
-    path_flux_files, path_sky_flux_files = check_sort_data_create_directories(save_preprocessed_data=save_preprocessed_data, centering_method=centering_method)
+    path_flux_files, path_sky_flux_files = check_sort_data_create_directories(save_preprocessed_data=save_preprocessed_data, centering_method_object=centering_method_object)
 
     ###############################################################################
     # Read static master flat and bad pixel map
@@ -2026,7 +2148,7 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, ce
     # Processing center files and extracting center coordinates
     ###############################################################################
     
-    if centering_method == 'center frames':
+    if centering_method_object == 'center frames':
         # Print that we process the center files
         printandlog('\n###############################################################################')
         printandlog('# Processing CENTER-files')
@@ -2045,7 +2167,7 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, ce
 #        printandlog('%.2f    %.2f    %.2f    %.2f     %s    ' % param_centering[:5] + separator_1 + '%.1f' % param_centering[5])
             
         # Process the center files            
-        list_frame_center_processed, header_center = process_center_frames(path_center_files=path_center_files, path_object_center_files=path_object_center_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, centering_subtract_object=centering_subtract_object, center_coordinates=center_coordinates, sigmafiltering=sigmafiltering)
+        list_frame_center_processed, header_center = process_center_frames(path_center_files=path_center_files, path_object_center_files=path_object_center_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, centering_subtract_object=centering_subtract_object, center_coordinates=center_coordinates_object, sigmafiltering=sigmafiltering)
     
         # Write processed center frames
         path_processed_center_files = [os.path.join(path_center_dir, os.path.splitext(os.path.basename(x))[0] + '_processed.fits') for x in path_center_files]
@@ -2053,7 +2175,7 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, ce
         write_fits_files(data=list_frame_center_processed, path=path_processed_center_files, header=header_center, silent=False)
         
         # Find center coordinates and replace values of center_coordinates
-        center_coordinates = find_center_coordinates(list_frame_center_processed=list_frame_center_processed, path_processed_center_files=path_processed_center_files, center_coordinates=center_coordinates, param_centering=param_centering)
+        center_coordinates_object = find_center_coordinates(list_frame_center_processed=list_frame_center_processed, path_processed_center_files=path_processed_center_files, center_coordinates=center_coordinates_object, param_centering=param_centering_object)
 
     ###############################################################################
     # Creating processed and centered single-sum and -difference images
@@ -2064,7 +2186,7 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, ce
     printandlog('# Processing OBJECT-files')
     printandlog('###############################################################################') 
       
-    cube_single_sum, cube_single_difference, header = process_object_frames(path_object_files=path_object_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, sigmafiltering=sigmafiltering, centering_method=centering_method, center_coordinates=center_coordinates, param_centering=param_centering, collapse_ndit=collapse_ndit, plot_centering_sub_images=plot_centering_sub_images)
+    cube_single_sum, cube_single_difference, header = process_object_frames(path_object_files=path_object_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky=frame_master_sky, sigmafiltering=sigmafiltering, centering_method=centering_method_object, center_coordinates=center_coordinates_object, param_centering=param_centering_object, collapse_ndit=collapse_ndit, plot_centering_sub_images=plot_centering_sub_images)
     
     if save_preprocessed_data == True:
         # Write preprocessed cubes of single-sum and single-difference images 
@@ -2123,13 +2245,13 @@ def perform_preprocessing(param_annulus_background_flux, sigmafiltering=True, ce
             printandlog(param_annulus_background_flux)
 
         # Processthe flux files
-        frame_master_flux = process_flux_frames(path_flux_files=path_flux_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky_flux=frame_master_sky_flux, param_annulus_background=param_annulus_background_flux, sigmafiltering=sigmafiltering)
+        frame_master_flux, frame_annulus_background_flux = process_flux_frames(path_flux_files=path_flux_files, frame_master_flat=frame_master_flat, frame_master_bpm=frame_master_bpm, frame_master_sky_flux=frame_master_sky_flux, param_annulus_background=param_annulus_background_flux, sigmafiltering=sigmafiltering, centering_method=centering_method_flux, center_coordinates=center_coordinates_flux, param_centering=param_centering_flux, collapse_ndit=False, plot_centering_sub_images=plot_centering_sub_images)
 
-        # Write master flux-frame
+        # Write master flux-frame and frame showing annulus used to determine background
         write_fits_files(data=frame_master_flux, path=os.path.join(path_flux_dir, name_file_root + 'master_flux.fits'), header=False, silent=False)
+        write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
-#TODO: update function to process flux files to include centering by cross-correlation
-#TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star?
+#TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star? I now create one master flux frame out of all flux frames. Do we want to create a master flux frame per file instead?
 
     return cube_single_sum, cube_single_difference, header
 
@@ -2286,78 +2408,6 @@ def check_header_matching(header, header_name_to_check, print_if_matching=True):
     else:
         raise ValueError('Values of header ' + header_name_to_check + ' do not match.' 
                  '\nHeader values: ' + ', '.join([str(x) for x in header_to_check]))
- 
-###############################################################################
-# compute_annulus_values
-###############################################################################    
-    
-def compute_annulus_values(cube, param):
-    '''
-    Obtain values of an image cube in an annulus (cube can have more than 
-    3 dimensions; the cut is made in the last 2 dimensions)
-    
-    Input:
-        cube: image cube or frame to obtain values from
-        param: (list of) length-6-tuple(s) with parameters to generate annulus coordinates:
-            coord_center_x: x-coordinate of center (pixels; 0-based)
-            coord_center_y: y-coordinate of center (pixels; 0-based)
-            inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            
-    Output:
-        values_annulus: values of the image cube in the annulus
-        frame_annulus: frame showing the annulus used to obtain the values
-        
-    File written by Rob van Holstein
-    Function status: verified
-    '''
-
-    # Create meshgrid coordinates to construct annulus on
-    x = np.arange(0, cube.shape[-1])
-    y = np.arange(0, cube.shape[-2])
-    xm, ym = np.meshgrid(x, y)
-
-    # Create empty arrays for x- and y-coordinates
-    coord_x_tot = np.array([])
-    coord_y_tot = np.array([])
-    
-    # Make sure param is a list of tuples
-    if type(param) == tuple:
-        param = [param]
-
-    for param_sel in param:
-        coord_center_x, coord_center_y, inner_radius, width, start_angle, end_angle = param_sel
-        outer_radius = inner_radius + width
-
-        start_angle = np.mod(start_angle, 360)
-        end_angle = np.mod(end_angle, 360)
-        
-        # Of each pixel calculate radius and angle in range [0, 360)
-        radius = np.sqrt((xm - coord_center_x)**2 + (ym - coord_center_y)**2)
-        angle = np.mod(np.rad2deg(np.arctan2(coord_center_x - xm, ym - coord_center_y)), 360)
-           
-        # Select pixels that satisfy provided requirements
-        if start_angle < end_angle:
-            coord_y, coord_x = np.nonzero(np.logical_and(np.logical_and(radius >= inner_radius, radius < outer_radius), np.logical_and(angle >= start_angle, angle < end_angle)))
-        else:
-            coord_y1, coord_x1 = np.nonzero(np.logical_and(np.logical_and(radius >= inner_radius, radius < outer_radius), np.logical_and(angle >= start_angle, angle < 360)))
-            coord_y2, coord_x2 = np.nonzero(np.logical_and(np.logical_and(radius >= inner_radius, radius < outer_radius), np.logical_and(angle >= 0, angle < end_angle)))
-            coord_y, coord_x = np.hstack([coord_y1, coord_y2]), np.hstack([coord_x1, coord_x2])
-        
-        # Append coordinates to final coordinate arrays
-        coord_x_tot = np.append(coord_x_tot, coord_x).astype(np.int)
-        coord_y_tot = np.append(coord_y_tot, coord_y).astype(np.int)
-        
-    # Determine values 
-    values_annulus = cube[..., coord_y_tot, coord_x_tot]
- 
-    # Create map with annulus coordinates
-    frame_annulus = np.zeros(cube.shape[-2:], dtype = np.float32)
-    frame_annulus[coord_y_tot, coord_x_tot] = 1.0
-
-    return values_annulus, frame_annulus
 
 ###############################################################################
 # determine_star_polarization
@@ -2379,7 +2429,7 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, param_annulu
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure background:
+        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
@@ -2736,7 +2786,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum, cube_I_U_doub
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure background:
+        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
@@ -3179,42 +3229,6 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum, cube_I_U_doub
     return frame_I_Q_incident, frame_I_U_incident, frame_Q_incident, frame_U_incident, cube_I_Q_incident, cube_I_U_incident, cube_Q_incident, cube_U_incident
 
 ###############################################################################
-# subtract_background
-###############################################################################
-
-def subtract_background(cube, param_annulus_background):   
-    '''
-    Subtract background from cube or frame
-     
-    Input:
-        cube: image cube or frame to subtract background from
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure background:
-            coord_center_x: x-coordinate of center (pixels; 0-based)
-            coord_center_y: y-coordinate of center (pixels; 0-based)
-            inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-
-    Output:
-        cube_background_subtracted: image cube or frame with background subtracted
-        background: float or array of background values for each image
-   
-    File written by Rob van Holstein
-    Function status: verified   
-    '''
-
-    # Determine background in frame or cube and subtract it
-    if cube.ndim == 2:
-        background = np.median(compute_annulus_values(cube=cube, param=param_annulus_background)[0])
-        cube_background_subtracted = cube - background
-    elif cube.ndim == 3:
-        background = np.median(compute_annulus_values(cube=cube, param=param_annulus_background)[0], axis=1)
-        cube_background_subtracted = cube - background[:, np.newaxis, np.newaxis] 
-   
-    return cube_background_subtracted, background
-
-###############################################################################
 # compute_azimuthal_stokes_parameters
 ###############################################################################
     
@@ -3359,7 +3373,7 @@ def perform_postprocessing(cube_single_sum, cube_single_difference, header, para
             and width of the annulus will depend on the filter used. If 
             'star aperture' a small aparture located at the position of
             the central star will be used.
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure background:
+        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
@@ -3746,7 +3760,7 @@ elif os.path.exists(path_log_file) == True and skip_preprocessing == True:
    
 if skip_preprocessing == False:
     # Pre-process raw data
-    cube_single_sum, cube_single_difference, header = perform_preprocessing(param_annulus_background_flux=param_annulus_background_flux, sigmafiltering=sigmafiltering, centering_method=centering_method, centering_subtract_object=centering_subtract_object, center_coordinates=center_coordinates, param_centering=param_centering, collapse_ndit=collapse_ndit, plot_centering_sub_images=plot_centering_sub_images, save_preprocessed_data=save_preprocessed_data)
+    cube_single_sum, cube_single_difference, header = perform_preprocessing(param_annulus_background_flux=param_annulus_background_flux, sigmafiltering=sigmafiltering, centering_method_object=centering_method_object, centering_subtract_object=centering_subtract_object, center_coordinates_object=center_coordinates_object, param_centering_object=param_centering_object, centering_method_flux=centering_method_flux, center_coordinates_flux=center_coordinates_flux, param_centering_flux=param_centering_flux, collapse_ndit=collapse_ndit, plot_centering_sub_images=plot_centering_sub_images, save_preprocessed_data=save_preprocessed_data)
 
     # Print that post-processing starts
     printandlog('\n###############################################################################')
