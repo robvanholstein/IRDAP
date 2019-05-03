@@ -49,18 +49,18 @@ frames_to_remove = [(1, 3),
 # Options for post-processing
 double_difference_type = 'standard'
 remove_vertical_band_detector_artefact = True
-param_annulus_star = 'ao residuals'
+#param_annulus_star = 'ao residuals'
 param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
                       (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
 #param_annulus_star = (516, 478, 0, 11, 0, 360)
-#param_annulus_background = 'large annulus'
+param_annulus_background = 'large annulus'
 combination_method_polarization_images = 'trimmed mean'
 #combination_method_polarization_images = 'least squares'
 trimmed_mean_proportiontocut_polarization_images = 0.10
 combination_method_total_intensity_images = 'mean'
 trimmed_mean_proportiontocut_total_intensity_images = 0.10
-images_north_up = True
-create_images_DoLP_AoLP_q_u_norm = True
+single_posang_north_up = True
+normalized_polarization_images = True
 
 #TODO: turn combination_method_polarization_images and trimmed_mean_proportiontocut_polarization_images
 # into a single variable (also for the total intensity ones)? Instead of trimmed mean, give a number, 
@@ -90,6 +90,10 @@ create_images_DoLP_AoLP_q_u_norm = True
 #                    (12, 5)]
 
 #frames_to_remove = []
+
+#param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
+#                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
+#param_annulus_star = (516, 478, 0, 11, 0, 360)
 
 ###############################################################################
 ###############################################################################
@@ -155,7 +159,7 @@ specifying a (list of) length-6-tuple(s) of floats with parameters:
 For example, when using 'star aperture' the annulus used will be: 
 (512.5, 512.5, 0, 11, 0, 360). The coordinates and angles of the annulus are
 defined with respect to the final orientation of the image. Generally this is 
-North up, except when images_north_up = False (see below) for observations in 
+North up, except when single_posang_north_up = False (see below) for observations in 
 field-tracking mode with a single derotator POSANG. The annulus used can be
 checked with annulus_star.fits that can be found in the directories with the
 reduced images.
@@ -176,7 +180,7 @@ length-6-tuple(s) of floats with parameters:
 For example, when using 'large annulus' the annulus used will be: 
 (512.5, 512.5, 360, 60, 0, 360). The coordinates and angles of the annulus are
 defined with respect to the final orientation of the image. Generally this is 
-North up, except when images_north_up = False (see below) for observations in 
+North up, except when single_posang_north_up = False (see below) for observations in 
 field-tracking mode with a single derotator POSANG. The annulus used can be
 checked with annulus_background.fits that can be found in the directories with 
 the reduced images.
@@ -228,16 +232,19 @@ for combination_method_total_intensity_images. Parameter is ignored in case
 value of 0.1 or 0.15 removes the bad pixels well while producing images similar
 to those obtained with 'mean'.
 
-images_north_up:
+single_posang_north_up:
 
 For observations taken in field-tracking mode with a single derotator position 
 angle (INS4.DROT2.POSANG either 0 or with a fixed offset), the final images 
-are oriented with North up if True, and oriented as the raw frames if False.
-Parameter is ignored for field-tracking observations with more than one 
+are rotated with North up if True, and kept in the orientation of the raw 
+frames if False. In the latter case, the images are more accurate as they 
+suffer less from interpolation errors. This is useful when for example 
+extracting the polarized surface brightness distribution of a circumstellar
+disk. Parameter is ignored for field-tracking observations with more than one 
 derotator position angle or observations taken in pupil-tracking mode, because 
 in these cases the final images produced always have North up.
 
-create_images_DoLP_AoLP_q_u_norm: 
+normalized_polarization_images: 
     
 if True create final images of degree of linear polarization, normalized Stokes
 q and u and degree and angle of linear polarization computed from q and u:
@@ -3263,7 +3270,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                               trimmed_mean_proportiontocut_polarization_images=0.1, 
                                               combination_method_total_intensity_images='trimmed mean', 
                                               trimmed_mean_proportiontocut_total_intensity_images=0.1, 
-                                              images_north_up=True):
+                                              single_posang_north_up=True):
     '''
     Calculate incident I_Q-, I_U-, Q- and U-images by correcting for the instrumental polarization effects of IRDIS using the polarimetric instrument model
 
@@ -3296,7 +3303,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             'mean', 'trimmed mean' or 'median' (default = 'trimmed mean')
         trimmed_mean_proportiontocut_total_intensity_images: fraction to cut off of both tails of the distribution if 
             trimmed_mean_proportiontocut_total_intensity_images = 'trimmed mean' (default = 0.1) 
-        images_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
+        single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
             than one derotator position angle, because in these cases the final images produced always have North up
@@ -3464,7 +3471,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     indices_Uplus = np.nonzero(stokes_parameter == 'Uplus')[0]
     indices_Uminus = np.nonzero(stokes_parameter == 'Uminus')[0] 
 
-    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and images_north_up == False:
+    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and single_posang_north_up == False:
         # Set rotation angles of images equal to zero
         printandlog('\nSetting the image rotation angles for field-tracking mode equal to zero so that North is not up in the final images.')
         rotation_angles_Q = np.zeros(len(indices_Qplus))
@@ -3787,7 +3794,7 @@ def compute_azimuthal_stokes_parameters(frame_Q, frame_U, rotation_angle=0, cent
 # compute_final_images
 ###############################################################################
     
-def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, images_north_up):
+def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_posang_north_up):
     ''' 
     Compute final images of polarimetric data reduction
     
@@ -3797,7 +3804,7 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, images_
         frame_Q: Q-image
         frame_U: U-image
         header: list of headers of raw science frames    
-        images_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
+        single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
             than one derotator position angle, because in these cases the final images produced always have North up
@@ -3828,7 +3835,7 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, images_
     derotator_position_angle = [x['ESO INS4 DROT2 POSANG'] for x in header]
     number_derotator_position_angles = len(np.unique(derotator_position_angle))
 
-    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and images_north_up == False:
+    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and single_posang_north_up == False:
         # Compute image position angle
         rotation_angle = -derotator_position_angle[0] - true_north_correction
     else:
@@ -3869,8 +3876,8 @@ def perform_postprocessing(cube_single_sum,
                            trimmed_mean_proportiontocut_polarization_images=0.1, 
                            combination_method_total_intensity_images='trimmed mean', 
                            trimmed_mean_proportiontocut_total_intensity_images=0.1, 
-                           images_north_up=True, 
-                           create_images_DoLP_AoLP_q_u_norm=False):
+                           single_posang_north_up=True, 
+                           normalized_polarization_images=False):
     '''
     Perform post-processing of data, including applying the model-based correction
     for the instrumental polarization effects, and save final images to FITS-files
@@ -3914,11 +3921,11 @@ def perform_postprocessing(cube_single_sum,
             'mean', 'trimmed mean' or 'median' (default = 'trimmed mean')
         trimmed_mean_proportiontocut_total_intensity_images: fraction to cut off of both tails of the distribution if 
             trimmed_mean_proportiontocut_total_intensity_images = 'trimmed mean' (default = 0.1) 
-        images_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
+        single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
             than one derotator position angle, because in these cases the final images produced always have North up
-        create_images_DoLP_AoLP_q_u_norm: if True create final images of degree of linear polarization, normalized Stokes q and u
+        normalized_polarization_images: if True create final images of degree of linear polarization, normalized Stokes q and u
             and degree and angle of linear polarization computed from q and u; such images only have meaning if all flux in the images
             originates from the astrophysical source of interest (default = False)
         
@@ -4024,7 +4031,7 @@ def perform_postprocessing(cube_single_sum,
                                                 trimmed_mean_proportiontocut_polarization_images=trimmed_mean_proportiontocut_polarization_images, 
                                                 combination_method_total_intensity_images=combination_method_total_intensity_images, 
                                                 trimmed_mean_proportiontocut_total_intensity_images=trimmed_mean_proportiontocut_total_intensity_images, 
-                                                images_north_up=images_north_up)
+                                                single_posang_north_up=single_posang_north_up)
     
     ###############################################################################
     # Subtract background in I_Q-, I_U-, Q- and U-frames
@@ -4198,7 +4205,7 @@ def perform_postprocessing(cube_single_sum,
                            frame_Q=frame_Q_background_subtracted, 
                            frame_U=frame_U_background_subtracted, 
                            header=header, 
-                           images_north_up=images_north_up)
+                           single_posang_north_up=single_posang_north_up)
 
     # Compute final images with the star polarization subtracted   
     frame_Q_phi_star_polarization_subtracted, frame_U_phi_star_polarization_subtracted, frame_I_pol_star_polarization_subtracted, \
@@ -4209,7 +4216,7 @@ def perform_postprocessing(cube_single_sum,
                            frame_Q=frame_Q_star_polarization_subtracted, 
                            frame_U=frame_U_star_polarization_subtracted, 
                            header=header, 
-                           images_north_up=images_north_up)[1:]
+                           single_posang_north_up=single_posang_north_up)[1:]
 
     # Create frames that show annuli used to retrieve star and background signals   
     frame_annulus_star = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=param_annulus_star)[1]
@@ -4234,7 +4241,7 @@ def perform_postprocessing(cube_single_sum,
         rotation_direction = 'counterclockwise'
         
     # Print image orientation of final images
-    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and images_north_up == False and np.sign(rotation_angle) != 0:
+    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and single_posang_north_up == False and np.sign(rotation_angle) != 0:
         printandlog('\nFinal images are rotated %.4f deg ' % (np.abs(rotation_angle)) + rotation_direction + ' with respect to North up.')
     else:
         printandlog('\nFinal images are oriented with North up.')
@@ -4248,7 +4255,7 @@ def perform_postprocessing(cube_single_sum,
                        frame_U_background_subtracted, frame_Q_phi, frame_U_phi, frame_I_pol, frame_AoLP]
     file_names = ['I_Q', 'I_U', 'I_tot', 'Q', 'U', 'Q_phi', 'U_phi', 'I_pol', 'AoLP']
     
-    if create_images_DoLP_AoLP_q_u_norm == True:
+    if normalized_polarization_images == True:
         # Add images of DoLP, normalized Stokes q and u and AoLP and DoLP created using q- and u-images
         printandlog('\nWARNING, the images DoLP.fits, q_norm.fits, u_norm.fits, AoLP_norm.fits and DoLP_norm.fits are only valid if all flux in the images originates from the astrophysical source of interest. This is generally the case for observations of for example solar system objects or galaxies. The images are generally not valid for observations of circumstellar disks or companions because in that case a large part of the flux in the total intensity images originates from the central star.')
         frames_to_write += [frame_DoLP, frame_q, frame_u, frame_AoLP_norm, frame_DoLP_norm]       
@@ -4268,7 +4275,7 @@ def perform_postprocessing(cube_single_sum,
                        frame_Q_phi_star_polarization_subtracted, frame_U_phi_star_polarization_subtracted, frame_I_pol_star_polarization_subtracted, frame_AoLP_star_polarization_subtracted]
     file_names = ['I_Q', 'I_U', 'I_tot', 'Q_star_pol_subtr', 'U_star_pol_subtr', 'Q_phi_star_pol_subtr', 'U_phi_star_pol_subtr', 'I_pol_star_pol_subtr', 'AoLP_star_pol_subtr']
 
-    if create_images_DoLP_AoLP_q_u_norm == True:
+    if normalized_polarization_images == True:
         # Add images of DoLP, normalized Stokes q and u and AoLP and DoLP created using q- and u-images
         frames_to_write += [frame_DoLP_star_polarization_subtracted, frame_q_star_polarization_subtracted, frame_u_star_polarization_subtracted, \
                             frame_AoLP_norm_star_polarization_subtracted, frame_DoLP_norm_star_polarization_subtracted]       
@@ -4357,11 +4364,11 @@ if type(trimmed_mean_proportiontocut_total_intensity_images) not in [int, float]
 if not 0 <= trimmed_mean_proportiontocut_total_intensity_images <= 1:
     raise ValueError('\'trimmed_mean_proportiontocut_total_intensity_images\' should be in range 0 <= trimmed_mean_proportiontocut_total_intensity_images <= 1.')
 
-if images_north_up not in [True, False]:
-    raise ValueError('\'images_north_up\' should be either True or False.')   
+if single_posang_north_up not in [True, False]:
+    raise ValueError('\'single_posang_north_up\' should be either True or False.')   
 
-if create_images_DoLP_AoLP_q_u_norm not in [True, False]:
-    raise ValueError('\'create_images_DoLP_AoLP_q_u_norm\' should be either True or False.')   
+if normalized_polarization_images not in [True, False]:
+    raise ValueError('\'normalized_polarization_images\' should be either True or False.')   
 
 ###############################################################################
 # Convert input from 1-based to 0-based indexing
@@ -4534,8 +4541,8 @@ perform_postprocessing(cube_single_sum=cube_single_sum,
                        trimmed_mean_proportiontocut_polarization_images=trimmed_mean_proportiontocut_polarization_images, 
                        combination_method_total_intensity_images=combination_method_total_intensity_images, 
                        trimmed_mean_proportiontocut_total_intensity_images=trimmed_mean_proportiontocut_total_intensity_images,
-                       images_north_up=images_north_up, 
-                       create_images_DoLP_AoLP_q_u_norm=create_images_DoLP_AoLP_q_u_norm)
+                       single_posang_north_up=single_posang_north_up, 
+                       normalized_polarization_images=normalized_polarization_images)
 
 # Print time elapsed
 time_end = time.time()
