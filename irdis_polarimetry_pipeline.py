@@ -10,14 +10,14 @@
 ###############################################################################
 
 # Definition of paths
-path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup'
-#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau'
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup'
+path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau'
 path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
 
 # Options for pre-processing
 skip_preprocessing = False
 sigmafiltering = False
-centering_method_object = 'center frames' # 'center frames', 'gaussian', 'cross-correlation', 'manual'
+centering_method_object = 'automatic' # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
 centering_subtract_object = True
 center_coordinates_object = (478, 522, 1504, 512) # 'default'
 param_centering_object = (60, None, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
@@ -47,14 +47,13 @@ save_preprocessed_data = True
 #                    (19, 6),
 #                    (20, 7)] # GQ Lup
 
-frames_to_remove = []
-
 # Options for post-processing
 double_difference_type = 'standard'
 remove_vertical_band_detector_artefact = True
+param_annulus_star = 'automatic'
 #param_annulus_star = 'ao residuals'
-param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
-                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
+#param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'automatic', 'ao residuals', 'star aperture'
+#                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
 #param_annulus_star = (516, 478, 0, 11, 0, 360)
 param_annulus_background = 'large annulus'
 combination_method_polarization_images = 'trimmed mean'
@@ -92,7 +91,7 @@ normalized_polarization_images = True
 #                    (12, 4),
 #                    (12, 5)]
 
-#frames_to_remove = []
+frames_to_remove = []
 
 #param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
 #                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
@@ -455,10 +454,15 @@ def check_sort_data_create_directories(frames_to_remove,
             of specific file can be removed by specifying a tuple
             (file_index, frame_index) (default = []).
         combination_method_polarization_images: method to be used to produce the 
-            incident Q- and U-images, 'least squares', 'trimmed mean' or 'median' 
-            (default = 'trimmed mean')
-        centering_method_object: method to center the OBJECT-frames. If 
-            'center frames' or 'manual', use fixed coordinates as provided by 
+            incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'. 
+            In this function, if combination_method_polarization_images is forced 
+            to 'least squares' in case there is an unequal number of Q- and 
+            U-measurements (default = 'trimmed mean').
+        centering_method_object: method to center the OBJECT-frames. In this 
+            function, if centering_method_object is 'automatic', it is set to
+            'center frames' if there are CENTER-files, and is set to '
+            gaussian' if there are no CENTER-files. If centering_method_object
+            is 'center frames' or 'manual', use fixed coordinates as provided by 
             center_coordinates. If 'gaussian', fit a 2D Gaussian to each frame. 
             If 'cross-correlation', fit a 2D Gaussian to the first frame and then
             use cross-correlation to align (register) the other frames onto the 
@@ -477,8 +481,8 @@ def check_sort_data_create_directories(frames_to_remove,
     
     Note that combination_method_polarization_images, centering_method_object, 
     save_preprocessed_data and plot_centering_sub_images are input to this 
-    function as they are required for the sorting of the data, not to actually
-    perform centering for example.
+    function as they are required for the sorting of the data or preparing the
+    pre-processing, not to actually perform centering for example.
     
     Note that path_raw_dir, path_sky_dir, path_center_dir, path_flux_dir, 
     path_sky_flux_dir, path_preprocessed_dir, path_reduced_dir and 
@@ -512,9 +516,11 @@ def check_sort_data_create_directories(frames_to_remove,
             If no frames are to be removed the array is empty.        
         file_index_object: list of file indices of OBJECT-files (0-based)
         file_index_flux: list of file indices of FLUX-files (0-based)
+        centering_method_object: method to center the OBJECT-frames, 'center frames', 
+            'gaussian', cross-correlation' or 'manual'.
         combination_method_polarization_images: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
-     
+
     File written by Rob van Holstein; based on function by Christian Ginski
     Function status: verified
     '''
@@ -680,7 +686,7 @@ def check_sort_data_create_directories(frames_to_remove,
         
         if not all([x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header_center]):
             raise IOError('One or more CENTER-files use a NIR neutral density filter different from that of the OBJECT-files.')
-        
+         
     # Print that headers have been checked and passed all checks
     printandlog('\nThe FITS-headers of the raw data have passed all checks.')
 
@@ -688,8 +694,7 @@ def check_sort_data_create_directories(frames_to_remove,
     # Define list of indices to remove frames
     ###############################################################################
 
-    # Create list of files to remove frames from and frames to remove for each of these files
-    
+    # Create list of files to remove frames from and frames to remove for each of these files    
     files_to_remove_frames_from = np.array([x[0] for x in frames_to_remove if type(x) is tuple])
     frames_to_remove_per_file = np.array([x[1] for x in frames_to_remove if type(x) is tuple])
 
@@ -888,9 +893,18 @@ def check_sort_data_create_directories(frames_to_remove,
         for file_sel in path_imcompatible_files:
             printandlog('{0:s}'.format(file_sel))
     
+    # If centering_method_object is 'automatic', set to 'center frames' if there are CENTER-files and otherwise to 'gaussian'
+    if centering_method_object == 'automatic':
+        if any(path_center_files):
+            printandlog('\ncentering_method_object is \'automatic\': changing it to \'center frames\', because there are CENTER-files.')
+            centering_method_object = 'center frames'
+        else:
+            printandlog('\ncentering_method_object is \'automatic\': changing it to \'gaussian\', because there are no CENTER-files.')
+            centering_method_object = 'gaussian'
+              
     # Raise error when there are no center files, but they are required by the selected centering method
     if centering_method_object == 'center frames' and not any(path_center_files):
-        raise IOError('centering_method_object = \'{0:s}\', but there are no CENTER-files provided.'.format(centering_method_object))
+        raise IOError('centering_method_object = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(centering_method_object))
 
     ###############################################################################
     # Create directories to write processed data to
@@ -963,7 +977,7 @@ def check_sort_data_create_directories(frames_to_remove,
            path_flux_files, path_sky_flux_files, indices_to_remove_object, indices_to_remove_sky, \
            indices_to_remove_center, indices_to_remove_object_center, indices_to_remove_flux, \
            indices_to_remove_sky_flux, file_index_object, file_index_flux, \
-           combination_method_polarization_images
+           centering_method_object, combination_method_polarization_images
 
 ###############################################################################
 # read_fits_files
@@ -1570,10 +1584,10 @@ def find_center_coordinates(list_frame_center_processed,
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511). 
-        param_centering_satellite_spots: length-3-tuple with parameters for 
-            determining the centers of the satellite spots in the CENTER-frames:
+        param_centering_satellite_spots: length-3-tuple with parameters for 2D 
+            Gaussian fitting the centers of the satellite spots in the CENTER-frames:
             crop_radius: half the length of side of square cropped sub-images used 
-                to fit Gaussian to (pixels). Must be integer. If None, the complete 
+                to fit 2D Gaussian to (pixels). Must be integer. If None, the complete 
                 frame is used for the fitting and center_coordinates is ignored.
             sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
@@ -1840,7 +1854,8 @@ def process_object_frames(path_object_files,
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511).         
-        param_centering: length-3-tuple with parameters for centering:
+        param_centering: length-3-tuple with parameters for centering by fitting 
+            a 2D Gaussian or using cross-correlation:          
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to and used for 
                 cross-correlating the images (pixels). Must be integer. The 
@@ -2358,7 +2373,8 @@ def process_flux_frames(path_flux_files,
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (444, 490, 1469, 479).         
-        param_centering: length-3-tuple with parameters for centering:
+        param_centering: length-3-tuple with parameters for centering by fitting
+            a 2D Gaussian:
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to (pixels). Must be 
                 integer. The sub-image is centered on the coordinates as 
@@ -2483,7 +2499,9 @@ def perform_preprocessing(frames_to_remove=[],
             centered first  frame. For 'gaussian' and 'cross-correlation' 
             center_coordinates_object is used as initial guess of the center 
             coordinates and the determined center coordinates are plotted for
-            each image (default = 'center frames').
+            each image. If 'automatic', centering_method_object is set to
+            'center frames' if there are CENTER-files, and is set to 'gaussian' 
+            if there are no CENTER-files (default = 'center frames').
         centering_subtract_object: if True subtract the OBJECT-file(s) taken
             closest in time from the CENTER-file(s) (default = True). This generally
             results in a more accurate determination of the center coordinates
@@ -2503,9 +2521,9 @@ def perform_preprocessing(frames_to_remove=[],
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511). 
         param_centering_satellite_spots: length-3-tuple with parameters for 
-            determining the centers of the satellite spots in the CENTER-frames:
+            2D Gaussian fitting the centers of the satellite spots in the CENTER-frames:
             crop_radius: half the length of side of square cropped sub-images used 
-                to fit Gaussian to (pixels). Must be integer. If None, the complete 
+                to fit 2D Gaussian to (pixels). Must be integer. If None, the complete 
                 frame is used for the fitting and center_coordinates is ignored.
             sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
@@ -2519,7 +2537,8 @@ def perform_preprocessing(frames_to_remove=[],
             The default value of param_centering_satellite_spots is (12, 7, 30000).
             param_centering_satellite_spots is only used when centering_method_object
             is 'center frames'.
-        param_centering_object: length-3-tuple with parameters for centering of OBJECT-frames:
+        param_centering_object: length-3-tuple with parameters for centering of 
+            OBJECT-frames by fitting a 2D Gaussian or using cross-correlation:
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to and used for 
                 cross-correlating the images (pixels). Must be integer. The 
@@ -2553,7 +2572,8 @@ def perform_preprocessing(frames_to_remove=[],
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (444, 490, 1469, 479).         
-        param_centering_flux: length-3-tuple with parameters for centering of FLUX-frames:
+        param_centering_flux: length-3-tuple with parameters for centering of 
+            FLUX-frames by fitting a 2D Gaussian:
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to (pixels). Must be 
                 integer. The sub-image is centered on the coordinates as 
@@ -2617,7 +2637,7 @@ def perform_preprocessing(frames_to_remove=[],
     # Check and sort data, and create directories
     path_object_files, path_sky_files, path_center_files, path_object_center_files, path_flux_files, path_sky_flux_files, \
     indices_to_remove_object, indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, indices_to_remove_flux, \
-    indices_to_remove_sky_flux, file_index_object, file_index_flux, combination_method_polarization_images \
+    indices_to_remove_sky_flux, file_index_object, file_index_flux, centering_method_object, combination_method_polarization_images \
     = check_sort_data_create_directories(frames_to_remove=frames_to_remove, 
                                          combination_method_polarization_images=combination_method_polarization_images, 
                                          centering_method_object=centering_method_object, 
@@ -3921,11 +3941,13 @@ def perform_postprocessing(cube_single_sum,
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            If string 'ao residuals' the annulus will automatically determined and 
+            If string 'ao residuals' the annulus will be automatically determined and 
             be star-centered and located over the AO residuals. The inner radius 
             and width of the annulus will depend on the filter used. If 
             'star aperture' a small aparture located at the position of
-            the central star will be used (default = 'ao residuals').
+            the central star will be used (default = 'ao residuals'). If 'automatic', 
+            param_annulus_star will first be set to 'ao residuals' in case of coronagraphic
+            data, and to 'star aperture' in case of non-coronagraphic data.
         param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
@@ -3971,6 +3993,15 @@ def perform_postprocessing(cube_single_sum,
     # Determine filter and coronagraph used    
     filter_used = header[0]['ESO INS1 FILT ID']   
     coronagraph_used = header[0]['ESO INS COMB ICOR']
+
+    # If param_annulus_star is 'automatic', set to 'ao residuals' for coronagraphic data and to 'star aperture' for non-coronagraphic data
+    if param_annulus_star == 'automatic':
+        if coronagraph_used == 'N_NS_CLEAR':
+            printandlog('\nparam_annulus_star is \'automatic\': changing it to \'star aperture\', because the data is non-coronagraphic.')
+            param_annulus_star = 'star aperture'
+        else:
+            printandlog('\nparam_annulus_star is \'automatic\': changing it to \'ao residuals\', because the data is coronagraphic.')
+            param_annulus_star = 'ao residuals'
 
     # Define and print annulus to determine the star polarization from
     if type(param_annulus_star) == tuple or type(param_annulus_star) == list:
@@ -4344,19 +4375,19 @@ if remove_vertical_band_detector_artefact not in [True, False]:
 #TODO: Add checks of specific values of param_annulus_star/background
 #      Check how an annulus behaves when it is cut off by the edge of the image
 if type(param_annulus_star) not in [str, tuple, list]:
-    raise TypeError('\'param_annulus_star\' should be \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+    raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-elif type(param_annulus_star) is str and param_annulus_star not in ['ao residuals', 'star aperture']:
-    raise ValueError('\'param_annulus_star\' should be \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+elif type(param_annulus_star) is str and param_annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
+    raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
 elif type(param_annulus_star) is tuple and len(param_annulus_star) is not 6:
-    raise ValueError('\'param_annulus_star\' should be \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+    raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
 elif type(param_annulus_star) is list:
     if any([type(x) is not tuple for x in param_annulus_star]):
-        raise TypeError('\'param_annulus_star\' should be \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+        raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
     elif any([len(x) is not 6 for x in param_annulus_star]):
-        raise ValueError('\'param_annulus_star\' should be \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+        raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
 if type(param_annulus_background) not in [str, tuple, list]:
     raise TypeError('\'param_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
