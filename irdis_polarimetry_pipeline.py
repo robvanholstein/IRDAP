@@ -20,31 +20,34 @@ sigmafiltering = False
 centering_method_object = 'center frames' # 'center frames', 'gaussian', 'cross-correlation', 'manual'
 centering_subtract_object = True
 center_coordinates_object = (478, 522, 1504, 512) # 'default'
-#param_centering_object = (12, 7, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
-param_centering_object = (12, None, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
+param_centering_object = (60, None, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
+param_centering_satellite_spots = (12, None, 30000)
 collapse_ndit_object = True
 plot_centering_sub_images = True
-center_coordinates_flux = () #TODO: or list of center coordinates if different for multiple frames
+#center_coordinates_flux = () #TODO: or list of center coordinates if different for multiple frames
 
 # Flux
 centering_method_flux = 'gaussian' # 'gaussian', 'manual'
-center_coordinates_flux = (445, 491, 1470, 480)
-param_centering_flux = (12, None, 30000)
+#center_coordinates_flux = (445, 491, 1470, 480)
+center_coordinates_flux = (478, 522, 1504, 512) 
+param_centering_flux = (60, None, 30000)
 param_annulus_background_flux = 'large annulus'
 
 save_preprocessed_data = True
 
-frames_to_remove = [(1, 3),
-                    (2, 2),
-                    (15, 1),     
-                    4, 
-                    7,
-                    16,  
-                    (17, 2),
-                    (18, 1),
-                    (19, 2),
-                    (19, 6),
-                    (20, 7)] # GQ Lup
+#frames_to_remove = [(1, 3),
+#                    (2, 2),
+#                    (15, 1),     
+#                    4, 
+#                    7,
+#                    16,  
+#                    (17, 2),
+#                    (18, 1),
+#                    (19, 2),
+#                    (19, 6),
+#                    (20, 7)] # GQ Lup
+
+frames_to_remove = []
 
 # Options for post-processing
 double_difference_type = 'standard'
@@ -1548,7 +1551,8 @@ def fit_2d_gaussian(frame, x0=None, y0=None, x_stddev=1.0, y_stddev=1.0, theta=0
 def find_center_coordinates(list_frame_center_processed, 
                             path_processed_center_files, 
                             center_coordinates=(477, 521, 1503, 511), 
-                            param_centering=(12, 7, 30000)):
+                            param_centering_satellite_spots=(12, 7, 30000)):
+    
     '''
     Find coordinates of star center from processed CENTER frames. The function
     shows the fitted coordinates of the satellite spots in an image and writes
@@ -1566,7 +1570,8 @@ def find_center_coordinates(list_frame_center_processed,
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511). 
-        param_centering: length-3-tuple with parameters for centering:
+        param_centering_satellite_spots: length-3-tuple with parameters for 
+            determining the centers of the satellite spots in the CENTER-frames:
             crop_radius: half the length of side of square cropped sub-images used 
                 to fit Gaussian to (pixels). Must be integer. If None, the complete 
                 frame is used for the fitting and center_coordinates is ignored.
@@ -1579,7 +1584,7 @@ def find_center_coordinates(list_frame_center_processed,
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering is (12, 7, 30000).
+            The default value of param_centering_satellite_spots is (12, 7, 30000).
                 
     Output:
         center_coordinates: a length-4-tuple with the determined center 
@@ -1589,13 +1594,11 @@ def find_center_coordinates(list_frame_center_processed,
     Christian Ginski
     Function status: verified
     '''
-
+    
     # Read centering parameters
     x_center_0 = np.array([center_coordinates[0], center_coordinates[2]])
     y_center_0 = np.array([center_coordinates[1], center_coordinates[3]])
-    crop_radius = param_centering[0]
-    sigfactor = param_centering[1]
-    saturation_level = param_centering[2]
+    crop_radius, sigfactor, saturation_level = param_centering_satellite_spots
     
     # Subtract 1024 from the right x-coordinate to make it valid for a frame half
     x_center_0[1] -= 1024
@@ -1604,8 +1607,8 @@ def find_center_coordinates(list_frame_center_processed,
     header = [pyfits.getheader(x) for x in path_processed_center_files]
     
     # Determine filter used
-    filter_used = header[0]['ESO INS1 FILT ID']
-    
+    filter_used = header[0]['ESO INS1 FILT ID'] 
+                
     # Compute theoretical full width half maximum and separation of satellite spots
     fwhm, separation = compute_fwhm_separation(filter_used)
     
@@ -1641,8 +1644,8 @@ def find_center_coordinates(list_frame_center_processed,
         title_main = 'center_coordinates = %s' % (center_coordinates,)
         if center_coordinates == (477, 521, 1503, 511):
             title_main += ' (default)'
-        title_main += '\nparam_centering = %s' % (param_centering,)         
-        if param_centering == (12, 7, 30000):
+        title_main += '\nparam_centering_satellite_spots = %s' % (param_centering_satellite_spots,)         
+        if param_centering_satellite_spots == (12, 7, 30000):
             title_main += ' (default)'
         fig.suptitle(title_main, horizontalalignment='center')
         fig.subplots_adjust(top=0.7)
@@ -1855,7 +1858,8 @@ def process_object_frames(path_object_files,
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering is (12, 7, 30000).
+            The default value of param_centering is (12, 7, 30000). param_centering
+            is only used when centering_method is 'gaussian' or 'cross-correlation'.
         collapse_ndit: If True, compute the mean over the (NDIT) frames of a
             file before subtracting the background, flat-fielding, bad pixel
             removal and centering. If False, perform the above steps for each
@@ -1979,6 +1983,7 @@ def process_object_frames(path_object_files,
 
                     if plot_centering_sub_images == True:
                         # Create sub-image to show center coordinates in
+                        crop_radius = 12
                         x_center_0_rounded = int(np.round(x_center_0_sel))
                         y_center_0_rounded = int(np.round(y_center_0_sel))
                         sub_image = create_sub_image(frame=frame_half, x0=x_center_0_rounded + x_dith, y0=y_center_0_rounded + y_dith, crop_radius=crop_radius)
@@ -1988,7 +1993,7 @@ def process_object_frames(path_object_files,
                         y_fit_sub_image = y_center_0_sel - y_center_0_rounded + crop_radius
 
                 elif centering_method == 'gaussian':
-                    # Determine accurate coordinates of star position fitting a Gaussian           
+                    # Determine accurate coordinates of star position by fitting a Gaussian           
                     x_fit, y_fit, x_fit_sub_image, y_fit_sub_image, sub_image = \
                     fit_2d_gaussian(frame=frame_half, x0=x_center_0_sel + x_dith, y0=y_center_0_sel + y_dith, x_stddev=fwhm, y_stddev=fwhm, \
                                     theta=0.0, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)
@@ -2370,7 +2375,8 @@ def process_flux_frames(path_flux_files,
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering is (12, None, 30000).
+            The default value of param_centering is (12, None, 30000). param_centering
+            is only used when centering_method is 'gaussian'.    
         collapse_ndit: If True, compute the mean over the (NDIT) frames of a
             file before subtracting the background, flat-fielding, bad pixel
             removal and centering. If False, perform the above steps for each
@@ -2436,7 +2442,8 @@ def perform_preprocessing(frames_to_remove=[],
                           centering_method_object='center frames', 
                           centering_subtract_object=True, 
                           center_coordinates_object=(477, 521, 1503, 511), 
-                          param_centering_object=(12, 7, 30000), 
+                          param_centering_satellite_spots=(12, 7, 30000),
+                          param_centering_object=(60, None, 30000), 
                           centering_method_flux='gaussian', 
                           center_coordinates_flux=(444, 490, 1469, 479), 
                           param_centering_flux=(12, None, 30000), 
@@ -2495,6 +2502,23 @@ def perform_preprocessing(frames_to_remove=[],
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511). 
+        param_centering_satellite_spots: length-3-tuple with parameters for 
+            determining the centers of the satellite spots in the CENTER-frames:
+            crop_radius: half the length of side of square cropped sub-images used 
+                to fit Gaussian to (pixels). Must be integer. If None, the complete 
+                frame is used for the fitting and center_coordinates is ignored.
+            sigfactor: all sub-image pixels with values smaller than 
+                sigfactor*standard deviation are replaced by random Gaussian noise 
+                to mask them for fitting the 2D Gaussian. If None, no pixels are
+                replaced by Gaussian noise.
+            saturation_level: all pixels within the smallest circle encompassing 
+                the pixels with a value equal to or higher than saturation_level 
+                are ignored when fitting the 2D Gaussian. We use a circle because
+                strongly saturated pixels in the peak of the PSF often have values 
+                lower than saturation_level. If None, no pixels are ignored.
+            The default value of param_centering_satellite_spots is (12, 7, 30000).
+            param_centering_satellite_spots is only used when centering_method_object
+            is 'center frames'.
         param_centering_object: length-3-tuple with parameters for centering of OBJECT-frames:
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to and used for 
@@ -2513,7 +2537,9 @@ def perform_preprocessing(frames_to_remove=[],
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_object is (12, 7, 30000).            
+            The default value of param_centering_object is (12, 7, 30000). 
+            param_centering_object is only used when centering_method_object is 
+            'gaussian' or 'cross-correlation'.
         centering_method_flux: method to center the FLUX-frames. If 'manual', use fixed 
             coordinates as provided by center_coordinates_flux. If 'gaussian', fit 
             a 2D Gaussian to each frame. For 'gaussian' center_coordinates_flux is 
@@ -2527,7 +2553,7 @@ def perform_preprocessing(frames_to_remove=[],
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (444, 490, 1469, 479).         
-        param_centering_flux: length-3-tuple with parameters for centering if FLUX-frames:
+        param_centering_flux: length-3-tuple with parameters for centering of FLUX-frames:
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to (pixels). Must be 
                 integer. The sub-image is centered on the coordinates as 
@@ -2544,7 +2570,8 @@ def perform_preprocessing(frames_to_remove=[],
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_flux is (12, None, 30000).            
+            The default value of param_centering_flux is (12, None, 30000).
+            param_centering_flux is only used when centering_method_flux is 'gaussian'.  
         param_annulus_background_flux: (list of) length-6-tuple(s) with parameters 
             to generate annulus to measure and subtract background in master flux frame:
             coord_center_x: x-coordinate of center (pixels; 0-based)
@@ -2695,7 +2722,7 @@ def perform_preprocessing(frames_to_remove=[],
         center_coordinates_object = find_center_coordinates(list_frame_center_processed=list_frame_center_processed, 
                                                             path_processed_center_files=path_processed_center_files, 
                                                             center_coordinates=center_coordinates_object, 
-                                                            param_centering=param_centering_object)
+                                                            param_centering_satellite_spots=param_centering_satellite_spots)
 
     ###############################################################################
     # Creating processed and centered single-sum and -difference images
@@ -4489,7 +4516,8 @@ if skip_preprocessing == False:
                             centering_method_object=centering_method_object, 
                             centering_subtract_object=centering_subtract_object, 
                             center_coordinates_object=center_coordinates_object, 
-                            param_centering_object=param_centering_object, 
+                            param_centering_satellite_spots=param_centering_satellite_spots,
+                            param_centering_object=param_centering_object,
                             centering_method_flux=centering_method_flux, 
                             center_coordinates_flux=center_coordinates_flux, 
                             param_centering_flux=param_centering_flux, 
