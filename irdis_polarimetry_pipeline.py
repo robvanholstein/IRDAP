@@ -10,13 +10,13 @@
 ###############################################################################
 
 # Definition of paths
-#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup'
-path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau'
+path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup Sebas 2'
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau'
 path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
 
 # Options for pre-processing
 skip_preprocessing = False
-sigmafiltering = False
+sigma_filtering = True
 centering_method_object = 'automatic' # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
 centering_subtract_object = True
 center_coordinates_object = (478, 522, 1504, 512) # 'default'
@@ -50,14 +50,14 @@ save_preprocessed_data = True
 # Options for post-processing
 double_difference_type = 'standard'
 remove_vertical_band_detector_artefact = True
-param_annulus_star = 'automatic'
+#param_annulus_star = 'automatic'
 #param_annulus_star = 'ao residuals'
-#param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'automatic', 'ao residuals', 'star aperture'
-#                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
+param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'automatic', 'ao residuals', 'star aperture'
+                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
 #param_annulus_star = (516, 478, 0, 11, 0, 360)
 param_annulus_background = 'large annulus'
-combination_method_polarization_images = 'trimmed mean'
-#combination_method_polarization_images = 'least squares'
+#combination_method_polarization_images = 'trimmed mean'
+combination_method_polarization_images = 'least squares'
 trimmed_mean_proportiontocut_polarization_images = 0.10
 combination_method_total_intensity_images = 'mean'
 trimmed_mean_proportiontocut_total_intensity_images = 0.10
@@ -437,9 +437,9 @@ def create_overview_headers():
 # check_sort_data_create_directories
 ###############################################################################
 
-def check_sort_data_create_directories(frames_to_remove, 
-                                       combination_method_polarization_images='trimmed mean', 
-                                       centering_method_object='center frames', 
+def check_sort_data_create_directories(frames_to_remove=[], 
+                                       combination_method_polarization_images='least squares', 
+                                       centering_method_object='automatic', 
                                        save_preprocessed_data=True, 
                                        plot_centering_sub_images=True):
     '''
@@ -457,7 +457,7 @@ def check_sort_data_create_directories(frames_to_remove,
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'. 
             In this function, if combination_method_polarization_images is forced 
             to 'least squares' in case there is an unequal number of Q- and 
-            U-measurements (default = 'trimmed mean').
+            U-measurements (default = 'least squares').
         centering_method_object: method to center the OBJECT-frames. In this 
             function, if centering_method_object is 'automatic', it is set to
             'center frames' if there are CENTER-files, and is set to '
@@ -469,7 +469,7 @@ def check_sort_data_create_directories(frames_to_remove,
             centered first  frame. For 'gaussian' and 'cross-correlation' 
             center_coordinates is used as initial guess of the center 
             coordinates and the determined center coordinates are plotted for
-            each image (default = 'center frames').
+            each image (default = 'automatic').
         save_preprocessed_data: If True, save preprocessed cubes of single-sum 
             and single-difference images in the 'preprocessed' folder so that 
             the preprocessing can be skipped when re-running the pipeline
@@ -1089,7 +1089,7 @@ def write_fits_files(data, path, header=False, silent=False):
 # remove_bad_pixels
 ###############################################################################
 
-def remove_bad_pixels(cube, frame_master_bpm, sigmafiltering=True):
+def remove_bad_pixels(cube, frame_master_bpm, sigma_filtering=True):
     ''' 
     Remove bad pixels from an image cube or frame using the bad pixel map
     followed by optional repeated sigma-filtering
@@ -1124,7 +1124,7 @@ def remove_bad_pixels(cube, frame_master_bpm, sigmafiltering=True):
                                                             filter_size_median))
     cube_filtered = cube_median + frame_master_bpm * (cube - cube_median)
         
-    if sigmafiltering == True:
+    if sigma_filtering == True:
         # Define threshold factor for sigma filtering
         factor_threshold = 5
         
@@ -1170,7 +1170,7 @@ def remove_bad_pixels(cube, frame_master_bpm, sigmafiltering=True):
 # process_sky_frames
 ###############################################################################
 
-def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, sigmafiltering=True):
+def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, sigma_filtering=True):
     '''
     Create a master sky-frame from the SKY-files
     
@@ -1179,7 +1179,7 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
         indices_to_remove_sky: list of arrays with indices of frames to remove for each SKY-file
         frame_master_bpm: frame indicating location of bad pixels with 0's and good
             pixels with 1's
-        sigmafiltering: if True remove bad pixels remaining after applying
+        sigma_filtering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
 
     Output:
@@ -1206,7 +1206,7 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
     cube_sky_raw = np.vstack(list_cube_sky_raw)
 
     # Remove bad pixels of each frame
-    cube_sky_filtered = remove_bad_pixels(cube=cube_sky_raw, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+    cube_sky_filtered = remove_bad_pixels(cube=cube_sky_raw, frame_master_bpm=frame_master_bpm, sigma_filtering=sigma_filtering)
 
     # Compute median of sky frames
     frame_master_sky = np.median(cube_sky_filtered, axis=0)
@@ -1278,7 +1278,7 @@ def process_center_frames(path_center_files,
                           frame_master_sky, 
                           centering_subtract_object=True, 
                           center_coordinates=(477, 521, 1503, 511), 
-                          sigmafiltering=True):
+                          sigma_filtering=True):
     '''
     Process the CENTER frames by subtracting the background, flat-fielding, 
     removing bad pixels and computing the mean over the NDIT's
@@ -1313,7 +1313,7 @@ def process_center_frames(path_center_files,
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511). 
-        sigmafiltering: if True remove bad pixels remaining after applying
+        sigma_filtering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
        
     Output:
@@ -1387,7 +1387,7 @@ def process_center_frames(path_center_files,
                 # Remove bad pixels from background frame and cut into two halves
                 printandlog('\nRotating OBJECT-frame around the initial guess of center before subtracting it from the CENTER-file.')
                 printandlog('')
-                frame_background = remove_bad_pixels(cube=frame_background, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+                frame_background = remove_bad_pixels(cube=frame_background, frame_master_bpm=frame_master_bpm, sigma_filtering=sigma_filtering)
                 frame_background_left = frame_background[:, :1024]
                 frame_background_right = frame_background[:, 1024:]
                 
@@ -1404,7 +1404,7 @@ def process_center_frames(path_center_files,
         cube_bgsubtr_flatfielded = (cube_center - frame_background) / frame_master_flat
         
         # Remove bad pixels of each frame
-        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigma_filtering=sigma_filtering)
                 
         # Compute mean over NDIT frames
         frame_mean = np.mean(cube_badpixel_filtered, axis=0)
@@ -1565,7 +1565,7 @@ def fit_2d_gaussian(frame, x0=None, y0=None, x_stddev=1.0, y_stddev=1.0, theta=0
 def find_center_coordinates(list_frame_center_processed, 
                             path_processed_center_files, 
                             center_coordinates=(477, 521, 1503, 511), 
-                            param_centering_satellite_spots=(12, 7, 30000)):
+                            param_centering_satellite_spots=(12, None, 30000)):
     
     '''
     Find coordinates of star center from processed CENTER frames. The function
@@ -1598,7 +1598,7 @@ def find_center_coordinates(list_frame_center_processed,
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_satellite_spots is (12, 7, 30000).
+            The default value of param_centering_satellite_spots is (12, None, 30000).
                 
     Output:
         center_coordinates: a length-4-tuple with the determined center 
@@ -1816,11 +1816,11 @@ def process_object_frames(path_object_files,
                           frame_master_flat, 
                           frame_master_bpm, 
                           frame_master_sky, 
-                          sigmafiltering=True, 
+                          sigma_filtering=True, 
                           centering_method='center frames', 
                           center_coordinates=(477, 521, 1503, 511), 
-                          param_centering=(12, 7, 30000), 
-                          collapse_ndit=True, 
+                          param_centering=(60, None, 30000), 
+                          collapse_ndit=False, 
                           plot_centering_sub_images=True):
     '''
     Process the OBJECT frames by subtracting the background, flat-fielding, 
@@ -1835,7 +1835,7 @@ def process_object_frames(path_object_files,
         frame_master_bpm: frame indicating location of bad pixels with 0's and 
             good pixels with 1's
         frame_master_sky: master sky frame for OBJECT-files
-        sigmafiltering: if True remove bad pixels remaining after applying
+        sigma_filtering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
         centering_method: method to center the images. If 'center frames' or
             'manual', use fixed coordinates as provided by center_coordinates. 
@@ -1873,13 +1873,13 @@ def process_object_frames(path_object_files,
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering is (12, 7, 30000). param_centering
+            The default value of param_centering is (60, None, 30000). param_centering
             is only used when centering_method is 'gaussian' or 'cross-correlation'.
         collapse_ndit: If True, compute the mean over the (NDIT) frames of a
             file before subtracting the background, flat-fielding, bad pixel
             removal and centering. If False, perform the above steps for each
             frame and after that compute the mean over the frames 
-            (default = True).
+            (default = False).
         plot_centering_sub_images: If True, plot the sub-images showing the 
             center coordinates for each frame. The plots allow for checking
             whether the centering is correct and to scan the data for frames 
@@ -1966,7 +1966,7 @@ def process_object_frames(path_object_files,
         cube_bgsubtr_flatfielded = (cube_sel - frame_master_sky) / frame_master_flat
 
         # Remove bad pixels of each frame
-        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigmafiltering=sigmafiltering)
+        cube_badpixel_filtered = remove_bad_pixels(cube=cube_bgsubtr_flatfielded, frame_master_bpm=frame_master_bpm, sigma_filtering=sigma_filtering)
 
         # Create zero arrays to save centered images in
         cube_left_centered = np.zeros((cube_badpixel_filtered.shape[-3], cube_badpixel_filtered.shape[-2], int(cube_badpixel_filtered.shape[-1] / 2)))
@@ -2328,10 +2328,10 @@ def process_flux_frames(path_flux_files,
                         frame_master_flat, frame_master_bpm, 
                         frame_master_sky_flux, 
                         param_annulus_background, 
-                        sigmafiltering=True, 
+                        sigma_filtering=True, 
                         centering_method='gaussian', 
-                        center_coordinates=(444, 490, 1469, 479), 
-                        param_centering=(12, None, 30000), 
+                        center_coordinates=(477, 521, 1503, 511), 
+                        param_centering=(60, None, 30000), 
                         collapse_ndit=False, 
                         plot_centering_sub_images=True):
     '''
@@ -2358,7 +2358,7 @@ def process_flux_frames(path_flux_files,
                 rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and 
                 rotating counterclockwise)
-        sigmafiltering: if True remove bad pixels remaining after applying
+        sigma_filtering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
         centering_method: method to center the images. If 'manual', use fixed 
             coordinates as provided by center_coordinates. If 'gaussian', fit 
@@ -2372,7 +2372,7 @@ def process_flux_frames(path_flux_files,
             y_right: y-coordinate of center of right frame half
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
-            is (444, 490, 1469, 479).         
+            is (477, 521, 1503, 511).         
         param_centering: length-3-tuple with parameters for centering by fitting
             a 2D Gaussian:
             crop_radius: half the length of the sides of the square cropped 
@@ -2391,7 +2391,7 @@ def process_flux_frames(path_flux_files,
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering is (12, None, 30000). param_centering
+            The default value of param_centering is (60, None, 30000). param_centering
             is only used when centering_method is 'gaussian'.    
         collapse_ndit: If True, compute the mean over the (NDIT) frames of a
             file before subtracting the background, flat-fielding, bad pixel
@@ -2418,7 +2418,7 @@ def process_flux_frames(path_flux_files,
                                             frame_master_flat=frame_master_flat, 
                                             frame_master_bpm=frame_master_bpm, 
                                             frame_master_sky=frame_master_sky_flux, 
-                                            sigmafiltering=sigmafiltering, 
+                                            sigma_filtering=sigma_filtering, 
                                             centering_method=centering_method, 
                                             center_coordinates=center_coordinates, 
                                             param_centering=param_centering, 
@@ -2452,20 +2452,20 @@ def process_flux_frames(path_flux_files,
 ###############################################################################
 
 def perform_preprocessing(frames_to_remove=[], 
-                          sigmafiltering=True, 
-                          collapse_ndit_object=True, 
+                          sigma_filtering=True, 
+                          collapse_ndit_object=False, 
                           plot_centering_sub_images=True, 
-                          centering_method_object='center frames', 
+                          centering_method_object='automatic', 
                           centering_subtract_object=True, 
                           center_coordinates_object=(477, 521, 1503, 511), 
-                          param_centering_satellite_spots=(12, 7, 30000),
+                          param_centering_satellite_spots=(12, None, 30000),
                           param_centering_object=(60, None, 30000), 
                           centering_method_flux='gaussian', 
-                          center_coordinates_flux=(444, 490, 1469, 479), 
-                          param_centering_flux=(12, None, 30000), 
+                          center_coordinates_flux=(477, 521, 1503, 511), 
+                          param_centering_flux=(60, None, 30000), 
                           param_annulus_background_flux='large annulus',
                           save_preprocessed_data=True, 
-                          combination_method_polarization_images='trimmed mean'):
+                          combination_method_polarization_images='least squares'):
     '''
     Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data, 
     background subtraction, flat-fielding, bad pixel removal, centering and compution
@@ -2479,14 +2479,14 @@ def perform_preprocessing(frames_to_remove=[],
             (file_index, frame_index). If no files or frames should be removed, 
             use an empty list [] (default = []). The files are sorted in
             chronological order from oldest to newest.
-        sigmafiltering: if True, remove bad pixels remaining after applying
+        sigma_filtering: if True, remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True). Applies
             to all file-types (OBJECT, CENTER, SKY and FLUX).
         collapse_ndit_object: If True, compute the mean over the (NDIT) frames of
             the OBJECT-files before subtracting the background, flat-fielding, bad 
             pixel removal and centering to speed up the preprocessing. If False, 
             perform the above steps for each frame and after that compute the 
-            mean over the frames (default = True).
+            mean over the frames (default = False).
         plot_centering_sub_images: If True, plot the sub-images showing the 
             center coordinates for each frame of the OBJECT- and FLUX-files. 
             The plots allow for checking whether the centering is correct and 
@@ -2501,7 +2501,7 @@ def perform_preprocessing(frames_to_remove=[],
             coordinates and the determined center coordinates are plotted for
             each image. If 'automatic', centering_method_object is set to
             'center frames' if there are CENTER-files, and is set to 'gaussian' 
-            if there are no CENTER-files (default = 'center frames').
+            if there are no CENTER-files (default = 'automatic').
         centering_subtract_object: if True subtract the OBJECT-file(s) taken
             closest in time from the CENTER-file(s) (default = True). This generally
             results in a more accurate determination of the center coordinates
@@ -2534,7 +2534,7 @@ def perform_preprocessing(frames_to_remove=[],
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_satellite_spots is (12, 7, 30000).
+            The default value of param_centering_satellite_spots is (12, None, 30000).
             param_centering_satellite_spots is only used when centering_method_object
             is 'center frames'.
         param_centering_object: length-3-tuple with parameters for centering of 
@@ -2571,7 +2571,7 @@ def perform_preprocessing(frames_to_remove=[],
             y_right: y-coordinate of center of right frame half
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
-            is (444, 490, 1469, 479).         
+            is (477, 521, 1503, 511).         
         param_centering_flux: length-3-tuple with parameters for centering of 
             FLUX-frames by fitting a 2D Gaussian:
             crop_radius: half the length of the sides of the square cropped 
@@ -2590,7 +2590,7 @@ def perform_preprocessing(frames_to_remove=[],
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_flux is (12, None, 30000).
+            The default value of param_centering_flux is (60, None, 30000).
             param_centering_flux is only used when centering_method_flux is 'gaussian'.  
         param_annulus_background_flux: (list of) length-6-tuple(s) with parameters 
             to generate annulus to measure and subtract background in master flux frame:
@@ -2611,7 +2611,7 @@ def perform_preprocessing(frames_to_remove=[],
             (default = True). 
         combination_method_polarization_images: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median' 
-            (default = 'trimmed mean')
+            (default = 'least squares')
         
     Output:
         cube_single_sum: cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^-intensity images
@@ -2689,7 +2689,7 @@ def perform_preprocessing(frames_to_remove=[],
         frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, 
                                               indices_to_remove_sky=indices_to_remove_sky, 
                                               frame_master_bpm=frame_master_bpm, 
-                                              sigmafiltering=sigmafiltering)
+                                              sigma_filtering=sigma_filtering)
         
         # Write master sky-frame
         printandlog('')
@@ -2731,7 +2731,7 @@ def perform_preprocessing(frames_to_remove=[],
                                                                            frame_master_sky=frame_master_sky, 
                                                                            centering_subtract_object=centering_subtract_object, 
                                                                            center_coordinates=center_coordinates_object, 
-                                                                           sigmafiltering=sigmafiltering)
+                                                                           sigma_filtering=sigma_filtering)
     
         # Write processed center frames
         path_processed_center_files = [os.path.join(path_center_dir, os.path.splitext(os.path.basename(x))[0] + '_processed.fits') for x in path_center_files]
@@ -2759,7 +2759,7 @@ def perform_preprocessing(frames_to_remove=[],
                                                                             frame_master_flat=frame_master_flat, 
                                                                             frame_master_bpm=frame_master_bpm, 
                                                                             frame_master_sky=frame_master_sky, 
-                                                                            sigmafiltering=sigmafiltering, 
+                                                                            sigma_filtering=sigma_filtering, 
                                                                             centering_method=centering_method_object, 
                                                                             center_coordinates=center_coordinates_object, 
                                                                             param_centering=param_centering_object, 
@@ -2792,7 +2792,7 @@ def perform_preprocessing(frames_to_remove=[],
         frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, 
                                                    indices_to_remove_sky=indices_to_remove_sky_flux, 
                                                    frame_master_bpm=frame_master_bpm, 
-                                                   sigmafiltering=sigmafiltering)
+                                                   sigma_filtering=sigma_filtering)
         
         # Write master sky-frame
         printandlog('')
@@ -2833,7 +2833,7 @@ def perform_preprocessing(frames_to_remove=[],
                                                                                frame_master_bpm=frame_master_bpm, 
                                                                                frame_master_sky_flux=frame_master_sky_flux, 
                                                                                param_annulus_background=param_annulus_background_flux, 
-                                                                               sigmafiltering=sigmafiltering, 
+                                                                               sigma_filtering=sigma_filtering, 
                                                                                centering_method=centering_method_flux, 
                                                                                center_coordinates=center_coordinates_flux, 
                                                                                param_centering=param_centering_flux, 
@@ -3313,9 +3313,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                               file_index_object, 
                                               param_annulus_star, 
                                               param_annulus_background, 
-                                              combination_method_polarization_images='trimmed mean', 
+                                              combination_method_polarization_images='least squares', 
                                               trimmed_mean_proportiontocut_polarization_images=0.1, 
-                                              combination_method_total_intensity_images='trimmed mean', 
+                                              combination_method_total_intensity_images='mean', 
                                               trimmed_mean_proportiontocut_total_intensity_images=0.1, 
                                               single_posang_north_up=True):
     '''
@@ -3343,11 +3343,11 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
         combination_method_polarization_images: method to be used to produce the incident Q- and U-images, 
-            'least squares', 'trimmed mean' or 'median' (default = 'trimmed mean')
+            'least squares', 'trimmed mean' or 'median' (default = 'least squares')
         trimmed_mean_proportiontocut_polarization_images: fraction to cut off of both tails of the distribution if 
             combination_method_polarization_images = 'trimmed mean' (default = 0.1) 
         combination_method_total_intensity_images: method to be used to produce the incident I_Q- and I_U-images, 
-            'mean', 'trimmed mean' or 'median' (default = 'trimmed mean')
+            'mean', 'trimmed mean' or 'median' (default = 'mean')
         trimmed_mean_proportiontocut_total_intensity_images: fraction to cut off of both tails of the distribution if 
             trimmed_mean_proportiontocut_total_intensity_images = 'trimmed mean' (default = 0.1) 
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
@@ -3841,7 +3841,7 @@ def compute_azimuthal_stokes_parameters(frame_Q, frame_U, rotation_angle=0, cent
 # compute_final_images
 ###############################################################################
     
-def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_posang_north_up):
+def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_posang_north_up=True):
     ''' 
     Compute final images of polarimetric data reduction
     
@@ -3915,13 +3915,13 @@ def perform_postprocessing(cube_single_sum,
                            cube_single_difference, 
                            header, 
                            file_index_object, 
-                           param_annulus_star='ao residuals', 
+                           param_annulus_star='automatic', 
                            param_annulus_background='large annulus', 
                            double_difference_type='standard', 
                            remove_vertical_band_detector_artefact=True, 
-                           combination_method_polarization_images='trimmed mean', 
+                           combination_method_polarization_images='least squares', 
                            trimmed_mean_proportiontocut_polarization_images=0.1, 
-                           combination_method_total_intensity_images='trimmed mean', 
+                           combination_method_total_intensity_images='mean', 
                            trimmed_mean_proportiontocut_total_intensity_images=0.1, 
                            single_posang_north_up=True, 
                            normalized_polarization_images=False):
@@ -3945,9 +3945,9 @@ def perform_postprocessing(cube_single_sum,
             be star-centered and located over the AO residuals. The inner radius 
             and width of the annulus will depend on the filter used. If 
             'star aperture' a small aparture located at the position of
-            the central star will be used (default = 'ao residuals'). If 'automatic', 
-            param_annulus_star will first be set to 'ao residuals' in case of coronagraphic
-            data, and to 'star aperture' in case of non-coronagraphic data.
+            the central star will be used. If 'automatic', param_annulus_star will 
+            first be set to 'ao residuals' in case of coronagraphic data, and to 
+            'star aperture' in case of non-coronagraphic data (default = 'automatic').
         param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
@@ -3961,13 +3961,13 @@ def perform_postprocessing(cube_single_sum,
         double_difference_type: type of double difference to be computed, either
         'standard' or 'normalized' (see van Holstein et al. 2019; default = 'standard')
         remove_vertical_band_detector_artefact: If True remove the vertical band detector artefact seen in 
-            the double-difference Q- and U-images. If False don't remove it.
+            the double-difference Q- and U-images. If False don't remove it (default = True).
         combination_method_polarization_images: method to be used to produce the incident Q- and U-images, 
-            'least squares', 'trimmed mean' or 'median' (default = 'trimmed mean')
+            'least squares', 'trimmed mean' or 'median' (default = 'least squares')
         trimmed_mean_proportiontocut_polarization_images: fraction to cut off of both tails of the distribution if 
             combination_method_polarization_images = 'trimmed mean' (default = 0.1) 
         combination_method_total_intensity_images: method to be used to produce the incident I_Q- and I_U-images, 
-            'mean', 'trimmed mean' or 'median' (default = 'trimmed mean')
+            'mean', 'trimmed mean' or 'median' (default = 'mean')
         trimmed_mean_proportiontocut_total_intensity_images: fraction to cut off of both tails of the distribution if 
             trimmed_mean_proportiontocut_total_intensity_images = 'trimmed mean' (default = 0.1) 
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
@@ -4541,7 +4541,7 @@ if skip_preprocessing == False:
     # Pre-process raw data
     cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization_images \
     = perform_preprocessing(frames_to_remove=frames_to_remove, 
-                            sigmafiltering=sigmafiltering, 
+                            sigma_filtering=sigma_filtering, 
                             collapse_ndit_object=collapse_ndit_object, 
                             plot_centering_sub_images=plot_centering_sub_images, 
                             centering_method_object=centering_method_object, 
