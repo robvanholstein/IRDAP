@@ -17,21 +17,21 @@ path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_p
 # Options for pre-processing
 skip_preprocessing = False
 sigma_filtering = True
-centering_method_object = 'automatic' # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
-centering_subtract_object = True
-center_coordinates_object = (478, 522, 1504, 512) # 'default'
-param_centering_object = (60, None, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
-param_centering_satellite_spots = (12, None, 30000)
-collapse_ndit_object = True
-plot_centering_sub_images = True
-#center_coordinates_flux = () #TODO: or list of center coordinates if different for multiple frames
+object_centering_method = 'automatic' # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
+center_subtract_object = True
+object_center_coordinates = (478, 522, 1504, 512) # 'default'
+object_param_centering = (60, None, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
+center_param_centering = (12, None, 30000)
+object_collapse_ndit = True
+show_images_center_coordinates = True
+#flux_center_coordinates = () #TODO: or list of center coordinates if different for multiple frames
 
 # Flux
-centering_method_flux = 'gaussian' # 'gaussian', 'manual'
-#center_coordinates_flux = (445, 491, 1470, 480)
-center_coordinates_flux = (478, 522, 1504, 512) 
-param_centering_flux = (60, None, 30000)
-param_annulus_background_flux = 'large annulus'
+flux_centering_method = 'gaussian' # 'gaussian', 'manual'
+#flux_center_coordinates = (445, 491, 1470, 480)
+flux_center_coordinates = (478, 522, 1504, 512) 
+flux_param_centering = (60, None, 30000)
+flux_annulus_background = 'large annulus'
 
 save_preprocessed_data = True
 
@@ -50,21 +50,21 @@ save_preprocessed_data = True
 # Options for post-processing
 double_difference_type = 'standard'
 remove_vertical_band_detector_artefact = True
-#param_annulus_star = 'automatic'
-#param_annulus_star = 'ao residuals'
-param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'automatic', 'ao residuals', 'star aperture'
+#annulus_star = 'automatic'
+#annulus_star = 'ao residuals'
+annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'automatic', 'ao residuals', 'star aperture'
                       (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
-#param_annulus_star = (516, 478, 0, 11, 0, 360)
-param_annulus_background = 'large annulus'
-#combination_method_polarization_images = 'trimmed mean'
-combination_method_polarization_images = 'least squares'
-trimmed_mean_proportiontocut_polarization_images = 0.10
-combination_method_total_intensity_images = 'mean'
-trimmed_mean_proportiontocut_total_intensity_images = 0.10
+#annulus_star = (516, 478, 0, 11, 0, 360)
+annulus_background = 'large annulus'
+#combination_method_polarization = 'trimmed mean'
+combination_method_polarization = 'least squares'
+trimmed_mean_proportion_to_cut_polarization = 0.10
+combination_method_intensity = 'mean'
+trimmed_mean_proportion_to_cut_intensity = 0.10
 single_posang_north_up = True
 normalized_polarization_images = True
 
-#TODO: turn combination_method_polarization_images and trimmed_mean_proportiontocut_polarization_images
+#TODO: turn combination_method_polarization and trimmed_mean_proportion_to_cut_polarization
 # into a single variable (also for the total intensity ones)? Instead of trimmed mean, give a number, 
 # also for mean can probably give 0 (should test it though).
 
@@ -93,9 +93,56 @@ normalized_polarization_images = True
 
 frames_to_remove = []
 
-#param_annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
+#annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
 #                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
-#param_annulus_star = (516, 478, 0, 11, 0, 360)
+#annulus_star = (516, 478, 0, 11, 0, 360)
+
+'''
+###############################################################################
+# Renaming 3 (to be used)
+###############################################################################
+
+# Definition of path
+main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup' # ! CHANGED
+
+# Pre-processing: basic [Basic pre-processing options]
+sigma_filtering = True                              # True, False ! CHANGED
+object_collapse_ndit = False                        # True, False
+object_centering_method = 'automatic'               # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
+skip_preprocessing = False                          # True, False
+frames_to_remove = []                               # list of integers and tuples
+
+# Post-processing: basic [Basic post-processing options]
+annulus_star = 'automatic'                          # 'list of length-6-tuples, length-6-tuple or string
+annulus_background = 'large annulus'                # length-6-tuple or string
+combination_method_polarization = 'least squares'   # 'trimmed mean', 'least squares', 'median'
+combination_method_intensity = 'mean'               # 'trimmed mean', 'mean', 'median'
+normalized_polarization_images = False              # True, False
+
+# Pre-processing: advanced (generally does not need to be changed) [Advanced pre-processing options]
+center_subtract_object = True                       # True, False ! CHANGED
+center_param_centering = (12, None, 30000)          # length-3-tuple
+object_center_coordinates = (478, 522, 1504, 512)   # length-4-tuple
+object_param_centering = (60, None, 30000)           # length-3-tuple
+flux_centering_method = 'gaussian'                  # 'gaussian', 'manual'
+flux_center_coordinates = (478, 522, 1504, 512)     # 'automatic', length-4-tuple
+flux_param_centering = (60, None, 30000)            # length-3-tuple
+flux_annulus_background = 'large annulus'           # lengt-6-tuple
+
+# Post-processing: advanced (generally does not need to be changed) [Advanced post-processing options]
+double_difference_type = 'standard'                 # 'standard', 'normalized'
+trimmed_mean_proportion_to_cut_polarization = 0.10    # float ! CHANGED
+trimmed_mean_proportion_to_cut_intensity = 0.10       # float ! CHANGED
+single_posang_north_up = True                       # True, False
+
+# To be hardcoded
+save_preprocessed_data = True                       # True, False ! HARDCODE TO TRUE IN CODE
+show_images_center_coordinates = True               # True, False ! HARDCODE TO TRUE IN CODE
+remove_vertical_band_detector_artefact = True       # True, False ! HARDCODE TO TRUE IN CODE
+
+# To be removed:
+path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
+'''
 
 ###############################################################################
 ###############################################################################
@@ -144,7 +191,7 @@ In almost all cases one would use True. One would only use False in case
 there is a lot of astrophysical signal within in the region where the median 
 is computed.
 
-param_annulus_star: 
+annulus_star: 
     
 Parameter(s) defining with which annulus/annuli the star polarization will be
 determined. If 'ao residuals' the annulus will be star-centered and located 
@@ -166,7 +213,7 @@ field-tracking mode with a single derotator POSANG. The annulus used can be
 checked with annulus_star.fits that can be found in the directories with the
 reduced images.
 
-param_annulus_background: 
+annulus_background: 
     
 Parameter(s) defining with which annulus/annuli the background will be
 determined. If 'large annulus' the annulus will be star-centered and located 
@@ -187,7 +234,7 @@ field-tracking mode with a single derotator POSANG. The annulus used can be
 checked with annulus_background.fits that can be found in the directories with 
 the reduced images.
 
-combination_method_polarization_images:
+combination_method_polarization:
 
 Method to be used to produce the incident Q- and U-images, i.e. the images that
 are corrected for the instrumental polarization effects. Valid values are 
@@ -206,16 +253,16 @@ have essentially the same accuracy and signal-to-noise ratio images produced
 using 'least squares', but without the bad pixels. Therefore 'trimmed mean' is 
 the recommended option.
 
-trimmed_mean_proportiontocut_polarization_images:
+trimmed_mean_proportion_to_cut_polarization:
 
 Fraction to cut off of both tails of the distribution if 'trimmed mean' is used
-for combination_method_polarization_images. Parameter is ignored in case 
+for combination_method_polarization. Parameter is ignored in case 
 'least squares' or 'median' is used. Value should be in range
-0 <= trimmed_mean_proportiontocut_polarization_images <= 1. In most cases a 
+0 <= trimmed_mean_proportion_to_cut_polarization <= 1. In most cases a 
 value of 0.1 or 0.15 removes the bad pixels well while producing images very 
 similar to those obtained with 'least squares'.
     
-combination_method_total_intensity_images:
+combination_method_intensity:
 
 Method to be used to produce the incident I_Q- and I_U-images. These images are 
 computed by combining the I_Q- or I_U-images of all HWP cycles using the 
@@ -225,12 +272,12 @@ will remove these bad pixels, but is the least accurate option. 'trimmed mean'
 produces images similar to 'mean', but without the bad pixels. It is generally
 recommended to use either 'trimmed mean' or 'mean'.
 
-trimmed_mean_proportiontocut_total_intensity_images:
+trimmed_mean_proportion_to_cut_intensity:
 
 Fraction to cut off of both tails of the distribution if 'trimmed mean' is used
-for combination_method_total_intensity_images. Parameter is ignored in case 
+for combination_method_intensity. Parameter is ignored in case 
 'mean' or 'median' is used. Value should be in range
-0 <= trimmed_mean_proportiontocut_total_intensity_images <= 1. In most cases a 
+0 <= trimmed_mean_proportion_to_cut_intensity <= 1. In most cases a 
 value of 0.1 or 0.15 removes the bad pixels well while producing images similar
 to those obtained with 'mean'.
 
@@ -438,10 +485,10 @@ def create_overview_headers():
 ###############################################################################
 
 def check_sort_data_create_directories(frames_to_remove=[], 
-                                       combination_method_polarization_images='least squares', 
-                                       centering_method_object='automatic', 
+                                       combination_method_polarization='least squares', 
+                                       object_centering_method='automatic', 
                                        save_preprocessed_data=True, 
-                                       plot_centering_sub_images=True):
+                                       show_images_center_coordinates=True):
     '''
     Check the FITS-headers of the data in the raw directory, remove files and 
     frames as specified by the user, sort the data and create directories to 
@@ -453,15 +500,15 @@ def check_sort_data_create_directories(frames_to_remove=[],
             file can be removed by specifying its integer index, while a frame
             of specific file can be removed by specifying a tuple
             (file_index, frame_index) (default = []).
-        combination_method_polarization_images: method to be used to produce the 
+        combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'. 
-            In this function, if combination_method_polarization_images is forced 
+            In this function, if combination_method_polarization is forced 
             to 'least squares' in case there is an unequal number of Q- and 
             U-measurements (default = 'least squares').
-        centering_method_object: method to center the OBJECT-frames. In this 
-            function, if centering_method_object is 'automatic', it is set to
+        object_centering_method: method to center the OBJECT-frames. In this 
+            function, if object_centering_method is 'automatic', it is set to
             'center frames' if there are CENTER-files, and is set to '
-            gaussian' if there are no CENTER-files. If centering_method_object
+            gaussian' if there are no CENTER-files. If object_centering_method
             is 'center frames' or 'manual', use fixed coordinates as provided by 
             center_coordinates. If 'gaussian', fit a 2D Gaussian to each frame. 
             If 'cross-correlation', fit a 2D Gaussian to the first frame and then
@@ -474,13 +521,13 @@ def check_sort_data_create_directories(frames_to_remove=[],
             and single-difference images in the 'preprocessed' folder so that 
             the preprocessing can be skipped when re-running the pipeline
             (default = True).
-        plot_centering_sub_images: If True, plot the sub-images showing the 
+        show_images_center_coordinates: If True, plot the sub-images showing the 
             center coordinates for each frame. The plots allow for checking
             whether the centering is correct and to scan the data for frames 
             with bad quality (default = True). 
     
-    Note that combination_method_polarization_images, centering_method_object, 
-    save_preprocessed_data and plot_centering_sub_images are input to this 
+    Note that combination_method_polarization, object_centering_method, 
+    save_preprocessed_data and show_images_center_coordinates are input to this 
     function as they are required for the sorting of the data or preparing the
     pre-processing, not to actually perform centering for example.
     
@@ -516,9 +563,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
             If no frames are to be removed the array is empty.        
         file_index_object: list of file indices of OBJECT-files (0-based)
         file_index_flux: list of file indices of FLUX-files (0-based)
-        centering_method_object: method to center the OBJECT-frames, 'center frames', 
+        object_centering_method: method to center the OBJECT-frames, 'center frames', 
             'gaussian', cross-correlation' or 'manual'.
-        combination_method_polarization_images: method to be used to produce the 
+        combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
 
     File written by Rob van Holstein; based on function by Christian Ginski
@@ -671,11 +718,11 @@ def check_sort_data_create_directories(frames_to_remove=[],
     
     if not any([x['ESO DPR TYPE'] == 'SKY' and x['EXPTIME'] == object_exposure_time and x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header]):
         # TODO: Change statement here when pipeline is finished
-        printandlog('\nWARNING, there are no SKY-files to subtract from the OBJECT-files. Although the background will be subtracted from the final images after determining it using the annulus as defined by the input variable \'param_annulus_background\', the result will be less accurate than when subtracting a SKY-image.')    
+        printandlog('\nWARNING, there are no SKY-files to subtract from the OBJECT-files. Although the background will be subtracted from the final images after determining it using the annulus as defined by the input variable \'annulus_background\', the result will be less accurate than when subtracting a SKY-image.')    
     
     if any(header_flux):    
         if not any([x['ESO DPR TYPE'] == 'SKY' and x['EXPTIME'] == flux_exposure_time and x['ESO INS4 FILT2 NAME'] == flux_nd_filter for x in header]):
-            printandlog('\nWARNING, there are no SKY-files to subtract from the FLUX-file(s). Although the background will be subtracted after determining it using the annulus as defined by the input variable \'param_annulus_background_flux\', the result will be less accurate than when subtracting a SKY-image.')
+            printandlog('\nWARNING, there are no SKY-files to subtract from the FLUX-file(s). Although the background will be subtracted after determining it using the annulus as defined by the input variable \'flux_annulus_background\', the result will be less accurate than when subtracting a SKY-image.')
     
     # Perform checks on header values that apply only to CENTER files
     header_center = [x for x in header if x['ESO DPR TYPE'] == 'OBJECT,CENTER']
@@ -870,10 +917,10 @@ def check_sort_data_create_directories(frames_to_remove=[],
             raise IOError('The data has no Q-measurements and therefore cannot be reduced.')
         
     # Force 'least squares' for combining the polarization images if the number of Q- and U-measurements is unequal
-    if combination_method_polarization_images != 'least squares':
+    if combination_method_polarization != 'least squares':
         if stokes_parameter.count('Qplus') != stokes_parameter.count('Uplus'):
-            combination_method_polarization_images = 'least squares'
-            printandlog('\nWARNING, combination_method_polarization_images is forced to \'least squares\' because the number of Q- and U-measurements are unequal. The plots showing the measured star polarization as a function of HWP cycle number will only show the complete HWP cycles.')
+            combination_method_polarization = 'least squares'
+            printandlog('\nWARNING, combination_method_polarization is forced to \'least squares\' because the number of Q- and U-measurements are unequal. The plots showing the measured star polarization as a function of HWP cycle number will only show the complete HWP cycles.')
  
     ###############################################################################
     # Print number of files for each file type
@@ -893,18 +940,18 @@ def check_sort_data_create_directories(frames_to_remove=[],
         for file_sel in path_imcompatible_files:
             printandlog('{0:s}'.format(file_sel))
     
-    # If centering_method_object is 'automatic', set to 'center frames' if there are CENTER-files and otherwise to 'gaussian'
-    if centering_method_object == 'automatic':
+    # If object_centering_method is 'automatic', set to 'center frames' if there are CENTER-files and otherwise to 'gaussian'
+    if object_centering_method == 'automatic':
         if any(path_center_files):
-            printandlog('\ncentering_method_object is \'automatic\': changing it to \'center frames\', because there are CENTER-files.')
-            centering_method_object = 'center frames'
+            printandlog('\nobject_centering_method is \'automatic\': changing it to \'center frames\', because there are CENTER-files.')
+            object_centering_method = 'center frames'
         else:
-            printandlog('\ncentering_method_object is \'automatic\': changing it to \'gaussian\', because there are no CENTER-files.')
-            centering_method_object = 'gaussian'
+            printandlog('\nobject_centering_method is \'automatic\': changing it to \'gaussian\', because there are no CENTER-files.')
+            object_centering_method = 'gaussian'
               
     # Raise error when there are no center files, but they are required by the selected centering method
-    if centering_method_object == 'center frames' and not any(path_center_files):
-        raise IOError('centering_method_object = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(centering_method_object))
+    if object_centering_method == 'center frames' and not any(path_center_files):
+        raise IOError('object_centering_method = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(object_centering_method))
 
     ###############################################################################
     # Create directories to write processed data to
@@ -921,7 +968,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
         else:
             directories_already_existing.append(path_sky_dir)
     
-    if any(path_center_files) and centering_method_object == 'center frames':
+    if any(path_center_files) and object_centering_method == 'center frames':
         if not os.path.exists(path_center_dir):
             os.makedirs(path_center_dir)
             directories_created.append(path_center_dir) 
@@ -942,8 +989,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
         else:
             directories_already_existing.append(path_sky_flux_dir)
        
-    if save_preprocessed_data == True or plot_centering_sub_images == True or \
-       centering_method_object in ['gaussian', 'cross-correlation']:
+    if save_preprocessed_data == True or show_images_center_coordinates == True or \
+       object_centering_method in ['gaussian', 'cross-correlation']:
         if not os.path.exists(path_preprocessed_dir):
             os.makedirs(path_preprocessed_dir)
             directories_created.append(path_preprocessed_dir)
@@ -977,7 +1024,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
            path_flux_files, path_sky_flux_files, indices_to_remove_object, indices_to_remove_sky, \
            indices_to_remove_center, indices_to_remove_object_center, indices_to_remove_flux, \
            indices_to_remove_sky_flux, file_index_object, file_index_flux, \
-           centering_method_object, combination_method_polarization_images
+           object_centering_method, combination_method_polarization
 
 ###############################################################################
 # read_fits_files
@@ -1276,7 +1323,7 @@ def process_center_frames(path_center_files,
                           frame_master_flat, 
                           frame_master_bpm, 
                           frame_master_sky, 
-                          centering_subtract_object=True, 
+                          center_subtract_object=True, 
                           center_coordinates=(477, 521, 1503, 511), 
                           sigma_filtering=True):
     '''
@@ -1295,7 +1342,7 @@ def process_center_frames(path_center_files,
         frame_master_bpm: frame indicating location of bad pixels with 0's and good
             pixels with 1's
         frame_master_sky: master sky frame for OBJECT- (or CENTER)-files
-        centering_subtract_object: if True subtract the OBJECT-file taken
+        center_subtract_object: if True subtract the OBJECT-file taken
             closest in time from the CENTER-file (default = True). This generally
             results in a more accurate determination of the center coordinates
             as the background and any other celestial objects in the field of view
@@ -1325,7 +1372,7 @@ def process_center_frames(path_center_files,
     '''
 
     # Print if and how background is subtracted
-    if centering_subtract_object == True:
+    if center_subtract_object == True:
         printandlog('\nSubtracting OBJECT-file closest in time from CENTER-file(s).')
     else:
         if np.array_equal(frame_master_sky, np.zeros((1024, 2048))):
@@ -1351,7 +1398,7 @@ def process_center_frames(path_center_files,
         # Remove frames based on list of indices provided by the user
         cube_center = np.delete(cube_center, indices_center_sel, axis=0)
    
-        if centering_subtract_object == True:
+        if center_subtract_object == True:
             # Use OBJECT-file closest in time to CENTER-file as backround
             cube_object, header_object = read_fits_files(path=path_object_sel, silent=True)
             
@@ -1565,7 +1612,7 @@ def fit_2d_gaussian(frame, x0=None, y0=None, x_stddev=1.0, y_stddev=1.0, theta=0
 def find_center_coordinates(list_frame_center_processed, 
                             path_processed_center_files, 
                             center_coordinates=(477, 521, 1503, 511), 
-                            param_centering_satellite_spots=(12, None, 30000)):
+                            param_centering=(12, None, 30000)):
     
     '''
     Find coordinates of star center from processed CENTER frames. The function
@@ -1584,7 +1631,7 @@ def find_center_coordinates(list_frame_center_processed,
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511). 
-        param_centering_satellite_spots: length-3-tuple with parameters for 2D 
+        param_centering: length-3-tuple with parameters for 2D 
             Gaussian fitting the centers of the satellite spots in the CENTER-frames:
             crop_radius: half the length of side of square cropped sub-images used 
                 to fit 2D Gaussian to (pixels). Must be integer. If None, the complete 
@@ -1598,7 +1645,7 @@ def find_center_coordinates(list_frame_center_processed,
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_satellite_spots is (12, None, 30000).
+            The default value of param_centering is (12, None, 30000).
                 
     Output:
         center_coordinates: a length-4-tuple with the determined center 
@@ -1612,7 +1659,7 @@ def find_center_coordinates(list_frame_center_processed,
     # Read centering parameters
     x_center_0 = np.array([center_coordinates[0], center_coordinates[2]])
     y_center_0 = np.array([center_coordinates[1], center_coordinates[3]])
-    crop_radius, sigfactor, saturation_level = param_centering_satellite_spots
+    crop_radius, sigfactor, saturation_level = param_centering
     
     # Subtract 1024 from the right x-coordinate to make it valid for a frame half
     x_center_0[1] -= 1024
@@ -1655,11 +1702,11 @@ def find_center_coordinates(list_frame_center_processed,
         path_plot_sub_images = os.path.splitext(path_sel)[0] + '.png'
         printandlog('\nCreating plot ' + path_plot_sub_images + ' showing sub-images of satellite spots with fitted coordinates.')
         fig, axs = plt.subplots(nrows=2, ncols=4, sharex=True, sharey=True, subplot_kw={'xticks': [], 'yticks': []}, figsize=(8, 4.3)) 
-        title_main = 'center_coordinates = %s' % (center_coordinates,)
+        title_main = 'object_center_coordinates = %s' % (center_coordinates,)
         if center_coordinates == (477, 521, 1503, 511):
             title_main += ' (default)'
-        title_main += '\nparam_centering_satellite_spots = %s' % (param_centering_satellite_spots,)         
-        if param_centering_satellite_spots == (12, 7, 30000):
+        title_main += '\ncenter_param_centering = %s' % (param_centering,)         
+        if param_centering == (12, 7, 30000):
             title_main += ' (default)'
         fig.suptitle(title_main, horizontalalignment='center')
         fig.subplots_adjust(top=0.7)
@@ -1821,7 +1868,7 @@ def process_object_frames(path_object_files,
                           center_coordinates=(477, 521, 1503, 511), 
                           param_centering=(60, None, 30000), 
                           collapse_ndit=False, 
-                          plot_centering_sub_images=True):
+                          show_images_center_coordinates=True):
     '''
     Process the OBJECT frames by subtracting the background, flat-fielding, 
     removing bad pixels, centering, computing the mean over the NDIT's and
@@ -1863,7 +1910,7 @@ def process_object_frames(path_object_files,
                 center_coordinates. If None, the complete frame is used for the 
                 fitting and center_coordinates is ignored. The value of
                 crop_radius is also used to create the sub-images when
-                plot_centering_sub_images = True.
+                show_images_center_coordinates = True.
             sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
                 to mask them for fitting the 2D Gaussian. If None, no pixels are
@@ -1880,7 +1927,7 @@ def process_object_frames(path_object_files,
             removal and centering. If False, perform the above steps for each
             frame and after that compute the mean over the frames 
             (default = False).
-        plot_centering_sub_images: If True, plot the sub-images showing the 
+        show_images_center_coordinates: If True, plot the sub-images showing the 
             center coordinates for each frame. The plots allow for checking
             whether the centering is correct and to scan the data for frames 
             with bad quality (default = True). 
@@ -1927,7 +1974,7 @@ def process_object_frames(path_object_files,
         filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
         fwhm = compute_fwhm_separation(filter_used)[0]
     
-    if plot_centering_sub_images == True:
+    if show_images_center_coordinates == True:
         # Create empty lists
         list_x_fit_sub_image = [[], []]
         list_y_fit_sub_image = [[], []]
@@ -1996,7 +2043,7 @@ def process_object_frames(path_object_files,
                     list_shift_x[k].append(511.5 - x_center_0_sel - x_dith)
                     list_shift_y[k].append(511.5 - y_center_0_sel - y_dith)
 
-                    if plot_centering_sub_images == True:
+                    if show_images_center_coordinates == True:
                         # Create sub-image to show center coordinates in
                         crop_radius = 12
                         x_center_0_rounded = int(np.round(x_center_0_sel))
@@ -2043,12 +2090,12 @@ def process_object_frames(path_object_files,
                     list_shift_x[k].append(511.5 - x_fit_template[k] + x_shift_fit - x_dith)
                     list_shift_y[k].append(511.5 - y_fit_template[k] + y_shift_fit - y_dith)   
 
-                    if plot_centering_sub_images == True:
+                    if show_images_center_coordinates == True:
                         # Compute fit position in coordinates of sub-image                   
                         x_fit_sub_image = x_fit_sub_image_template[k] - x_shift_fit
                         y_fit_sub_image = y_fit_sub_image_template[k] - y_shift_fit
                         
-                if plot_centering_sub_images == True:
+                if show_images_center_coordinates == True:
                     # Append sub-image and its fitted coordinates to lists
                     list_x_fit_sub_image[k].append(x_fit_sub_image)
                     list_y_fit_sub_image[k].append(y_fit_sub_image)
@@ -2154,7 +2201,7 @@ def process_object_frames(path_object_files,
             printandlog('x_left    y_left    x_right    y_right')
             printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center_mean[0], y_center_mean[0], x_center_mean[1], y_center_mean[1]))   
 
-    if plot_centering_sub_images == True:
+    if show_images_center_coordinates == True:
         # Compute number of figures, rows and figure size
         number_frames_max = 10
         height_frame = 3.05
@@ -2286,13 +2333,13 @@ def compute_annulus_values(cube, param):
 # subtract_background
 ###############################################################################
 
-def subtract_background(cube, param_annulus_background):   
+def subtract_background(cube, annulus_background):   
     '''
     Subtract background from cube or frame
      
     Input:
         cube: image cube or frame to subtract background from
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
+        annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
@@ -2310,10 +2357,10 @@ def subtract_background(cube, param_annulus_background):
 
     # Determine background in frame or cube and subtract it
     if cube.ndim == 2:
-        background = np.median(compute_annulus_values(cube=cube, param=param_annulus_background)[0])
+        background = np.median(compute_annulus_values(cube=cube, param=annulus_background)[0])
         cube_background_subtracted = cube - background
     elif cube.ndim == 3:
-        background = np.median(compute_annulus_values(cube=cube, param=param_annulus_background)[0], axis=1)
+        background = np.median(compute_annulus_values(cube=cube, param=annulus_background)[0], axis=1)
         cube_background_subtracted = cube - background[:, np.newaxis, np.newaxis] 
    
     return cube_background_subtracted, background
@@ -2327,13 +2374,13 @@ def process_flux_frames(path_flux_files,
                         indices_to_remove_flux, 
                         frame_master_flat, frame_master_bpm, 
                         frame_master_sky_flux, 
-                        param_annulus_background, 
+                        annulus_background, 
                         sigma_filtering=True, 
                         centering_method='gaussian', 
                         center_coordinates=(477, 521, 1503, 511), 
                         param_centering=(60, None, 30000), 
                         collapse_ndit=False, 
-                        plot_centering_sub_images=True):
+                        show_images_center_coordinates=True):
     '''
     Create a master flux-frame from the FLUX-files. Function performs the same
     steps as process_object_frames, but only uses the single-sum (total 
@@ -2348,7 +2395,7 @@ def process_flux_frames(path_flux_files,
         frame_master_bpm: frame indicating location of bad pixels with 0's and 
             good pixels with 1's
         frame_master_sky_flux: master sky frame for FLUX-files
-        param_annulus_background: (list of) length-6-tuple(s) with parameters 
+        annulus_background: (list of) length-6-tuple(s) with parameters 
             to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
@@ -2381,7 +2428,7 @@ def process_flux_frames(path_flux_files,
                 provided by center_coordinates. If None, the complete frame is 
                 used for the fitting and center_coordinates is ignored. The
                 value of crop_radius is also used to create the sub-images when
-                plot_centering_sub_images = True.
+                show_images_center_coordinates = True.
             sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
                 to mask them for fitting the 2D Gaussian. If None, no pixels are
@@ -2398,7 +2445,7 @@ def process_flux_frames(path_flux_files,
             removal and centering. If False, perform the above steps for each
             frame and after that compute the mean over the frames 
             (default = False).
-        plot_centering_sub_images: If True, plot the sub-images showing the 
+        show_images_center_coordinates: If True, plot the sub-images showing the 
             center coordinates for each frame. The plots allow for checking
             whether the centering is correct and to scan the data for frames 
             with bad quality (default = True). 
@@ -2423,19 +2470,19 @@ def process_flux_frames(path_flux_files,
                                             center_coordinates=center_coordinates, 
                                             param_centering=param_centering, 
                                             collapse_ndit=collapse_ndit, 
-                                            plot_centering_sub_images=plot_centering_sub_images)[0]
+                                            show_images_center_coordinates=show_images_center_coordinates)[0]
 
     # Compute flux frame as mean of single sum cube
     frame_flux = np.mean(cube_single_sum, axis=0)
 
     # Determine background and subtract it
     frame_master_flux, background = subtract_background(cube=frame_flux, 
-                                                        param_annulus_background=param_annulus_background)
+                                                        annulus_background=annulus_background)
 
     printandlog('\nSubtracted background in master flux image = %.3f' % background)
       
     # Create frame showing annulus used to determine background
-    frame_annulus_background = compute_annulus_values(cube=frame_flux, param=param_annulus_background)[1]
+    frame_annulus_background = compute_annulus_values(cube=frame_flux, param=annulus_background)[1]
     
     # Print number of frames used to create master flux frame
     number_frames_total = sum([pyfits.getheader(x)['ESO DET NDIT'] for x in path_flux_files])
@@ -2453,19 +2500,19 @@ def process_flux_frames(path_flux_files,
 
 def perform_preprocessing(frames_to_remove=[], 
                           sigma_filtering=True, 
-                          collapse_ndit_object=False, 
-                          plot_centering_sub_images=True, 
-                          centering_method_object='automatic', 
-                          centering_subtract_object=True, 
-                          center_coordinates_object=(477, 521, 1503, 511), 
-                          param_centering_satellite_spots=(12, None, 30000),
-                          param_centering_object=(60, None, 30000), 
-                          centering_method_flux='gaussian', 
-                          center_coordinates_flux=(477, 521, 1503, 511), 
-                          param_centering_flux=(60, None, 30000), 
-                          param_annulus_background_flux='large annulus',
+                          object_collapse_ndit=False, 
+                          show_images_center_coordinates=True, 
+                          object_centering_method='automatic', 
+                          center_subtract_object=True, 
+                          object_center_coordinates=(477, 521, 1503, 511), 
+                          center_param_centering=(12, None, 30000),
+                          object_param_centering=(60, None, 30000), 
+                          flux_centering_method='gaussian', 
+                          flux_center_coordinates=(477, 521, 1503, 511), 
+                          flux_param_centering=(60, None, 30000), 
+                          flux_annulus_background='large annulus',
                           save_preprocessed_data=True, 
-                          combination_method_polarization_images='least squares'):
+                          combination_method_polarization='least squares'):
     '''
     Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data, 
     background subtraction, flat-fielding, bad pixel removal, centering and compution
@@ -2482,27 +2529,27 @@ def perform_preprocessing(frames_to_remove=[],
         sigma_filtering: if True, remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True). Applies
             to all file-types (OBJECT, CENTER, SKY and FLUX).
-        collapse_ndit_object: If True, compute the mean over the (NDIT) frames of
+        object_collapse_ndit: If True, compute the mean over the (NDIT) frames of
             the OBJECT-files before subtracting the background, flat-fielding, bad 
             pixel removal and centering to speed up the preprocessing. If False, 
             perform the above steps for each frame and after that compute the 
             mean over the frames (default = False).
-        plot_centering_sub_images: If True, plot the sub-images showing the 
+        show_images_center_coordinates: If True, plot the sub-images showing the 
             center coordinates for each frame of the OBJECT- and FLUX-files. 
             The plots allow for checking whether the centering is correct and 
             to scan the data for frames with bad quality (default = True).    
-        centering_method_object: method to center the OBJECT-frames. If 
+        object_centering_method: method to center the OBJECT-frames. If 
             'center frames' or 'manual', use fixed coordinates as provided by 
-            center_coordinates_object. If 'gaussian', fit a 2D Gaussian to each frame. 
+            object_center_coordinates. If 'gaussian', fit a 2D Gaussian to each frame. 
             If 'cross-correlation', fit a 2D Gaussian to the first frame and then
             use cross-correlation to align (register) the other frames onto the 
             centered first  frame. For 'gaussian' and 'cross-correlation' 
-            center_coordinates_object is used as initial guess of the center 
+            object_center_coordinates is used as initial guess of the center 
             coordinates and the determined center coordinates are plotted for
-            each image. If 'automatic', centering_method_object is set to
+            each image. If 'automatic', object_centering_method is set to
             'center frames' if there are CENTER-files, and is set to 'gaussian' 
             if there are no CENTER-files (default = 'automatic').
-        centering_subtract_object: if True subtract the OBJECT-file(s) taken
+        center_subtract_object: if True subtract the OBJECT-file(s) taken
             closest in time from the CENTER-file(s) (default = True). This generally
             results in a more accurate determination of the center coordinates
             as the background and any other celestial objects in the field of view
@@ -2510,9 +2557,9 @@ def perform_preprocessing(frames_to_remove=[],
             the CENTER- and OBJECT-frames is large (i.e. difference in derotator 
             position angle for field-tracking and difference in parallactic angle 
             for pupil-tracking), the OBJECT-frame will be rotated around the initial 
-            guess of the centers as defined by center_coordinates_object before 
+            guess of the centers as defined by object_center_coordinates before 
             subtracting it from the CENTER-file. 
-        center_coordinates_object: length-4-tuple with center coordinates of OBJECT-frames:
+        object_center_coordinates: length-4-tuple with center coordinates of OBJECT-frames:
             x_left: x-coordinate of center of left frame half
             y_left: y-coordinate of center of left frame half
             x_right: x-coordinate of center of right frame half
@@ -2520,7 +2567,7 @@ def perform_preprocessing(frames_to_remove=[],
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511). 
-        param_centering_satellite_spots: length-3-tuple with parameters for 
+        center_param_centering: length-3-tuple with parameters for 
             2D Gaussian fitting the centers of the satellite spots in the CENTER-frames:
             crop_radius: half the length of side of square cropped sub-images used 
                 to fit 2D Gaussian to (pixels). Must be integer. If None, the complete 
@@ -2534,10 +2581,10 @@ def perform_preprocessing(frames_to_remove=[],
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_satellite_spots is (12, None, 30000).
-            param_centering_satellite_spots is only used when centering_method_object
+            The default value of center_param_centering is (12, None, 30000).
+            center_param_centering is only used when object_centering_method
             is 'center frames'.
-        param_centering_object: length-3-tuple with parameters for centering of 
+        object_param_centering: length-3-tuple with parameters for centering of 
             OBJECT-frames by fitting a 2D Gaussian or using cross-correlation:
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to and used for 
@@ -2546,7 +2593,7 @@ def perform_preprocessing(frames_to_remove=[],
                 center_coordinates. If None, the complete frame is used for the 
                 fitting and center_coordinates is ignored. The value of
                 crop_radius is also used to create the sub-images when
-                plot_centering_sub_images = True.
+                show_images_center_coordinates = True.
             sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
                 to mask them for fitting the 2D Gaussian. If None, no pixels are
@@ -2556,15 +2603,15 @@ def perform_preprocessing(frames_to_remove=[],
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_object is (12, 7, 30000). 
-            param_centering_object is only used when centering_method_object is 
+            The default value of object_param_centering is (12, 7, 30000). 
+            object_param_centering is only used when object_centering_method is 
             'gaussian' or 'cross-correlation'.
-        centering_method_flux: method to center the FLUX-frames. If 'manual', use fixed 
-            coordinates as provided by center_coordinates_flux. If 'gaussian', fit 
-            a 2D Gaussian to each frame. For 'gaussian' center_coordinates_flux is 
+        flux_centering_method: method to center the FLUX-frames. If 'manual', use fixed 
+            coordinates as provided by flux_center_coordinates. If 'gaussian', fit 
+            a 2D Gaussian to each frame. For 'gaussian' flux_center_coordinates is 
             used as initial guess of the center coordinates and the determined 
             center coordinates are plotted for each image (default = 'gaussian').
-        center_coordinates_flux: length-4-tuple with center coordinates of FLUX-frames:
+        flux_center_coordinates: length-4-tuple with center coordinates of FLUX-frames:
             x_left: x-coordinate of center of left frame half
             y_left: y-coordinate of center of left frame half
             x_right: x-coordinate of center of right frame half
@@ -2572,7 +2619,7 @@ def perform_preprocessing(frames_to_remove=[],
             Note that the center coordinates are defined in the complete frame, 
             i.e. with both detector halves (pixels; 0-based). The default value 
             is (477, 521, 1503, 511).         
-        param_centering_flux: length-3-tuple with parameters for centering of 
+        flux_param_centering: length-3-tuple with parameters for centering of 
             FLUX-frames by fitting a 2D Gaussian:
             crop_radius: half the length of the sides of the square cropped 
                 sub-images used to fit the 2D Gaussian to (pixels). Must be 
@@ -2580,7 +2627,7 @@ def perform_preprocessing(frames_to_remove=[],
                 provided by center_coordinates. If None, the complete frame is 
                 used for the fitting and center_coordinates is ignored. The
                 value of crop_radius is also used to create the sub-images when
-                plot_centering_sub_images = True.
+                show_images_center_coordinates = True.
             sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
                 to mask them for fitting the 2D Gaussian. If None, no pixels are
@@ -2590,9 +2637,9 @@ def perform_preprocessing(frames_to_remove=[],
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of param_centering_flux is (60, None, 30000).
-            param_centering_flux is only used when centering_method_flux is 'gaussian'.  
-        param_annulus_background_flux: (list of) length-6-tuple(s) with parameters 
+            The default value of flux_param_centering is (60, None, 30000).
+            flux_param_centering is only used when flux_centering_method is 'gaussian'.  
+        flux_annulus_background: (list of) length-6-tuple(s) with parameters 
             to generate annulus to measure and subtract background in master flux frame:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
@@ -2609,7 +2656,7 @@ def perform_preprocessing(frames_to_remove=[],
             and single-difference images in the 'preprocessed' folder so that 
             the preprocessing can be skipped when re-running the pipeline
             (default = True). 
-        combination_method_polarization_images: method to be used to produce the 
+        combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median' 
             (default = 'least squares')
         
@@ -2618,7 +2665,7 @@ def perform_preprocessing(frames_to_remove=[],
         cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^-images
         header: list of FITS-headers of raw science frames 
         file_index_object: list of file indices of OBJECT-files (0-based)
-        combination_method_polarization_images: method to be used to produce the 
+        combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
             
     File written by Rob van Holstein; based on function by Christian Ginski
@@ -2637,12 +2684,12 @@ def perform_preprocessing(frames_to_remove=[],
     # Check and sort data, and create directories
     path_object_files, path_sky_files, path_center_files, path_object_center_files, path_flux_files, path_sky_flux_files, \
     indices_to_remove_object, indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, indices_to_remove_flux, \
-    indices_to_remove_sky_flux, file_index_object, file_index_flux, centering_method_object, combination_method_polarization_images \
+    indices_to_remove_sky_flux, file_index_object, file_index_flux, object_centering_method, combination_method_polarization \
     = check_sort_data_create_directories(frames_to_remove=frames_to_remove, 
-                                         combination_method_polarization_images=combination_method_polarization_images, 
-                                         centering_method_object=centering_method_object, 
+                                         combination_method_polarization=combination_method_polarization, 
+                                         object_centering_method=object_centering_method, 
                                          save_preprocessed_data=save_preprocessed_data, 
-                                         plot_centering_sub_images=plot_centering_sub_images)
+                                         show_images_center_coordinates=show_images_center_coordinates)
 
     ###############################################################################
     # Read static master flat and bad pixel map
@@ -2703,7 +2750,7 @@ def perform_preprocessing(frames_to_remove=[],
     # Processing center files and extracting center coordinates
     ###############################################################################
     
-    if centering_method_object == 'center frames':
+    if object_centering_method == 'center frames':
         # Print that we process the center files
         printandlog('\n###############################################################################')
         printandlog('# Processing CENTER-files')
@@ -2729,8 +2776,8 @@ def perform_preprocessing(frames_to_remove=[],
                                                                            frame_master_flat=frame_master_flat, 
                                                                            frame_master_bpm=frame_master_bpm, 
                                                                            frame_master_sky=frame_master_sky, 
-                                                                           centering_subtract_object=centering_subtract_object, 
-                                                                           center_coordinates=center_coordinates_object, 
+                                                                           center_subtract_object=center_subtract_object, 
+                                                                           center_coordinates=object_center_coordinates, 
                                                                            sigma_filtering=sigma_filtering)
     
         # Write processed center frames
@@ -2739,10 +2786,10 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=list_frame_center_processed, path=path_processed_center_files, header=header_center, silent=False)
         
         # Find center coordinates and replace values of center_coordinates
-        center_coordinates_object = find_center_coordinates(list_frame_center_processed=list_frame_center_processed, 
+        object_center_coordinates = find_center_coordinates(list_frame_center_processed=list_frame_center_processed, 
                                                             path_processed_center_files=path_processed_center_files, 
-                                                            center_coordinates=center_coordinates_object, 
-                                                            param_centering_satellite_spots=param_centering_satellite_spots)
+                                                            center_coordinates=object_center_coordinates, 
+                                                            param_centering=center_param_centering)
 
     ###############################################################################
     # Creating processed and centered single-sum and -difference images
@@ -2760,11 +2807,11 @@ def perform_preprocessing(frames_to_remove=[],
                                                                             frame_master_bpm=frame_master_bpm, 
                                                                             frame_master_sky=frame_master_sky, 
                                                                             sigma_filtering=sigma_filtering, 
-                                                                            centering_method=centering_method_object, 
-                                                                            center_coordinates=center_coordinates_object, 
-                                                                            param_centering=param_centering_object, 
-                                                                            collapse_ndit=collapse_ndit_object, 
-                                                                            plot_centering_sub_images=plot_centering_sub_images)
+                                                                            centering_method=object_centering_method, 
+                                                                            center_coordinates=object_center_coordinates, 
+                                                                            param_centering=object_param_centering, 
+                                                                            collapse_ndit=object_collapse_ndit, 
+                                                                            show_images_center_coordinates=show_images_center_coordinates)
     
     if save_preprocessed_data == True:
         # Write preprocessed cubes of single-sum and single-difference images 
@@ -2813,17 +2860,17 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('###############################################################################') 
 
         # Define and print annulus to determine the background from
-        if type(param_annulus_background_flux) == tuple or type(param_annulus_background_flux) == list:
+        if type(flux_annulus_background) == tuple or type(flux_annulus_background) == list:
             printandlog('\nThe background will be determined with a user-defined annulus or several user-defined annuli:')
-            if type(param_annulus_background_flux) == tuple:
-                printandlog(param_annulus_background_flux)
-            elif type(param_annulus_background_flux) == list:
-                for x in param_annulus_background_flux:
+            if type(flux_annulus_background) == tuple:
+                printandlog(flux_annulus_background)
+            elif type(flux_annulus_background) == list:
+                for x in flux_annulus_background:
                     printandlog(x)
-        elif param_annulus_background_flux == 'large annulus':
-            param_annulus_background_flux = (511.5, 511.5, 320, 60, 0, 360)
+        elif flux_annulus_background == 'large annulus':
+            flux_annulus_background = (511.5, 511.5, 320, 60, 0, 360)
             printandlog('\nThe background will be determined with a star-centered annulus located far away from the star:')
-            printandlog(param_annulus_background_flux)
+            printandlog(flux_annulus_background)
 
         # Processthe flux files
         frame_master_flux, frame_annulus_background_flux = process_flux_frames(path_flux_files=path_flux_files, 
@@ -2832,13 +2879,13 @@ def perform_preprocessing(frames_to_remove=[],
                                                                                frame_master_flat=frame_master_flat, 
                                                                                frame_master_bpm=frame_master_bpm, 
                                                                                frame_master_sky_flux=frame_master_sky_flux, 
-                                                                               param_annulus_background=param_annulus_background_flux, 
+                                                                               annulus_background=flux_annulus_background, 
                                                                                sigma_filtering=sigma_filtering, 
-                                                                               centering_method=centering_method_flux, 
-                                                                               center_coordinates=center_coordinates_flux, 
-                                                                               param_centering=param_centering_flux, 
+                                                                               centering_method=flux_centering_method, 
+                                                                               center_coordinates=flux_center_coordinates, 
+                                                                               param_centering=flux_param_centering, 
                                                                                collapse_ndit=False, 
-                                                                               plot_centering_sub_images=plot_centering_sub_images)
+                                                                               show_images_center_coordinates=show_images_center_coordinates)
 
         # Write master flux-frame and frame showing annulus used to determine background
         printandlog('')
@@ -2847,7 +2894,7 @@ def perform_preprocessing(frames_to_remove=[],
 
 #TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star? 
         
-    return cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization_images
+    return cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization
 
 ###############################################################################
 # compute_double_sum_double_difference
@@ -2953,7 +3000,7 @@ def remove_detector_artefact(cube, number_pixels):
 # determine_star_polarization
 ###############################################################################
 
-def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, param_annulus_star, param_annulus_background):   
+def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star, annulus_background):   
     '''
     Determine polarization of star in annulus
      
@@ -2962,14 +3009,14 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, param_annulu
         cube_I_U: cube of I_U-images
         cube_Q: cube of Q-images
         cube_U: cube of U-images
-        param_annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
+        annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
+        annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
@@ -2992,14 +3039,14 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, param_annulu
         mean_median_axis = 1
            
     # Compute flux in I_Q, I_U, Q and U in an annulus minus the background in an annulus
-    I_Q = np.mean(compute_annulus_values(cube=cube_I_Q, param=param_annulus_star)[0], axis=mean_median_axis) - \
-                  np.median(compute_annulus_values(cube=cube_I_Q, param=param_annulus_background)[0], axis=mean_median_axis)       
-    I_U = np.mean(compute_annulus_values(cube=cube_I_U, param=param_annulus_star)[0], axis=mean_median_axis) - \
-                  np.median(compute_annulus_values(cube=cube_I_U, param=param_annulus_background)[0], axis=mean_median_axis)      
-    Q = np.mean(compute_annulus_values(cube=cube_Q, param=param_annulus_star)[0], axis=mean_median_axis) - \
-                np.median(compute_annulus_values(cube=cube_Q, param=param_annulus_background)[0], axis=mean_median_axis)       
-    U = np.mean(compute_annulus_values(cube=cube_U, param=param_annulus_star)[0], axis=mean_median_axis) - \
-                np.median(compute_annulus_values(cube=cube_U, param=param_annulus_background)[0], axis=mean_median_axis)    
+    I_Q = np.mean(compute_annulus_values(cube=cube_I_Q, param=annulus_star)[0], axis=mean_median_axis) - \
+                  np.median(compute_annulus_values(cube=cube_I_Q, param=annulus_background)[0], axis=mean_median_axis)       
+    I_U = np.mean(compute_annulus_values(cube=cube_I_U, param=annulus_star)[0], axis=mean_median_axis) - \
+                  np.median(compute_annulus_values(cube=cube_I_U, param=annulus_background)[0], axis=mean_median_axis)      
+    Q = np.mean(compute_annulus_values(cube=cube_Q, param=annulus_star)[0], axis=mean_median_axis) - \
+                np.median(compute_annulus_values(cube=cube_Q, param=annulus_background)[0], axis=mean_median_axis)       
+    U = np.mean(compute_annulus_values(cube=cube_U, param=annulus_star)[0], axis=mean_median_axis) - \
+                np.median(compute_annulus_values(cube=cube_U, param=annulus_background)[0], axis=mean_median_axis)    
     
     # Compute normalized Stokes q and u
     q = Q / I_Q
@@ -3311,12 +3358,12 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                               cube_U_double_difference, 
                                               header, 
                                               file_index_object, 
-                                              param_annulus_star, 
-                                              param_annulus_background, 
-                                              combination_method_polarization_images='least squares', 
-                                              trimmed_mean_proportiontocut_polarization_images=0.1, 
-                                              combination_method_total_intensity_images='mean', 
-                                              trimmed_mean_proportiontocut_total_intensity_images=0.1, 
+                                              annulus_star, 
+                                              annulus_background, 
+                                              combination_method_polarization='least squares', 
+                                              trimmed_mean_proportion_to_cut_polarization=0.1, 
+                                              combination_method_intensity='mean', 
+                                              trimmed_mean_proportion_to_cut_intensity=0.1, 
                                               single_posang_north_up=True):
     '''
     Calculate incident I_Q-, I_U-, Q- and U-images by correcting for the instrumental polarization effects of IRDIS using the polarimetric instrument model
@@ -3328,28 +3375,28 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         cube_U_double_difference: cube of double-difference Stokes U-images in order of HWP cycles 
         header: list of FITS-headers of OBJECT-files
         file_index_object: list of file indices of OBJECT-files (0-based)
-        param_annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
+        annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
+        annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
             start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-        combination_method_polarization_images: method to be used to produce the incident Q- and U-images, 
+        combination_method_polarization: method to be used to produce the incident Q- and U-images, 
             'least squares', 'trimmed mean' or 'median' (default = 'least squares')
-        trimmed_mean_proportiontocut_polarization_images: fraction to cut off of both tails of the distribution if 
-            combination_method_polarization_images = 'trimmed mean' (default = 0.1) 
-        combination_method_total_intensity_images: method to be used to produce the incident I_Q- and I_U-images, 
+        trimmed_mean_proportion_to_cut_polarization: fraction to cut off of both tails of the distribution if 
+            combination_method_polarization = 'trimmed mean' (default = 0.1) 
+        combination_method_intensity: method to be used to produce the incident I_Q- and I_U-images, 
             'mean', 'trimmed mean' or 'median' (default = 'mean')
-        trimmed_mean_proportiontocut_total_intensity_images: fraction to cut off of both tails of the distribution if 
-            trimmed_mean_proportiontocut_total_intensity_images = 'trimmed mean' (default = 0.1) 
+        trimmed_mean_proportion_to_cut_intensity: fraction to cut off of both tails of the distribution if 
+            trimmed_mean_proportion_to_cut_intensity = 'trimmed mean' (default = 0.1) 
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
@@ -3545,8 +3592,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     ###############################################################################
 
     # If the annuli for the star and background are centered on the star and rotationally symmetric
-    if np.all(np.array(param_annulus_star, ndmin=2)[:, np.array([0, 1, 4, 5])] == np.array([511.5, 511.5, 0, 360])) and \
-       np.all(np.array(param_annulus_background, ndmin=2)[:, np.array([0, 1, 4, 5])] == np.array([511.5, 511.5, 0, 360])):
+    if np.all(np.array(annulus_star, ndmin=2)[:, np.array([0, 1, 4, 5])] == np.array([511.5, 511.5, 0, 360])) and \
+       np.all(np.array(annulus_background, ndmin=2)[:, np.array([0, 1, 4, 5])] == np.array([511.5, 511.5, 0, 360])):
         # Do not rotate the cubes of double-sum and double-difference images and compute normalized Stokes q and u in an annulus   
         printandlog('\nNot rotating the images used to determine the polarization signal in an annulus because the annuli used for the star and the background are centered on the star and rotationally symmetric.')
 
@@ -3554,8 +3601,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                                            cube_I_U=cube_I_U_double_sum, 
                                                            cube_Q=cube_Q_double_difference, 
                                                            cube_U=cube_U_double_difference, 
-                                                           param_annulus_star=param_annulus_star, 
-                                                           param_annulus_background=param_annulus_background)
+                                                           annulus_star=annulus_star, 
+                                                           annulus_background=annulus_background)
 
     else:
         # Rotate the cubes of double-sum and double-difference images so that the annuli are at the right position
@@ -3578,8 +3625,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                                            cube_I_U=cube_I_U_annulus, 
                                                            cube_Q=cube_Q_annulus, 
                                                            cube_U=cube_U_annulus, 
-                                                           param_annulus_star=param_annulus_star, 
-                                                           param_annulus_background=param_annulus_background)
+                                                           annulus_star=annulus_star, 
+                                                           annulus_background=annulus_background)
     
     ###############################################################################
     # Fit polarization of star from measurements using model coefficient matrix
@@ -3719,7 +3766,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         cube_U_incident[i, :, :] = cube_QU_incident[1, :, :]
         
     # Create incident Q- and U-images
-    if combination_method_polarization_images == 'least squares':
+    if combination_method_polarization == 'least squares':
         # Obtain incident Q- and U-images from the least squares solution
         printandlog('\nComputing the incident Q- and U-images using least squares.')
           
@@ -3735,13 +3782,13 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         frame_Q_incident = QU_in[0, :, :] 
         frame_U_incident = QU_in[1, :, :]
     
-    elif combination_method_polarization_images == 'trimmed mean': 
+    elif combination_method_polarization == 'trimmed mean': 
         # Compute incident Q- and U-images from the trimmed mean of incident cubes
-        printandlog('\nComputing the incident Q- and U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_proportiontocut_polarization_images) + '.')
-        frame_Q_incident = trim_mean(cube_Q_incident, proportiontocut=trimmed_mean_proportiontocut_polarization_images, axis=0)
-        frame_U_incident = trim_mean(cube_U_incident, proportiontocut=trimmed_mean_proportiontocut_polarization_images, axis=0)
+        printandlog('\nComputing the incident Q- and U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_proportion_to_cut_polarization) + '.')
+        frame_Q_incident = trim_mean(cube_Q_incident, proportiontocut=trimmed_mean_proportion_to_cut_polarization, axis=0)
+        frame_U_incident = trim_mean(cube_U_incident, proportiontocut=trimmed_mean_proportion_to_cut_polarization, axis=0)
     
-    elif combination_method_polarization_images == 'median': 
+    elif combination_method_polarization == 'median': 
         # Compute incident Q- and U-images from the median of incident cubes 
         printandlog('\nComputing the incident Q- and U-images using the median.')
         frame_Q_incident = np.median(cube_Q_incident, axis=0)
@@ -3762,19 +3809,19 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         cube_I_U_incident[i, :, :] = rotate(frame_I_U, rotation_angle_U, reshape=False)
 
     # Create incident I_Q- and I_U-images
-    if combination_method_total_intensity_images == 'mean':
+    if combination_method_intensity == 'mean':
         # Compute incident I_Q- and I_U-images from the mean 
         printandlog('\nComputing the incident I_Q- and I_U-images using the mean.')
         frame_I_Q_incident = np.mean(cube_I_Q_incident, axis = 0)
         frame_I_U_incident = np.mean(cube_I_U_incident, axis = 0)  
     
-    elif combination_method_total_intensity_images == 'trimmed mean': 
+    elif combination_method_intensity == 'trimmed mean': 
         # Compute incident I_Q- and I_U-images from the trimmed mean
-        printandlog('\nComputing the incident I_Q- and I_U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_proportiontocut_total_intensity_images) + '.')
-        frame_I_Q_incident = trim_mean(cube_I_Q_incident, proportiontocut=trimmed_mean_proportiontocut_total_intensity_images, axis=0)
-        frame_I_U_incident = trim_mean(cube_I_U_incident, proportiontocut=trimmed_mean_proportiontocut_total_intensity_images, axis=0)
+        printandlog('\nComputing the incident I_Q- and I_U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_proportion_to_cut_intensity) + '.')
+        frame_I_Q_incident = trim_mean(cube_I_Q_incident, proportiontocut=trimmed_mean_proportion_to_cut_intensity, axis=0)
+        frame_I_U_incident = trim_mean(cube_I_U_incident, proportiontocut=trimmed_mean_proportion_to_cut_intensity, axis=0)
     
-    elif combination_method_total_intensity_images == 'median': 
+    elif combination_method_intensity == 'median': 
         # Compute incident I_Q- and I_U-images from the median
         printandlog('\nComputing the incident I_Q- and I_U-images using the median.')
         frame_I_Q_incident = np.median(cube_I_Q_incident, axis=0)
@@ -3915,14 +3962,14 @@ def perform_postprocessing(cube_single_sum,
                            cube_single_difference, 
                            header, 
                            file_index_object, 
-                           param_annulus_star='automatic', 
-                           param_annulus_background='large annulus', 
+                           annulus_star='automatic', 
+                           annulus_background='large annulus', 
                            double_difference_type='standard', 
                            remove_vertical_band_detector_artefact=True, 
-                           combination_method_polarization_images='least squares', 
-                           trimmed_mean_proportiontocut_polarization_images=0.1, 
-                           combination_method_total_intensity_images='mean', 
-                           trimmed_mean_proportiontocut_total_intensity_images=0.1, 
+                           combination_method_polarization='least squares', 
+                           trimmed_mean_proportion_to_cut_polarization=0.1, 
+                           combination_method_intensity='mean', 
+                           trimmed_mean_proportion_to_cut_intensity=0.1, 
                            single_posang_north_up=True, 
                            normalized_polarization_images=False):
     '''
@@ -3934,7 +3981,7 @@ def perform_postprocessing(cube_single_sum,
         cube_single_difference: cube of pre-processed single-difference images
         header: list of FITS-headers of OBJECT-files 
         file_index_object: list of file indices of OBJECT-files (0-based)
-        param_annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
+        annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
@@ -3945,10 +3992,10 @@ def perform_postprocessing(cube_single_sum,
             be star-centered and located over the AO residuals. The inner radius 
             and width of the annulus will depend on the filter used. If 
             'star aperture' a small aparture located at the position of
-            the central star will be used. If 'automatic', param_annulus_star will 
+            the central star will be used. If 'automatic', annulus_star will 
             first be set to 'ao residuals' in case of coronagraphic data, and to 
             'star aperture' in case of non-coronagraphic data (default = 'automatic').
-        param_annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
+        annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
@@ -3962,14 +4009,14 @@ def perform_postprocessing(cube_single_sum,
         'standard' or 'normalized' (see van Holstein et al. 2019; default = 'standard')
         remove_vertical_band_detector_artefact: If True remove the vertical band detector artefact seen in 
             the double-difference Q- and U-images. If False don't remove it (default = True).
-        combination_method_polarization_images: method to be used to produce the incident Q- and U-images, 
+        combination_method_polarization: method to be used to produce the incident Q- and U-images, 
             'least squares', 'trimmed mean' or 'median' (default = 'least squares')
-        trimmed_mean_proportiontocut_polarization_images: fraction to cut off of both tails of the distribution if 
-            combination_method_polarization_images = 'trimmed mean' (default = 0.1) 
-        combination_method_total_intensity_images: method to be used to produce the incident I_Q- and I_U-images, 
+        trimmed_mean_proportion_to_cut_polarization: fraction to cut off of both tails of the distribution if 
+            combination_method_polarization = 'trimmed mean' (default = 0.1) 
+        combination_method_intensity: method to be used to produce the incident I_Q- and I_U-images, 
             'mean', 'trimmed mean' or 'median' (default = 'mean')
-        trimmed_mean_proportiontocut_total_intensity_images: fraction to cut off of both tails of the distribution if 
-            trimmed_mean_proportiontocut_total_intensity_images = 'trimmed mean' (default = 0.1) 
+        trimmed_mean_proportion_to_cut_intensity: fraction to cut off of both tails of the distribution if 
+            trimmed_mean_proportion_to_cut_intensity = 'trimmed mean' (default = 0.1) 
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
@@ -3994,53 +4041,53 @@ def perform_postprocessing(cube_single_sum,
     filter_used = header[0]['ESO INS1 FILT ID']   
     coronagraph_used = header[0]['ESO INS COMB ICOR']
 
-    # If param_annulus_star is 'automatic', set to 'ao residuals' for coronagraphic data and to 'star aperture' for non-coronagraphic data
-    if param_annulus_star == 'automatic':
+    # If annulus_star is 'automatic', set to 'ao residuals' for coronagraphic data and to 'star aperture' for non-coronagraphic data
+    if annulus_star == 'automatic':
         if coronagraph_used == 'N_NS_CLEAR':
-            printandlog('\nparam_annulus_star is \'automatic\': changing it to \'star aperture\', because the data is non-coronagraphic.')
-            param_annulus_star = 'star aperture'
+            printandlog('\nannulus_star is \'automatic\': changing it to \'star aperture\', because the data is non-coronagraphic.')
+            annulus_star = 'star aperture'
         else:
-            printandlog('\nparam_annulus_star is \'automatic\': changing it to \'ao residuals\', because the data is coronagraphic.')
-            param_annulus_star = 'ao residuals'
+            printandlog('\nannulus_star is \'automatic\': changing it to \'ao residuals\', because the data is coronagraphic.')
+            annulus_star = 'ao residuals'
 
     # Define and print annulus to determine the star polarization from
-    if type(param_annulus_star) == tuple or type(param_annulus_star) == list:
+    if type(annulus_star) == tuple or type(annulus_star) == list:
         printandlog('\nThe star polarization will be determined with a user-defined annulus or several user-defined annuli:')
-        if type(param_annulus_star) == tuple:
-            printandlog(param_annulus_star)
-        elif type(param_annulus_star) == list:
-            for x in param_annulus_star:
+        if type(annulus_star) == tuple:
+            printandlog(annulus_star)
+        elif type(annulus_star) == list:
+            for x in annulus_star:
                 printandlog(x)
-    elif param_annulus_star == 'ao residuals':
+    elif annulus_star == 'ao residuals':
         if filter_used == 'FILT_BBF_Y':
-            param_annulus_star = (511.5, 511.5, 40, 25, 0, 360)
+            annulus_star = (511.5, 511.5, 40, 25, 0, 360)
         elif filter_used == 'FILT_BBF_J':
-            param_annulus_star = (511.5, 511.5, 45, 30, 0, 360)
+            annulus_star = (511.5, 511.5, 45, 30, 0, 360)
         elif filter_used == 'FILT_BBF_H':
-            param_annulus_star = (511.5, 511.5, 60, 35, 0, 360)
+            annulus_star = (511.5, 511.5, 60, 35, 0, 360)
         elif filter_used == 'FILT_BBF_Ks':
-            param_annulus_star = (511.5, 511.5, 80, 40, 0, 360)  
+            annulus_star = (511.5, 511.5, 80, 40, 0, 360)  
         printandlog('\nThe star polarization will be determined with a star-centered annulus located over the AO residuals:')
-        printandlog(param_annulus_star)
+        printandlog(annulus_star)
         if coronagraph_used == 'N_NS_CLEAR':
             printandlog('\nWARNING, the data is non-coronagraphic so there might be little flux at the AO residuals. Determining the star polarization using an aperture at the position of the central star (\'star aperture\') will probably yield better results.')
-    elif param_annulus_star == 'star aperture':
-        param_annulus_star = (511.5, 511.5, 0, 11, 0, 360)
+    elif annulus_star == 'star aperture':
+        annulus_star = (511.5, 511.5, 0, 11, 0, 360)
         printandlog('\nThe star polarization will be determined with an aparture located at the position of the central star:')
-        printandlog(param_annulus_star)
+        printandlog(annulus_star)
     
     # Define and print annulus to determine the background from
-    if type(param_annulus_background) == tuple or type(param_annulus_background) == list:
+    if type(annulus_background) == tuple or type(annulus_background) == list:
         printandlog('\nThe background will be determined with a user-defined annulus or several user-defined annuli:')
-        if type(param_annulus_background) == tuple:
-            printandlog(param_annulus_background)
-        elif type(param_annulus_background) == list:
-            for x in param_annulus_background:
+        if type(annulus_background) == tuple:
+            printandlog(annulus_background)
+        elif type(annulus_background) == list:
+            for x in annulus_background:
                 printandlog(x)
-    elif param_annulus_background == 'large annulus':
-        param_annulus_background = (511.5, 511.5, 360, 60, 0, 360)
+    elif annulus_background == 'large annulus':
+        annulus_background = (511.5, 511.5, 360, 60, 0, 360)
         printandlog('\nThe background will be determined with a star-centered annulus located far away from the central star:')
-        printandlog(param_annulus_background)
+        printandlog(annulus_background)
     
     ###############################################################################
     # Compute double sum and difference
@@ -4083,12 +4130,12 @@ def perform_postprocessing(cube_single_sum,
                                                 cube_U_double_difference=cube_U_artefact_removed, 
                                                 header=header, 
                                                 file_index_object=file_index_object, 
-                                                param_annulus_star=param_annulus_star, 
-                                                param_annulus_background=param_annulus_background, 
-                                                combination_method_polarization_images=combination_method_polarization_images, 
-                                                trimmed_mean_proportiontocut_polarization_images=trimmed_mean_proportiontocut_polarization_images, 
-                                                combination_method_total_intensity_images=combination_method_total_intensity_images, 
-                                                trimmed_mean_proportiontocut_total_intensity_images=trimmed_mean_proportiontocut_total_intensity_images, 
+                                                annulus_star=annulus_star, 
+                                                annulus_background=annulus_background, 
+                                                combination_method_polarization=combination_method_polarization, 
+                                                trimmed_mean_proportion_to_cut_polarization=trimmed_mean_proportion_to_cut_polarization, 
+                                                combination_method_intensity=combination_method_intensity, 
+                                                trimmed_mean_proportion_to_cut_intensity=trimmed_mean_proportion_to_cut_intensity, 
                                                 single_posang_north_up=single_posang_north_up)
     
     ###############################################################################
@@ -4100,10 +4147,10 @@ def perform_postprocessing(cube_single_sum,
     printandlog('###############################################################################') 
 
     # Determine background in corrected I_Q-, I_U-, Q- and U-frames and subtract it
-    frame_I_Q_background_subtracted, background_frame_I_Q = subtract_background(cube=frame_I_Q_incident, param_annulus_background=param_annulus_background)
-    frame_I_U_background_subtracted, background_frame_I_U = subtract_background(cube=frame_I_U_incident, param_annulus_background=param_annulus_background)
-    frame_Q_background_subtracted, background_frame_Q = subtract_background(cube=frame_Q_incident, param_annulus_background=param_annulus_background)
-    frame_U_background_subtracted, background_frame_U = subtract_background(cube=frame_U_incident, param_annulus_background=param_annulus_background)
+    frame_I_Q_background_subtracted, background_frame_I_Q = subtract_background(cube=frame_I_Q_incident, annulus_background=annulus_background)
+    frame_I_U_background_subtracted, background_frame_I_U = subtract_background(cube=frame_I_U_incident, annulus_background=annulus_background)
+    frame_Q_background_subtracted, background_frame_Q = subtract_background(cube=frame_Q_incident, annulus_background=annulus_background)
+    frame_U_background_subtracted, background_frame_U = subtract_background(cube=frame_U_incident, annulus_background=annulus_background)
    
     # Print resulting background values
     printandlog('\nSubtracted backgrounds in the incident I_Q-, I_U-, Q- and U-images:')
@@ -4121,8 +4168,8 @@ def perform_postprocessing(cube_single_sum,
                                                  cube_I_U=frame_I_U_background_subtracted, 
                                                  cube_Q=frame_Q_background_subtracted, 
                                                  cube_U=frame_U_background_subtracted, 
-                                                 param_annulus_star=param_annulus_star, 
-                                                 param_annulus_background=param_annulus_background)
+                                                 annulus_star=annulus_star, 
+                                                 annulus_background=annulus_background)
     DoLP_star = np.sqrt(q_star**2 + u_star**2)
     AoLP_star = np.mod(np.rad2deg(0.5 * np.arctan2(u_star, q_star)), 180)
     
@@ -4140,9 +4187,9 @@ def perform_postprocessing(cube_single_sum,
     
     # Subtract very small residual background
     frame_Q_star_polarization_subtracted, background_frame_Q_star_polarization_subtracted = subtract_background(cube=frame_Q_star_polarization_subtracted, 
-                                                                                                                param_annulus_background=param_annulus_background)
+                                                                                                                annulus_background=annulus_background)
     frame_U_star_polarization_subtracted, background_frame_U_star_polarization_subtracted = subtract_background(cube=frame_U_star_polarization_subtracted, 
-                                                                                                                param_annulus_background=param_annulus_background)
+                                                                                                                annulus_background=annulus_background)
     
     # Print resulting background values
     printandlog('\nSubtracted residual backgrounds in the star-polarization-subtracted Q- and U-images:')
@@ -4155,10 +4202,10 @@ def perform_postprocessing(cube_single_sum,
         ###############################################################################
         
         # Determine background in corrected I_Q-, I_U-, Q- and U-frames and subtract it
-        cube_I_Q_background_subtracted, background_cube_I_Q = subtract_background(cube=cube_I_Q_incident, param_annulus_background=param_annulus_background)
-        cube_I_U_background_subtracted, background_cube_I_U = subtract_background(cube=cube_I_U_incident, param_annulus_background=param_annulus_background)
-        cube_Q_background_subtracted, background_cube_Q = subtract_background(cube=cube_Q_incident, param_annulus_background=param_annulus_background)
-        cube_U_background_subtracted, background_cube_U = subtract_background(cube=cube_U_incident, param_annulus_background=param_annulus_background)
+        cube_I_Q_background_subtracted, background_cube_I_Q = subtract_background(cube=cube_I_Q_incident, annulus_background=annulus_background)
+        cube_I_U_background_subtracted, background_cube_I_U = subtract_background(cube=cube_I_U_incident, annulus_background=annulus_background)
+        cube_Q_background_subtracted, background_cube_Q = subtract_background(cube=cube_Q_incident, annulus_background=annulus_background)
+        cube_U_background_subtracted, background_cube_U = subtract_background(cube=cube_U_incident, annulus_background=annulus_background)
        
         # Print resulting background values
         printandlog('\nSubtracted mean backgrounds in the incident I_Q-, I_U-, Q- and U-image cubes:')
@@ -4176,8 +4223,8 @@ def perform_postprocessing(cube_single_sum,
                                                                          cube_I_U=cube_I_U_background_subtracted, 
                                                                          cube_Q=cube_Q_background_subtracted, 
                                                                          cube_U=cube_U_background_subtracted, 
-                                                                         param_annulus_star=param_annulus_star, 
-                                                                         param_annulus_background=param_annulus_background)
+                                                                         annulus_star=annulus_star, 
+                                                                         annulus_background=annulus_background)
         DoLP_star_HWP_cycle = np.sqrt(q_star_HWP_cycle**2 + u_star_HWP_cycle**2)
         AoLP_star_HWP_cycle = np.mod(np.rad2deg(0.5 * np.arctan2(u_star_HWP_cycle, q_star_HWP_cycle)), 180)
         
@@ -4277,8 +4324,8 @@ def perform_postprocessing(cube_single_sum,
                            single_posang_north_up=single_posang_north_up)[1:]
 
     # Create frames that show annuli used to retrieve star and background signals   
-    frame_annulus_star = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=param_annulus_star)[1]
-    frame_annulus_background = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=param_annulus_background)[1]
+    frame_annulus_star = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_star)[1]
+    frame_annulus_background = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_background)[1]
 
     ###############################################################################
     # Print image orientation of final images
@@ -4372,55 +4419,55 @@ if double_difference_type not in ['standard', 'normalized']:
 if remove_vertical_band_detector_artefact not in [True, False]:
     raise ValueError('\'remove_vertical_band_detector_artefact\' should be either True or False.')   
 
-#TODO: Add checks of specific values of param_annulus_star/background
+#TODO: Add checks of specific values of annulus_star/background
 #      Check how an annulus behaves when it is cut off by the edge of the image
-if type(param_annulus_star) not in [str, tuple, list]:
-    raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+if type(annulus_star) not in [str, tuple, list]:
+    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-elif type(param_annulus_star) is str and param_annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
-    raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+elif type(annulus_star) is str and annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
+    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-elif type(param_annulus_star) is tuple and len(param_annulus_star) is not 6:
-    raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+elif type(annulus_star) is tuple and len(annulus_star) is not 6:
+    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-elif type(param_annulus_star) is list:
-    if any([type(x) is not tuple for x in param_annulus_star]):
-        raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
-    elif any([len(x) is not 6 for x in param_annulus_star]):
-        raise ValueError('\'param_annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+elif type(annulus_star) is list:
+    if any([type(x) is not tuple for x in annulus_star]):
+        raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+    elif any([len(x) is not 6 for x in annulus_star]):
+        raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-if type(param_annulus_background) not in [str, tuple, list]:
-    raise TypeError('\'param_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+if type(annulus_background) not in [str, tuple, list]:
+    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-elif type(param_annulus_background) is str and param_annulus_background not in ['large annulus']:
-    raise ValueError('\'param_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+elif type(annulus_background) is str and annulus_background not in ['large annulus']:
+    raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-elif type(param_annulus_background) is tuple and len(param_annulus_background) is not 6:
-    raise ValueError('\'param_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+elif type(annulus_background) is tuple and len(annulus_background) is not 6:
+    raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
     
-elif type(param_annulus_background) is list:
-    if any([type(x) is not tuple for x in param_annulus_background]):
-        raise TypeError('\'param_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
-    elif any([len(x) is not 6 for x in param_annulus_background]):
-        raise ValueError('\'param_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+elif type(annulus_background) is list:
+    if any([type(x) is not tuple for x in annulus_background]):
+        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+    elif any([len(x) is not 6 for x in annulus_background]):
+        raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
 
-if combination_method_polarization_images not in ['least squares', 'trimmed mean', 'median']:
-    raise ValueError('\'combination_method_polarization_images\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
+if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
+    raise ValueError('\'combination_method_polarization\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
     
-if type(trimmed_mean_proportiontocut_polarization_images) not in [int, float]:
-    raise TypeError('\'trimmed_mean_proportiontocut_polarization_images\' should be of type int or float.')
+if type(trimmed_mean_proportion_to_cut_polarization) not in [int, float]:
+    raise TypeError('\'trimmed_mean_proportion_to_cut_polarization\' should be of type int or float.')
 
-if not 0 <= trimmed_mean_proportiontocut_polarization_images <= 1:
-    raise ValueError('\'trimmed_mean_proportiontocut_polarization_images\' should be in range 0 <= trimmed_mean_proportiontocut_polarization_images <= 1.')
+if not 0 <= trimmed_mean_proportion_to_cut_polarization <= 1:
+    raise ValueError('\'trimmed_mean_proportion_to_cut_polarization\' should be in range 0 <= trimmed_mean_proportion_to_cut_polarization <= 1.')
 
-if combination_method_total_intensity_images not in ['mean', 'trimmed mean', 'median']:
-    raise ValueError('\'combination_method_total_intensity_images\' should be \'mean\', \'trimmed mean\' or \'median\'.')
+if combination_method_intensity not in ['mean', 'trimmed mean', 'median']:
+    raise ValueError('\'combination_method_intensity\' should be \'mean\', \'trimmed mean\' or \'median\'.')
 
-if type(trimmed_mean_proportiontocut_total_intensity_images) not in [int, float]:
-    raise TypeError('\'trimmed_mean_proportiontocut_total_intensity_images\' should be of type int or float.')
+if type(trimmed_mean_proportion_to_cut_intensity) not in [int, float]:
+    raise TypeError('\'trimmed_mean_proportion_to_cut_intensity\' should be of type int or float.')
 
-if not 0 <= trimmed_mean_proportiontocut_total_intensity_images <= 1:
-    raise ValueError('\'trimmed_mean_proportiontocut_total_intensity_images\' should be in range 0 <= trimmed_mean_proportiontocut_total_intensity_images <= 1.')
+if not 0 <= trimmed_mean_proportion_to_cut_intensity <= 1:
+    raise ValueError('\'trimmed_mean_proportion_to_cut_intensity\' should be in range 0 <= trimmed_mean_proportion_to_cut_intensity <= 1.')
 
 if single_posang_north_up not in [True, False]:
     raise ValueError('\'single_posang_north_up\' should be either True or False.')   
@@ -4432,19 +4479,19 @@ if normalized_polarization_images not in [True, False]:
 # Convert input from 1-based to 0-based indexing
 ###############################################################################
 
-# center_coordinates_object
-center_coordinates_object = tuple(x - 1 for x in center_coordinates_object)
+# object_center_coordinates
+object_center_coordinates = tuple(x - 1 for x in object_center_coordinates)
 
-# center_coordinates_flux
-center_coordinates_flux = tuple(x - 1 for x in center_coordinates_flux)
+# flux_center_coordinates
+flux_center_coordinates = tuple(x - 1 for x in flux_center_coordinates)
 
-# param_annulus_background_flux
-if type(param_annulus_background_flux) is tuple:
-    param_annulus_background_flux = (param_annulus_background_flux[0] - 1,) + (param_annulus_background_flux[1] - 1,) + param_annulus_background_flux[2:]
-elif type(param_annulus_background_flux) is list:
-    for i,x in enumerate(param_annulus_background_flux):
+# flux_annulus_background
+if type(flux_annulus_background) is tuple:
+    flux_annulus_background = (flux_annulus_background[0] - 1,) + (flux_annulus_background[1] - 1,) + flux_annulus_background[2:]
+elif type(flux_annulus_background) is list:
+    for i,x in enumerate(flux_annulus_background):
         x = (x[0] - 1,) + (x[1] - 1,) + x[2:]
-        param_annulus_background_flux[i] = x
+        flux_annulus_background[i] = x
 
 # frames_to_remove
 for i,x in enumerate(frames_to_remove):
@@ -4454,21 +4501,21 @@ for i,x in enumerate(frames_to_remove):
         x -= 1
     frames_to_remove[i] = x
 
-# param_annulus_star
-if type(param_annulus_star) is tuple:
-    param_annulus_star = (param_annulus_star[0] - 1,) + (param_annulus_star[1] - 1,) + param_annulus_star[2:]
-elif type(param_annulus_star) is list:
-    for i,x in enumerate(param_annulus_star):
+# annulus_star
+if type(annulus_star) is tuple:
+    annulus_star = (annulus_star[0] - 1,) + (annulus_star[1] - 1,) + annulus_star[2:]
+elif type(annulus_star) is list:
+    for i,x in enumerate(annulus_star):
         x = (x[0] - 1,) + (x[1] - 1,) + x[2:]
-        param_annulus_star[i] = x
+        annulus_star[i] = x
 
-# param_annulus_background
-if type(param_annulus_background) is tuple:
-    param_annulus_background = (param_annulus_background[0] - 1,) + (param_annulus_background[1] - 1,) + param_annulus_background[2:]
-elif type(param_annulus_background) is list:
-    for i,x in enumerate(param_annulus_background):
+# annulus_background
+if type(annulus_background) is tuple:
+    annulus_background = (annulus_background[0] - 1,) + (annulus_background[1] - 1,) + annulus_background[2:]
+elif type(annulus_background) is list:
+    for i,x in enumerate(annulus_background):
         x = (x[0] - 1,) + (x[1] - 1,) + x[2:]
-        param_annulus_background[i] = x
+        annulus_background[i] = x
       
 ###############################################################################
 # Define global variables
@@ -4539,22 +4586,22 @@ elif os.path.exists(path_log_file) == True and skip_preprocessing == True:
    
 if skip_preprocessing == False:
     # Pre-process raw data
-    cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization_images \
+    cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization \
     = perform_preprocessing(frames_to_remove=frames_to_remove, 
                             sigma_filtering=sigma_filtering, 
-                            collapse_ndit_object=collapse_ndit_object, 
-                            plot_centering_sub_images=plot_centering_sub_images, 
-                            centering_method_object=centering_method_object, 
-                            centering_subtract_object=centering_subtract_object, 
-                            center_coordinates_object=center_coordinates_object, 
-                            param_centering_satellite_spots=param_centering_satellite_spots,
-                            param_centering_object=param_centering_object,
-                            centering_method_flux=centering_method_flux, 
-                            center_coordinates_flux=center_coordinates_flux, 
-                            param_centering_flux=param_centering_flux, 
-                            param_annulus_background_flux=param_annulus_background_flux, 
+                            object_collapse_ndit=object_collapse_ndit, 
+                            show_images_center_coordinates=show_images_center_coordinates, 
+                            object_centering_method=object_centering_method, 
+                            center_subtract_object=center_subtract_object, 
+                            object_center_coordinates=object_center_coordinates, 
+                            center_param_centering=center_param_centering,
+                            object_param_centering=object_param_centering,
+                            flux_centering_method=flux_centering_method, 
+                            flux_center_coordinates=flux_center_coordinates, 
+                            flux_param_centering=flux_param_centering, 
+                            flux_annulus_background=flux_annulus_background, 
                             save_preprocessed_data=save_preprocessed_data, 
-                            combination_method_polarization_images=combination_method_polarization_images)
+                            combination_method_polarization=combination_method_polarization)
 
     # Print that post-processing starts
     printandlog('\n###############################################################################')
@@ -4592,14 +4639,14 @@ perform_postprocessing(cube_single_sum=cube_single_sum,
                        cube_single_difference=cube_single_difference, 
                        header=header, 
                        file_index_object=file_index_object, 
-                       param_annulus_star=param_annulus_star, 
-                       param_annulus_background=param_annulus_background, 
+                       annulus_star=annulus_star, 
+                       annulus_background=annulus_background, 
                        double_difference_type=double_difference_type, 
                        remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact, 
-                       combination_method_polarization_images=combination_method_polarization_images, 
-                       trimmed_mean_proportiontocut_polarization_images=trimmed_mean_proportiontocut_polarization_images, 
-                       combination_method_total_intensity_images=combination_method_total_intensity_images, 
-                       trimmed_mean_proportiontocut_total_intensity_images=trimmed_mean_proportiontocut_total_intensity_images,
+                       combination_method_polarization=combination_method_polarization, 
+                       trimmed_mean_proportion_to_cut_polarization=trimmed_mean_proportion_to_cut_polarization, 
+                       combination_method_intensity=combination_method_intensity, 
+                       trimmed_mean_proportion_to_cut_intensity=trimmed_mean_proportion_to_cut_intensity,
                        single_posang_north_up=single_posang_north_up, 
                        normalized_polarization_images=normalized_polarization_images)
 
