@@ -97,52 +97,52 @@ frames_to_remove = []
 #                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
 #annulus_star = (516, 478, 0, 11, 0, 360)
 
-'''
-###############################################################################
-# Renaming 3 (to be used)
-###############################################################################
 
-# Definition of path
-main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup' # ! CHANGED
+################################################################################
+## Renaming 3 (to be used)
+################################################################################
+#
+## Definition of path
+#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup' # ! CHANGED
+#
+## Pre-processing: basic [Basic pre-processing options]
+#sigma_filtering = True                              # True, False ! CHANGED
+#object_collapse_ndit = False                        # True, False
+#object_centering_method = 'automatic'               # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
+#skip_preprocessing = False                          # True, False
+#frames_to_remove = []                               # list of integers and tuples
+#
+## Post-processing: basic [Basic post-processing options]
+#annulus_star = 'automatic'                          # 'list of length-6-tuples, length-6-tuple or string
+#annulus_background = 'large annulus'                # length-6-tuple or string
+#combination_method_polarization = 'least squares'   # 'trimmed mean', 'least squares', 'median'
+#combination_method_intensity = 'mean'               # 'trimmed mean', 'mean', 'median'
+#normalized_polarization_images = False              # True, False
+#
+## Pre-processing: advanced (generally does not need to be changed) [Advanced pre-processing options]
+#center_subtract_object = True                       # True, False ! CHANGED
+#center_param_centering = (12, None, 30000)          # length-3-tuple
+#object_center_coordinates = (478, 522, 1504, 512)   # length-4-tuple
+#object_param_centering = (60, None, 30000)           # length-3-tuple
+#flux_centering_method = 'gaussian'                  # 'gaussian', 'manual'
+#flux_center_coordinates = (478, 522, 1504, 512)     # 'automatic', length-4-tuple
+#flux_param_centering = (60, None, 30000)            # length-3-tuple
+#flux_annulus_background = 'large annulus'           # lengt-6-tuple
+#
+## Post-processing: advanced (generally does not need to be changed) [Advanced post-processing options]
+#double_difference_type = 'standard'                 # 'standard', 'normalized'
+#trimmed_mean_proportion_to_cut_polarization = 0.10    # float ! CHANGED
+#trimmed_mean_proportion_to_cut_intensity = 0.10       # float ! CHANGED
+#single_posang_north_up = True                       # True, False
+#
+## To be hardcoded
+#save_preprocessed_data = True                       # True, False ! HARDCODE TO TRUE IN CODE
+#show_images_center_coordinates = True               # True, False ! HARDCODE TO TRUE IN CODE
+#remove_vertical_band_detector_artefact = True       # True, False ! HARDCODE TO TRUE IN CODE
+#
+## To be removed:
+#path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
 
-# Pre-processing: basic [Basic pre-processing options]
-sigma_filtering = True                              # True, False ! CHANGED
-object_collapse_ndit = False                        # True, False
-object_centering_method = 'automatic'               # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
-skip_preprocessing = False                          # True, False
-frames_to_remove = []                               # list of integers and tuples
-
-# Post-processing: basic [Basic post-processing options]
-annulus_star = 'automatic'                          # 'list of length-6-tuples, length-6-tuple or string
-annulus_background = 'large annulus'                # length-6-tuple or string
-combination_method_polarization = 'least squares'   # 'trimmed mean', 'least squares', 'median'
-combination_method_intensity = 'mean'               # 'trimmed mean', 'mean', 'median'
-normalized_polarization_images = False              # True, False
-
-# Pre-processing: advanced (generally does not need to be changed) [Advanced pre-processing options]
-center_subtract_object = True                       # True, False ! CHANGED
-center_param_centering = (12, None, 30000)          # length-3-tuple
-object_center_coordinates = (478, 522, 1504, 512)   # length-4-tuple
-object_param_centering = (60, None, 30000)           # length-3-tuple
-flux_centering_method = 'gaussian'                  # 'gaussian', 'manual'
-flux_center_coordinates = (478, 522, 1504, 512)     # 'automatic', length-4-tuple
-flux_param_centering = (60, None, 30000)            # length-3-tuple
-flux_annulus_background = 'large annulus'           # lengt-6-tuple
-
-# Post-processing: advanced (generally does not need to be changed) [Advanced post-processing options]
-double_difference_type = 'standard'                 # 'standard', 'normalized'
-trimmed_mean_proportion_to_cut_polarization = 0.10    # float ! CHANGED
-trimmed_mean_proportion_to_cut_intensity = 0.10       # float ! CHANGED
-single_posang_north_up = True                       # True, False
-
-# To be hardcoded
-save_preprocessed_data = True                       # True, False ! HARDCODE TO TRUE IN CODE
-show_images_center_coordinates = True               # True, False ! HARDCODE TO TRUE IN CODE
-remove_vertical_band_detector_artefact = True       # True, False ! HARDCODE TO TRUE IN CODE
-
-# To be removed:
-path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
-'''
 
 ###############################################################################
 ###############################################################################
@@ -4404,74 +4404,235 @@ def perform_postprocessing(cube_single_sum,
 time_start = time.time()
 
 ###############################################################################
-# Check whether input values are valid
+# Check whether input values are valid (note that checks do not account for all possibilities)
 ###############################################################################
 
+# path_main_dir
 if type(path_main_dir) is not str:
     raise TypeError('\'path_main_dir\' should be of type string.')
 
-if type(path_static_flat_badpixelmap) is not str:
-    raise TypeError('\'path_static_flat_badpixelmap\' should be of type string.')
+# frames_to_remove
+if type(frames_to_remove) is not list:
+      raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+  
+if len(frames_to_remove) != 0:
+    if any([type(x) not in [int, tuple] for x in frames_to_remove]):
+        raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+    if any([len(x) is not 2 for x in frames_to_remove if type(x) is tuple]):
+        raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+    elif any([type(y) is not int for x in frames_to_remove if type(x) is tuple for y in x]):
+        raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
 
+# sigma_filtering 
+if sigma_filtering not in [True, False]:
+    raise ValueError('\'sigma_filtering\' should be either True or False.')   
+
+# object_collapse_ndit
+if object_collapse_ndit not in [True, False]:
+    raise ValueError('\'object_collapse_ndit\' should be either True or False.')   
+                          
+# show_images_center_coordinates
+if show_images_center_coordinates not in [True, False]:
+    raise ValueError('\'show_images_center_coordinates\' should be either True or False.')   
+
+# object_centering_method
+if object_centering_method not in ['automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual']:
+    raise ValueError('\'object_centering_method\' should be \'automatic\', \'center frames\', \'gaussian\', \'cross-correlation\' or \'manual\'.')
+
+# center_subtract_object
+if center_subtract_object not in [True, False]:
+    raise ValueError('\'center_subtract_object\' should be either True or False.')   
+
+# object_center_coordinates
+if type(object_center_coordinates) is not tuple or len(object_center_coordinates) is not 4:
+    raise TypeError('\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+
+if any([type(x) not in [int, float] for x in object_center_coordinates]):
+    raise TypeError('\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+
+# center_param_centering
+if type(center_param_centering) is not tuple or len(center_param_centering) is not 3:
+    raise TypeError('\'center_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
+
+if type(center_param_centering[0]) is not int and center_param_centering[0] is not None:
+    raise TypeError('The first element of \'center_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+
+if type(center_param_centering[0]) is int and center_param_centering[0] <= 0:
+    raise ValueError('The first element of \'center_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+
+if type(center_param_centering[1]) not in [int, float] and center_param_centering[1] is not None:
+    raise TypeError('The second element of \'center_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+
+if type(center_param_centering[1]) in [int, float] and center_param_centering[1] <= 0:
+    raise ValueError('The second element of \'center_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+
+if type(center_param_centering[2]) not in [int, float] and center_param_centering[2] is not None:
+    raise TypeError('The third element of \'center_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+
+if type(center_param_centering[2]) in [int, float] and center_param_centering[2] <= 0:
+    raise ValueError('The third element of \'center_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+
+# object_param_centering
+if type(object_param_centering) is not tuple or len(object_param_centering) is not 3:
+    raise TypeError('\'object_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
+
+if type(object_param_centering[0]) is not int and object_param_centering[0] is not None:
+    raise TypeError('The first element of \'object_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+
+if type(object_param_centering[0]) is int and object_param_centering[0] <= 0:
+    raise ValueError('The first element of \'object_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+
+if type(object_param_centering[1]) not in [int, float] and object_param_centering[1] is not None:
+    raise TypeError('The second element of \'object_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+
+if type(object_param_centering[1]) in [int, float] and object_param_centering[1] <= 0:
+    raise ValueError('The second element of \'object_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+
+if type(object_param_centering[2]) not in [int, float] and object_param_centering[2] is not None:
+    raise TypeError('The third element of \'object_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+
+if type(object_param_centering[2]) in [int, float] and object_param_centering[2] <= 0:
+    raise ValueError('The third element of \'object_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+
+# flux_centering_method
+if flux_centering_method not in ['gaussian', 'manual']:
+    raise ValueError('\'flux_centering_method\' should be either \'gaussian\' or \'manual\'.')
+
+# flux_center_coordinates
+if type(flux_center_coordinates) is not tuple or len(flux_center_coordinates) is not 4:
+    raise TypeError('\'flux_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+
+if any([type(x) not in [int, float] for x in flux_center_coordinates]):
+    raise TypeError('\'flux_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+
+# flux_param_centering
+if type(flux_param_centering) is not tuple or len(flux_param_centering) is not 3:
+    raise TypeError('\'flux_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
+
+if type(flux_param_centering[0]) is not int and flux_param_centering[0] is not None:
+    raise TypeError('The first element of \'flux_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+
+if type(flux_param_centering[0]) is int and flux_param_centering[0] <= 0:
+    raise ValueError('The first element of \'flux_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+
+if type(flux_param_centering[1]) not in [int, float] and flux_param_centering[1] is not None:
+    raise TypeError('The second element of \'flux_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+
+if type(flux_param_centering[1]) in [int, float] and flux_param_centering[1] <= 0:
+    raise ValueError('The second element of \'flux_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+
+if type(flux_param_centering[2]) not in [int, float] and flux_param_centering[2] is not None:
+    raise TypeError('The third element of \'flux_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+
+if type(flux_param_centering[2]) in [int, float] and flux_param_centering[2] <= 0:
+    raise ValueError('The third element of \'flux_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+
+# flux_annulus_background
+if type(flux_annulus_background) not in [str, tuple, list]:
+    raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+if type(flux_annulus_background) is str and flux_annulus_background is not 'large annulus':
+    raise ValueError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+if type(flux_annulus_background) is tuple and len(flux_annulus_background) is not 6:
+    raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+if type(flux_annulus_background) is tuple and any([type(x) not in [int, float] for x in flux_annulus_background]):
+    raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+if type(flux_annulus_background) is list:
+    if any([type(x) is not tuple for x in flux_annulus_background]):
+        raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    elif any([len(x) is not 6 for x in flux_annulus_background]):
+        raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    elif any([type(y) not in [int, float] for x in flux_annulus_background for y in x]):
+        raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+# save_preprocessed_data
+if save_preprocessed_data not in [True, False]:
+    raise ValueError('\'save_preprocessed_data\' should be either True or False.')   
+  
+# skip_preprocessing
+if skip_preprocessing not in [True, False]:
+    raise ValueError('\'skip_preprocessing\' should be either True or False.')   
+
+# double_difference_type
 if double_difference_type not in ['standard', 'normalized']:
     raise ValueError('\'double_difference_type\' should be either \'standard\' or \'normalized\'.')
-    
+
+# remove_vertical_band_detector_artefact    
 if remove_vertical_band_detector_artefact not in [True, False]:
     raise ValueError('\'remove_vertical_band_detector_artefact\' should be either True or False.')   
 
-#TODO: Add checks of specific values of annulus_star/background
-#      Check how an annulus behaves when it is cut off by the edge of the image
+# annulus_star
 if type(annulus_star) not in [str, tuple, list]:
-    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+    raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
-elif type(annulus_star) is str and annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
-    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+if type(annulus_star) is str and annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
+    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
-elif type(annulus_star) is tuple and len(annulus_star) is not 6:
-    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+if type(annulus_star) is tuple and len(annulus_star) is not 6:
+    raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
-elif type(annulus_star) is list:
-    if any([type(x) is not tuple for x in annulus_star]):
-        raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
-    elif any([len(x) is not 6 for x in annulus_star]):
-        raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
-
-if type(annulus_background) not in [str, tuple, list]:
-    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
-
-elif type(annulus_background) is str and annulus_background not in ['large annulus']:
-    raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
-
-elif type(annulus_background) is tuple and len(annulus_background) is not 6:
-    raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+if type(annulus_star) is tuple and any([type(x) not in [int, float] for x in annulus_star]):
+    raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
-elif type(annulus_background) is list:
-    if any([type(x) is not tuple for x in annulus_background]):
-        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
-    elif any([len(x) is not 6 for x in annulus_background]):
-        raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or a list of length-6 tuples of floats.')
+if type(annulus_star) is list:
+    if any([type(x) is not tuple for x in annulus_star]):
+        raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    elif any([len(x) is not 6 for x in annulus_star]):
+        raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    elif any([type(y) not in [int, float] for x in annulus_star for y in x]):
+        raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
+# annulus_background
+if type(annulus_background) not in [str, tuple, list]:
+    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+if type(annulus_background) is str and annulus_background is not 'large annulus':
+    raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+if type(annulus_background) is tuple and len(annulus_background) is not 6:
+    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+if type(annulus_background) is tuple and any([type(x) not in [int, float] for x in annulus_background]):
+    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+if type(annulus_background) is list:
+    if any([type(x) is not tuple for x in annulus_background]):
+        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    elif any([len(x) is not 6 for x in annulus_background]):
+        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    elif any([type(y) not in [int, float] for x in annulus_background for y in x]):
+        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+# combination_method_polarization
 if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
     raise ValueError('\'combination_method_polarization\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
-    
+
+# trimmed_mean_proportion_to_cut_polarization    
 if type(trimmed_mean_proportion_to_cut_polarization) not in [int, float]:
     raise TypeError('\'trimmed_mean_proportion_to_cut_polarization\' should be of type int or float.')
 
 if not 0 <= trimmed_mean_proportion_to_cut_polarization <= 1:
     raise ValueError('\'trimmed_mean_proportion_to_cut_polarization\' should be in range 0 <= trimmed_mean_proportion_to_cut_polarization <= 1.')
 
+# combination_method_intensity
 if combination_method_intensity not in ['mean', 'trimmed mean', 'median']:
     raise ValueError('\'combination_method_intensity\' should be \'mean\', \'trimmed mean\' or \'median\'.')
 
+# trimmed_mean_proportion_to_cut_intensity
 if type(trimmed_mean_proportion_to_cut_intensity) not in [int, float]:
     raise TypeError('\'trimmed_mean_proportion_to_cut_intensity\' should be of type int or float.')
 
 if not 0 <= trimmed_mean_proportion_to_cut_intensity <= 1:
     raise ValueError('\'trimmed_mean_proportion_to_cut_intensity\' should be in range 0 <= trimmed_mean_proportion_to_cut_intensity <= 1.')
 
+# single_posang_north_up
 if single_posang_north_up not in [True, False]:
     raise ValueError('\'single_posang_north_up\' should be either True or False.')   
 
+# normalized_polarization_images
 if normalized_polarization_images not in [True, False]:
     raise ValueError('\'normalized_polarization_images\' should be either True or False.')   
 
