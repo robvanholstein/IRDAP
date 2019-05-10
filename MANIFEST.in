@@ -1,0 +1,7 @@
+include LICENSE
+include README
+#recursive-include fcmaker/example_files  *.params
+#recursive-include fcmaker/mpl_styles  *.mplstyle
+#recursive-include fcmaker/docs * 
+#recursive-exclude * *.DS_Store
+

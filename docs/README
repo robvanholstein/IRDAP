@@ -1,0 +1,13 @@
+To generate all the function docs automatically, use
+
+sphinx-apidoc —f -o source/modules/ ../fcmaker/
+
+and change the title in modules.rst to “The functions of fcmaker”
+
+To build the site:
+
+sphinx-build -a -b html source build
+
+Ipython Notebook are now formatted well without further manual tweak thanks to the nbsphinx package. References and the like may need to be included in them in a NBconvert cell with reST format. 
+
+Any example file (like the csv input files) have been included in the test_arena, so they are shipped with the package.
