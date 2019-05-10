@@ -1,336 +1,50 @@
 '''
+This file contains all functions used by IRDAP.
 
-@author: Rob the Modellist and Christian the Artist
-'''
+IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
+Copyright (C) 2019 R.G. van Holstein
 
-###############################################################################
-###############################################################################
-## Input
-###############################################################################
-###############################################################################
+Full documentation: http://www.spherepol.nl.
+Feedback, questions, comments: vanholstein@strw.leidenuniv.nl.
 
-# Definition of paths
-path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup Sebas 2'
-#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GG Tau'
-path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
+When publishing data reduced with IRDAP you must cite van Holstein et al. 
+(2019): <ADS link>. 
+For data in pupil-tracking mode you must additionally cite van Holstein et al. 
+(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
-# Options for pre-processing
-skip_preprocessing = False
-sigma_filtering = True
-object_centering_method = 'automatic' # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
-center_subtract_object = True
-object_center_coordinates = (478, 522, 1504, 512) # 'default'
-object_param_centering = (60, None, None) # 'default' Coords need to be accurate within a few pixels; for manual without dithering
-center_param_centering = (12, None, 30000)
-object_collapse_ndit = True
-show_images_center_coordinates = True
-#flux_center_coordinates = () #TODO: or list of center coordinates if different for multiple frames
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-# Flux
-flux_centering_method = 'gaussian' # 'gaussian', 'manual'
-#flux_center_coordinates = (445, 491, 1470, 480)
-flux_center_coordinates = (478, 522, 1504, 512) 
-flux_param_centering = (60, None, 30000)
-flux_annulus_background = 'large annulus'
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-save_preprocessed_data = True
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''   
 
-#frames_to_remove = [(1, 3),
-#                    (2, 2),
-#                    (15, 1),     
-#                    4, 
-#                    7,
-#                    16,  
-#                    (17, 2),
-#                    (18, 1),
-#                    (19, 2),
-#                    (19, 6),
-#                    (20, 7)] # GQ Lup
-
-# Options for post-processing
-double_difference_type = 'standard'
-remove_vertical_band_detector_artefact = True
-#annulus_star = 'automatic'
-#annulus_star = 'ao residuals'
-annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'automatic', 'ao residuals', 'star aperture'
-                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
-#annulus_star = (516, 478, 0, 11, 0, 360)
-annulus_background = 'large annulus'
-#combination_method_polarization = 'trimmed mean'
-combination_method_polarization = 'least squares'
-trimmed_mean_proportion_to_cut_polarization = 0.10
-combination_method_intensity = 'mean'
-trimmed_mean_proportion_to_cut_intensity = 0.10
-single_posang_north_up = True
-normalized_polarization_images = True
-
-#TODO: turn combination_method_polarization and trimmed_mean_proportion_to_cut_polarization
-# into a single variable (also for the total intensity ones)? Instead of trimmed mean, give a number, 
-# also for mean can probably give 0 (should test it though).
-
-#frames_to_remove = [(1, 1), 
-#                    (1, 2), 
-#                    (1, 4), 
-#                    (1, 10),
-#                    (2, 6), 
-#                    (2, 7),
-#                    3, 
-#                    (4, 6),
-#                    5,
-#                    (7, 3),
-#                    (7, 6),
-#                    (7, 15), 
-#                    (8, 3)]
-
-#frames_to_remove = [(1, 1),
-#                    (1, 4),
-#                    (8, 3), 
-#                    (9, 1),
-#                    (10, 2),
-#                    (11, 3), 
-#                    (12, 4),
-#                    (12, 5)]
-
-frames_to_remove = []
-
-#annulus_star = [(512.5, 512.5, 50, 20, -65, 130),  # 'ao residuals', 'star aperture'
-#                      (512.5, 512.5, 50, 20, -175, -95)] # GQ Lup
-#annulus_star = (516, 478, 0, 11, 0, 360)
-
-
-################################################################################
-## Renaming 3 (to be used)
-################################################################################
-#
-## Definition of path
-#path_main_dir = r'C:\Users\Rob\Desktop\IP Measurement Test\GQ Lup' # ! CHANGED
-#
-## Pre-processing: basic [Basic pre-processing options]
-#sigma_filtering = True                              # True, False ! CHANGED
-#object_collapse_ndit = False                        # True, False
-#object_centering_method = 'automatic'               # 'automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual'
-#skip_preprocessing = False                          # True, False
-#frames_to_remove = []                               # list of integers and tuples
-#
-## Post-processing: basic [Basic post-processing options]
-#annulus_star = 'automatic'                          # 'list of length-6-tuples, length-6-tuple or string
-#annulus_background = 'large annulus'                # length-6-tuple or string
-#combination_method_polarization = 'least squares'   # 'trimmed mean', 'least squares', 'median'
-#combination_method_intensity = 'mean'               # 'trimmed mean', 'mean', 'median'
-#normalized_polarization_images = False              # True, False
-#
-## Pre-processing: advanced (generally does not need to be changed) [Advanced pre-processing options]
-#center_subtract_object = True                       # True, False ! CHANGED
-#center_param_centering = (12, None, 30000)          # length-3-tuple
-#object_center_coordinates = (478, 522, 1504, 512)   # length-4-tuple
-#object_param_centering = (60, None, 30000)           # length-3-tuple
-#flux_centering_method = 'gaussian'                  # 'gaussian', 'manual'
-#flux_center_coordinates = (478, 522, 1504, 512)     # 'automatic', length-4-tuple
-#flux_param_centering = (60, None, 30000)            # length-3-tuple
-#flux_annulus_background = 'large annulus'           # lengt-6-tuple
-#
-## Post-processing: advanced (generally does not need to be changed) [Advanced post-processing options]
-#double_difference_type = 'standard'                 # 'standard', 'normalized'
-#trimmed_mean_proportion_to_cut_polarization = 0.10    # float ! CHANGED
-#trimmed_mean_proportion_to_cut_intensity = 0.10       # float ! CHANGED
-#single_posang_north_up = True                       # True, False
-#
-## To be hardcoded
-#save_preprocessed_data = True                       # True, False ! HARDCODE TO TRUE IN CODE
-#show_images_center_coordinates = True               # True, False ! HARDCODE TO TRUE IN CODE
-#remove_vertical_band_detector_artefact = True       # True, False ! HARDCODE TO TRUE IN CODE
-#
-## To be removed:
-#path_static_flat_badpixelmap = r'C:\Users\Rob\Documents\PhD\CentralFiles\irdis_polarimetry_pipeline'
-
+__version__ = 'v2019-05-08'
 
 ###############################################################################
-###############################################################################
-## README
-###############################################################################
-###############################################################################
-
-'''
-path_main_dir:
-    
-String of path to location of data directory, e.g. 'C:\Data\T Cha'. The raw
-data, i.e. FITS-files containing the OBJECT, CENTER, SKY and/or FLUX images, 
-need to be present in a subdirectory 'Raw' within this directory, so for the 
-example above in 'C:\Data\T Cha\Raw'. One can use the directory separator 
-('\' above) specific to the operating system in use. The reduced calibration 
-and object data will be written to subdirectories called 'Calibrations' and 
-'Reduced', respectively.
-
-path_static_flat_badpixelmap:
-
-String of path to location of directory containing the FITS-files of the static
-master flats and static bad pixel map, e.g. C:\Data\CentralFiles'. It might be 
-useful to keep these static files in a central directory so that they are 
-easily accessible when reducing various data sets.
-
-save_preprocessed_data:
-    
-If True, save preprocessed cubes of single-sum and single-difference images in 
-the 'preprocessed' folder so that the preprocessing can be skipped when 
-re-running the pipeline.
-
-double_difference_type:
-
-Type of double difference to be computed, either 'standard' or 'normalized' 
-(see van Holstein et al. 2019). In almost all cases one would use 'standard'.
-When there are large variations in seeing and sky transparency among the
-measurements, using 'normalized' can suppress spurious polarization signals and
-improve the quality of the final images.
-
-remove_vertical_band_detector_artefact:
-
-If True remove the vertical band detector artefact seen in the double-
-difference Q- and U-images by subtracting the median of the top and bottom 60
-pixel of each pixel column in the images. If False don't remove the artefact.
-In almost all cases one would use True. One would only use False in case 
-there is a lot of astrophysical signal within in the region where the median 
-is computed.
-
-annulus_star: 
-    
-Parameter(s) defining with which annulus/annuli the star polarization will be
-determined. If 'ao residuals' the annulus will be star-centered and located 
-over the AO residuals. The inner radius and width of the annulus will depend on
-the filter used. If 'star aperture' a small aparture located at the position of
-the central star will be used. One can manually define the annulus/annuli by
-specifying a (list of) length-6-tuple(s) of floats with parameters:
-- x-coordinate of center (pixels, 1-based, center of image is at 512.5)
-- y-coordinate of center (pixels, 1-based, center of image is at 512.5)
-- inner radius (pixels)
-- width (pixels)
-- start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-- end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-For example, when using 'star aperture' the annulus used will be: 
-(512.5, 512.5, 0, 11, 0, 360). The coordinates and angles of the annulus are
-defined with respect to the final orientation of the image. Generally this is 
-North up, except when single_posang_north_up = False (see below) for observations in 
-field-tracking mode with a single derotator POSANG. The annulus used can be
-checked with annulus_star.fits that can be found in the directories with the
-reduced images.
-
-annulus_background: 
-    
-Parameter(s) defining with which annulus/annuli the background will be
-determined. If 'large annulus' the annulus will be star-centered and located 
-far away from the star with an inner radius of 360 pixels and a width of 60
-pixels. One can manually define the annulus/annuli by specifying a (list of) 
-length-6-tuple(s) of floats with parameters:
-- x-coordinate of center (pixels, 1-based, center of image is at 512.5)
-- y-coordinate of center (pixels, 1-based, center of image is at 512.5)
-- inner radius (pixels)
-- width (pixels)
-- start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-- end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-For example, when using 'large annulus' the annulus used will be: 
-(512.5, 512.5, 360, 60, 0, 360). The coordinates and angles of the annulus are
-defined with respect to the final orientation of the image. Generally this is 
-North up, except when single_posang_north_up = False (see below) for observations in 
-field-tracking mode with a single derotator POSANG. The annulus used can be
-checked with annulus_background.fits that can be found in the directories with 
-the reduced images.
-
-combination_method_polarization:
-
-Method to be used to produce the incident Q- and U-images, i.e. the images that
-are corrected for the instrumental polarization effects. Valid values are 
-'least squares', 'trimmed mean' or 'median'. The recommended option is 'trimmed
-mean.' With 'least squares' the images are obtained by solving for every pixel 
-the system of equations describing the measurements using linear least squares 
-(see Eq. 35 of van Holstein et al. 2019). With 'trimmed mean' or 'median' the 
-images are obtained by solving the system of equations for each pair of double-
-difference Q- and U-images (each HWP cycle) separately, and then computing the 
-trimmed mean or median over all resulting images. 'least squares' is the most 
-accurate option, but any unremoved bad pixels will still be visible in the 
-images. Using 'median' will remove these bad pixels, but is the least accurate 
-option and also yields images with a lower signal-to-noise ratio as is clear
-from images of circumstellar disks. Using 'trimmed mean' will yield images that
-have essentially the same accuracy and signal-to-noise ratio images produced 
-using 'least squares', but without the bad pixels. Therefore 'trimmed mean' is 
-the recommended option.
-
-trimmed_mean_proportion_to_cut_polarization:
-
-Fraction to cut off of both tails of the distribution if 'trimmed mean' is used
-for combination_method_polarization. Parameter is ignored in case 
-'least squares' or 'median' is used. Value should be in range
-0 <= trimmed_mean_proportion_to_cut_polarization <= 1. In most cases a 
-value of 0.1 or 0.15 removes the bad pixels well while producing images very 
-similar to those obtained with 'least squares'.
-    
-combination_method_intensity:
-
-Method to be used to produce the incident I_Q- and I_U-images. These images are 
-computed by combining the I_Q- or I_U-images of all HWP cycles using the 
-'mean', 'trimmed mean' or 'median'. 'mean' yields the most accurate images, but
-any unremoved bad pixels will still be visible in the images. Using 'median' 
-will remove these bad pixels, but is the least accurate option. 'trimmed mean'
-produces images similar to 'mean', but without the bad pixels. It is generally
-recommended to use either 'trimmed mean' or 'mean'.
-
-trimmed_mean_proportion_to_cut_intensity:
-
-Fraction to cut off of both tails of the distribution if 'trimmed mean' is used
-for combination_method_intensity. Parameter is ignored in case 
-'mean' or 'median' is used. Value should be in range
-0 <= trimmed_mean_proportion_to_cut_intensity <= 1. In most cases a 
-value of 0.1 or 0.15 removes the bad pixels well while producing images similar
-to those obtained with 'mean'.
-
-single_posang_north_up:
-
-For observations taken in field-tracking mode with a single derotator position 
-angle (INS4.DROT2.POSANG either 0 or with a fixed offset), the final images 
-are rotated with North up if True, and kept in the orientation of the raw 
-frames if False. In the latter case, the images are more accurate as they 
-suffer less from interpolation errors. This is useful when for example 
-extracting the polarized surface brightness distribution of a circumstellar
-disk. Parameter is ignored for field-tracking observations with more than one 
-derotator position angle or observations taken in pupil-tracking mode, because 
-in these cases the final images produced always have North up.
-
-normalized_polarization_images: 
-    
-if True create final images of degree of linear polarization, normalized Stokes
-q and u and degree and angle of linear polarization computed from q and u:
-- DoLP = sqrt(Q^2 + U^2) / (0.5*(I_Q + I_U))
-- q = Q / I_Q
-- u = U / I_U
-- AoLP_norm = 0.5 * arctan(u / q)
-- DoLP_norm = sqrt(q^2 + u^2)
-These images are only valid if all flux in the images originates from the 
-astrophysical source of interest. This is generally the case for observations 
-of for example solar system objects or galaxies. The images are generally not 
-valid for observations of circumstellar disks or companions because in that 
-case a large part of the flux in the total intensity images originates from the 
-central star. AoLP_norm and DoLP_norm are potentially more accurate than 
-AoLP = 0.5 * arctan(U / Q) and DoLP, especially when there are significant 
-variations in seeing and sky transparency among the measurements.
-
-
-'''
-
-###############################################################################
-###############################################################################
-## Function definitions
-###############################################################################
-###############################################################################
-
 # Import packages
+###############################################################################
+
 import os
 import glob
 import time
 import datetime
 import warnings
+import shutil
+import configparser
 import textwrap
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
+from ast import literal_eval
 from scipy.ndimage.interpolation import rotate
 from scipy import interpolate
 from scipy import optimize
@@ -342,14 +56,162 @@ from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
 
 ###############################################################################
+# read_config_file
+###############################################################################
+
+def read_config_file(path_config_file):
+    '''
+    Read the configuration file with input parameters
+    
+    Input:
+        path_config_file: string specifying path of configuration file
+            
+    Output:
+        all input parameters from the configuration file
+    
+    File written by Rob van Holstein
+    Function status: verified       
+    '''
+    
+    # Create a configparser object
+    config = configparser.ConfigParser()
+    
+    # Read the configuration file
+    config_read = config.read(path_config_file)
+    
+    # Raise error if configuration file does not exist
+    if len(config_read) == 0:
+        raise IOError('\n\nThere is no valid configuration file ' + path_config_file + '.')
+          
+    # Get parameters from [Basic pre-processing options] section
+    sigma_filtering         = config.getboolean('Basic pre-processing options', 'sigma_filtering')
+    object_collapse_ndit    = config.getboolean('Basic pre-processing options', 'object_collapse_ndit')
+    object_centering_method = config.get('Basic pre-processing options', 'object_centering_method')
+    skip_preprocessing      = config.getboolean('Basic pre-processing options', 'skip_preprocessing')
+    frames_to_remove        = literal_eval(config.get('Basic pre-processing options', 'frames_to_remove'))
+      
+    # Get parameters from [Basic post-processing options] section
+    annulus_star                    = config.get('Basic post-processing options', 'annulus_star')
+    if '(' in annulus_star or '[' in annulus_star:
+        annulus_star = literal_eval(annulus_star)
+    annulus_background              = config.get('Basic post-processing options', 'annulus_background')
+    if '(' in annulus_background or '[' in annulus_background:
+        annulus_background = literal_eval(annulus_background)
+    combination_method_polarization = config.get('Basic post-processing options', 'combination_method_polarization')
+    combination_method_intensity    = config.get('Basic post-processing options', 'combination_method_intensity')
+    normalized_polarization_images  = config.getboolean('Basic post-processing options', 'normalized_polarization_images')
+    
+    # Get parameters from [Advanced pre-processing options] section
+    center_subtract_object    = config.getboolean('Advanced pre-processing options', 'center_subtract_object')
+    center_param_centering    = literal_eval(config.get('Advanced pre-processing options', 'center_param_centering'))
+    object_center_coordinates = literal_eval(config.get('Advanced pre-processing options', 'object_center_coordinates'))
+    object_param_centering    = literal_eval(config.get('Advanced pre-processing options', 'object_param_centering'))
+    flux_centering_method     = config.get('Advanced pre-processing options', 'flux_centering_method')
+    flux_center_coordinates   = literal_eval(config.get('Advanced pre-processing options', 'flux_center_coordinates'))
+    flux_param_centering      = literal_eval(config.get('Advanced pre-processing options', 'flux_param_centering'))
+    flux_annulus_background   = config.get('Advanced pre-processing options', 'flux_annulus_background')
+    if '(' in flux_annulus_background or '[' in flux_annulus_background:
+        flux_annulus_background = literal_eval(flux_annulus_background)
+    
+    # Get parameters from [Advanced post-processing options] section
+    double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
+    trimmed_mean_prop_to_cut_polar  = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_polar')
+    trimmed_mean_prop_to_cut_intens = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_intens')
+    single_posang_north_up          = config.getboolean('Advanced post-processing options', 'single_posang_north_up')
+
+    return sigma_filtering, \
+           object_collapse_ndit, \
+           object_centering_method, \
+           skip_preprocessing, \
+           frames_to_remove, \
+           annulus_star, \
+           annulus_background, \
+           combination_method_polarization, \
+           combination_method_intensity, \
+           normalized_polarization_images, \
+           center_subtract_object, \
+           center_param_centering, \
+           object_center_coordinates, \
+           object_param_centering, \
+           flux_centering_method, \
+           flux_center_coordinates, \
+           flux_param_centering, \
+           flux_annulus_background, \
+           double_difference_type, \
+           trimmed_mean_prop_to_cut_polar, \
+           trimmed_mean_prop_to_cut_intens, \
+           single_posang_north_up
+
+###############################################################################
+# wrapstr
+###############################################################################
+
+def wrapstr(string):
+    '''
+    Wrap a string to a maximum of 80 characters
+    
+    Input:
+        string: string to be wrapped
+        
+    Return:
+        string: wrapped string
+    
+    File written by Rob van Holstein
+    Function status: verified  
+    '''
+    
+    return textwrap.fill(string, width=80, 
+                         replace_whitespace=False,
+                         drop_whitespace=False,
+                         break_long_words=False)
+    
+###############################################################################
+# print_wrap
+###############################################################################
+
+def print_wrap(string):
+    '''
+    Print a string that is wrapped to a maximum of 80 characters
+    
+    Input:
+        string: string to print
+    
+    File written by Rob van Holstein
+    Function status: verified  
+    '''
+    
+    print(wrapstr(string))
+
+###############################################################################
+# input_wrap
+###############################################################################
+
+def input_wrap(string):
+    '''
+    Redefine input() function so that it prints the string wrapped to a maximum 
+    of 80 characters
+    
+    Input:
+        string: string to use for input() function
+    
+    Output:
+        result from input() function
+        
+    File written by Rob van Holstein
+    Function status: verified  
+    '''
+    
+    return input(wrapstr(string))
+
+###############################################################################
 # printandlog
 ###############################################################################
 
 def printandlog(single_object, wrap=True):
     '''
     Print a single object (string) on screen and save it to a log file. The log
-    file is located at path_main_dir and the name starts with name_file_root, 
-    which are strings and global variables to the funtion.
+    file is located at path_log_file, which is a global variable to the 
+    funtion.
     
     Input:
         single_object: single object (string) to be printed and logged
@@ -360,18 +222,13 @@ def printandlog(single_object, wrap=True):
     Function status: verified
     '''
             
-    # Define path to write log file, using path_reduced_dir as global variable
-    path_log_file = os.path.join(path_main_dir, name_file_root + 'LOG.txt')
-
     if not os.path.exists(path_log_file):
         # Create log file
         open(path_log_file, 'w+')
     
     # Wrap string to not exceed 79 characters
     if type(single_object) == str and wrap == True:
-        single_object = textwrap.fill(single_object, width=80, 
-                                      replace_whitespace=False, 
-                                      break_long_words=False)
+        single_object = wrapstr(single_object)
     
     # Print object in log file and on screen
     print(single_object, file=open(path_log_file, 'a'))
@@ -381,12 +238,15 @@ def printandlog(single_object, wrap=True):
 # create_overview_headers
 ###############################################################################
 
-def create_overview_headers():
+def create_overview_headers(path_raw_dir, path_overview, log=True):
     '''
     Create an overview of relevant FITS-headers and write it to a text-file
     
-    Note that path_raw_diris a global variable to the function.
-        
+    Input:
+        path_raw_dir: string specifying path of raw directory
+        path_overview: string specifying path of header overview to be created
+        log: if True print and log statement that overview has been created, if
+            False do not print anything
     File written by Rob van Holstein
     Function status: verified
     '''
@@ -476,9 +336,9 @@ def create_overview_headers():
     print_array += separator_array
     
     # Save the overview to a text file
-    path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
     np.savetxt(path_overview, print_array, fmt = '%s', newline= '\r\n')
-    printandlog('\nWrote file ' + path_overview + ' showing an overview of relevant headers for each file in the raw directory.')
+    if log:
+        printandlog('\nWrote file ' + path_overview + ' showing an overview of relevant headers for each file in the raw directory.')
     
 ###############################################################################
 # check_sort_data_create_directories
@@ -532,8 +392,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
     pre-processing, not to actually perform centering for example.
     
     Note that path_raw_dir, path_sky_dir, path_center_dir, path_flux_dir, 
-    path_sky_flux_dir, path_preprocessed_dir, path_reduced_dir and 
-    path_reduced_star_pol_subtr_dir are global variables to the function.
+    path_sky_flux_dir, path_preprocessed_dir, path_reduced_dir,  
+    path_reduced_star_pol_subtr_dir and path_overview are global variables to 
+    the function.
     
     Output:
         path_object_files: list of paths to raw OBJECT-files
@@ -577,16 +438,12 @@ def check_sort_data_create_directories(frames_to_remove=[],
     ###############################################################################
    
     # Extract paths to FITS-files in raw directory
-    path_raw_files = glob.glob(os.path.join(path_raw_dir,'*.fits'))
-    
-    # Check if raw folder contains FITS-files
-    if len(path_raw_files) == 0:
-        raise IOError('The raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
-    
-    # Create overview of relevant FITS-headers in a text file
     printandlog('\nReading raw directory ' + path_raw_dir + '.')
-    create_overview_headers()
+    path_raw_files = glob.glob(os.path.join(path_raw_dir,'*.fits'))
 
+    # Create overview of relevant FITS-headers in a text file
+    create_overview_headers(path_raw_dir, path_overview, log=True)
+    
     # Extract headers
     header = [pyfits.getheader(x) for x in path_raw_files]
     
@@ -608,11 +465,11 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     # Raise error if files to remove are listed more than once
     if len(files_to_remove) != len(set(files_to_remove)):
-        raise ValueError('One or more files to be removed are listed more than once.')
+        raise ValueError('\n\nOne or more files to be removed are listed more than once.')
         
     # Raise error if files to remove do not exist
     if not all([x in file_index for x in files_to_remove]):
-        raise ValueError('One or more files to be removed do not exist.')
+        raise ValueError('\n\nOne or more files to be removed do not exist.')
     
     # Print which files will be removed as specified by the user; do not change len() != 0 to any() because any([0]) = False and then it doesn't work
     if len(files_to_remove) != 0:
@@ -635,46 +492,52 @@ def check_sort_data_create_directories(frames_to_remove=[],
     printandlog('\nChecking the headers of all files.')
 
     if len(set([x['ESO OBS TARG NAME'] for x in header])) != 1:
-        raise IOError('The data provided have different targets.')
-    
+        different_targets = input_wrap('\nThe data provided have different targets. Continue anyway? (y/n) ')
+        if different_targets == 'y':
+            printandlog('\nWARNING, continuing reduction although the data provided have different targets.')
+        elif different_targets == 'n':
+            raise IOError('\n\nThe data provided have different targets.')
+        else:
+            raise IOError('\n\nThe provided input \'' + str(different_targets) + '\' is not valid.')
+   
     if not all([x['ESO DPR TYPE'] in ['OBJECT', 'SKY', 'OBJECT,CENTER', 'OBJECT,FLUX'] for x in header]):
-        raise IOError('One or more files are not of type OBJECT, SKY, OBJECT,CENTER or OBJECT,FLUX.')
+        raise IOError('\n\nOne or more files are not of type OBJECT, SKY, OBJECT,CENTER or OBJECT,FLUX.')
         
     if len(set([x['ESO INS4 COMB ROT'] for x in header])) != 1:
-        raise IOError('The data provided use different tracking modes.')
+        raise IOError('\n\nThe data provided use different tracking modes.')
 
     if not header[0]['ESO INS4 COMB ROT'] in ['FIELD', 'PUPIL']:
-        raise IOError('The tracking mode used is not field-tracking or pupil-tracking.')
+        raise IOError('\n\nThe tracking mode used is not field-tracking or pupil-tracking.')
         
     if not all([x['ESO INS4 OPTI8 NAME'] == 'H_NIR' for x in header]):
-        raise IOError('One or more files do not have the NIR half-wave plate inserted.')
+        raise IOError('\n\nOne or more files do not have the NIR half-wave plate inserted.')
     
     if len(set([x['ESO INS1 FILT ID'] for x in header])) != 1:
-        raise IOError('The data provided use different filters.')
+        raise IOError('\n\nThe data provided use different filters.')
 
     if not header[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
-        raise IOError('The filter used is not broadband Y, J, H or Ks. Narrowband filters will be supported in the near future.')
+        raise IOError('\n\nThe filter used is not broadband Y, J, H or Ks. Narrowband filters will be supported in the near future.')
     
     if not all([x['ESO INS1 OPTI2 NAME'] == 'P0-90' for x in header]):
-        raise IOError('One or more files do not have the P0-90 polarizer set inserted.')
+        raise IOError('\n\nOne or more files do not have the P0-90 polarizer set inserted.')
     
     # Perform checks on header values that apply only to OBJECT files
     header_object = [x for x in header if x['ESO DPR TYPE'] == 'OBJECT']
         
     if not any(header_object):
-        raise IOError('There are no OBJECT-files.')
+        raise IOError('\n\nThere are no OBJECT-files.')
         
     if len(set([x['EXPTIME'] for x in header_object])) != 1:
-        raise IOError('The OBJECT-files have different exposure times.')
+        raise IOError('\n\nThe OBJECT-files have different exposure times.')
     
     if len(set([x['ESO INS4 FILT2 NAME'] for x in header_object])) != 1:
-        raise IOError('The OBJECT-files use different NIR neutral density filters.')
+        raise IOError('\n\nThe OBJECT-files use different NIR neutral density filters.')
     
     if header_object[0]['ESO INS4 FILT2 NAME'] != 'OPEN':
         printandlog('\nWARNING, the OBJECT-files use a NIR neutral density filter. The final data product will be less accurate because the neutral density filters are known to have a depolarizing effect that is not calibrated.')
     
     if len(set([x['ESO INS COMB ICOR'] for x in header_object])) != 1:
-        raise IOError('The OBJECT-files use different coronagraph settings.')
+        raise IOError('\n\nThe OBJECT-files use different coronagraph settings.')
     
     # Determine exposure time and NIR neutral density filter for OBJECT files  
     object_exposure_time = header_object[0]['EXPTIME']
@@ -685,10 +548,10 @@ def check_sort_data_create_directories(frames_to_remove=[],
     
     if any(header_flux):
         if len(set([x['EXPTIME'] for x in header_flux])) != 1:
-            raise IOError('The FLUX-files have different exposure times.')
+            raise IOError('\n\nThe FLUX-files have different exposure times.')
         
         if len(set([x['ESO INS4 FILT2 NAME'] for x in header_flux])) != 1:
-            raise IOError('The FLUX-files use different NIR neutral density filters.')
+            raise IOError('\n\nThe FLUX-files use different NIR neutral density filters.')
         
         # Determine exposure time and NIR neutral density filter for FLUX files     
         flux_exposure_time = header_flux[0]['EXPTIME']
@@ -706,18 +569,18 @@ def check_sort_data_create_directories(frames_to_remove=[],
     if any(header_sky):
         if not all([x['EXPTIME'] in [object_exposure_time, flux_exposure_time] for x in header_sky]):
             if any(header_flux):
-                raise IOError('One or more SKY-files have an exposure time different from that of the OBJECT- or FLUX-files.')
+                raise IOError('\n\nOne or more SKY-files have an exposure time different from that of the OBJECT- or FLUX-files.')
             else:
-                raise IOError('One or more SKY-files have an exposure time different from that of the OBJECT-files.')
+                raise IOError('\n\nOne or more SKY-files have an exposure time different from that of the OBJECT-files.')
     
         if not all([x['ESO INS4 FILT2 NAME'] in [object_nd_filter, flux_nd_filter] for x in header_sky]):
             if any(header_flux):
-                raise IOError('One or more SKY-files use a NIR neutral density filter different from that of the OBJECT- or FLUX-files.')
+                raise IOError('\n\nOne or more SKY-files use a NIR neutral density filter different from that of the OBJECT- or FLUX-files.')
             else:
-                raise IOError('One or more SKY-files use a NIR neutral density filter different from that of the OBJECT-files.')
+                raise IOError('\n\nOne or more SKY-files use a NIR neutral density filter different from that of the OBJECT-files.')
     
     if not any([x['ESO DPR TYPE'] == 'SKY' and x['EXPTIME'] == object_exposure_time and x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header]):
-        # TODO: Change statement here when pipeline is finished
+        # TODO: Change statement here when background subtraction with dark,background is implemented
         printandlog('\nWARNING, there are no SKY-files to subtract from the OBJECT-files. Although the background will be subtracted from the final images after determining it using the annulus as defined by the input variable \'annulus_background\', the result will be less accurate than when subtracting a SKY-image.')    
     
     if any(header_flux):    
@@ -729,10 +592,10 @@ def check_sort_data_create_directories(frames_to_remove=[],
     
     if any(header_center):
         if not all([x['EXPTIME'] == object_exposure_time for x in header_center]):
-            raise IOError('One or more CENTER-files have an exposure time different from that of the OBJECT-files.')
+            raise IOError('\n\nOne or more CENTER-files have an exposure time different from that of the OBJECT-files.')
         
         if not all([x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header_center]):
-            raise IOError('One or more CENTER-files use a NIR neutral density filter different from that of the OBJECT-files.')
+            raise IOError('\n\nOne or more CENTER-files use a NIR neutral density filter different from that of the OBJECT-files.')
          
     # Print that headers have been checked and passed all checks
     printandlog('\nThe FITS-headers of the raw data have passed all checks.')
@@ -748,19 +611,19 @@ def check_sort_data_create_directories(frames_to_remove=[],
     # Raise error if frames to be removed are listed more than once
     frames_to_remove_tuples = [x for x in frames_to_remove if type(x) is tuple]
     if len(frames_to_remove_tuples) != len(set(frames_to_remove_tuples)):
-        raise ValueError('One or more frames to be removed are listed more than once.')
+        raise ValueError('\n\nOne or more frames to be removed are listed more than once.')
 
     # Raise error if frames need to be removed from a file that is already completely removed
     if any([x in files_to_remove for x in files_to_remove_frames_from]):
-        raise ValueError('One or more files to remove frames from are already completely removed.')  
+        raise ValueError('\n\nOne or more files to remove frames from are already completely removed.')  
 
     # Raise error if files to remove do not exist
     if not all([x in file_index for x in files_to_remove_frames_from]):
-        raise ValueError('One or more files to remove frames from do not exist.')
+        raise ValueError('\n\nOne or more files to remove frames from do not exist.')
 
     # Raise error if for one or more files the indices of frames to remove are negative or zero
     if any([x < 0 for x in frames_to_remove_per_file]):
-        raise ValueError('One or more of the frame numbers to be removed are negative or zero.')
+        raise ValueError('\n\nOne or more of the frame numbers to be removed are negative or zero.')
 
     # Create list of arrays with indices of frames to remove for each file
     indices_to_remove = [np.sort(frames_to_remove_per_file[files_to_remove_frames_from == x]).astype(np.int) for x in file_index]
@@ -770,11 +633,11 @@ def check_sort_data_create_directories(frames_to_remove=[],
     
     # Raise error if one or more files have all the frames removed
     if any([np.array_equal(x, np.arange(0, y)) for x,y in zip(indices_to_remove, NDIT)]):
-        raise ValueError('One or more files have all frames removed. If you want to remove the complete file, please specify just the file number in frames_to_remove and not a tuple of frames.')
+        raise ValueError('\n\nOne or more files have all frames removed. If you want to remove the complete file, please specify just the file number in frames_to_remove and not a tuple of frames.')
     
     # Raise error if for one or more files the indices of frames to remove are outside of the NDIT
     if any([any(x >= y) for x,y in zip(indices_to_remove, NDIT)]):
-        raise ValueError('One or more of the frame numbers to be removed are higher than the NDIT of the corresponding file.')
+        raise ValueError('\n\nOne or more of the frame numbers to be removed are higher than the NDIT of the corresponding file.')
 
     # Print which frames will be removed as specified by the user; do not change len() != 0 to any() because any([0]) = False and then it doesn't work
     if len(files_to_remove_frames_from) != 0:
@@ -896,7 +759,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
         printandlog('\nWARNING, the following FITS-file(s) will not be used because of a missing Q^+/- or U^+/-counterpart:')
         printandlog('File     Name')
         for file_to_remove in files_to_remove_stokes:
-            separation = 9 - len(str(file_index_object[file_to_remove]))
+            separation = 9 - len(str(file_index_object[file_to_remove] + 1))
             printandlog(str(file_index_object[file_to_remove] + 1) + separation*' ' + os.path.basename(path_object_files[file_to_remove]), wrap=False)
  
     # Print warning if one or more files are removed that would have frames removed
@@ -912,9 +775,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
     # Check if there are both Q- and U-measurements
     if not all([x in stokes_parameter for x in ['Qplus', 'Qminus', 'Uplus', 'Uminus']]):
         if any([x in stokes_parameter for x in ['Qplus', 'Qminus']]):
-            raise IOError('The data has no U-measurements and therefore cannot be reduced.')
+            raise IOError('\n\nThe data has no U-measurements and therefore cannot be reduced.')
         if any([x in stokes_parameter for x in ['Uplus', 'Uminus']]):
-            raise IOError('The data has no Q-measurements and therefore cannot be reduced.')
+            raise IOError('\n\nThe data has no Q-measurements and therefore cannot be reduced.')
         
     # Force 'least squares' for combining the polarization images if the number of Q- and U-measurements is unequal
     if combination_method_polarization != 'least squares':
@@ -951,7 +814,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
               
     # Raise error when there are no center files, but they are required by the selected centering method
     if object_centering_method == 'center frames' and not any(path_center_files):
-        raise IOError('object_centering_method = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(object_centering_method))
+        raise IOError('\n\nobject_centering_method = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(object_centering_method))
 
     ###############################################################################
     # Create directories to write processed data to
@@ -1066,7 +929,7 @@ def read_fits_files(path, silent=False):
         if data_read.ndim == 2:
             data_read = np.expand_dims(data_read, axis=0)
         elif data_read.ndim != 3:
-            raise IOError('{0:s} is neither a cube nor a frame'.format(path_sel))
+            raise IOError('\n\n{0:s} is neither a cube nor a frame'.format(path_sel))
         data.append(data_read)
         header.append(header_read) 
         if silent is not True:
@@ -1432,7 +1295,9 @@ def process_center_frames(path_center_files,
             
             if np.abs(delta_rot_angle) > max_image_rotation:
                 # Remove bad pixels from background frame and cut into two halves
+                center_coordinates_print = tuple(x + 1 for x in center_coordinates)
                 printandlog('\nRotating OBJECT-frame around the initial guess of center before subtracting it from the CENTER-file.')
+                printandlog('center_coordinates = ' + str(center_coordinates_print))
                 printandlog('')
                 frame_background = remove_bad_pixels(cube=frame_background, frame_master_bpm=frame_master_bpm, sigma_filtering=sigma_filtering)
                 frame_background_left = frame_background[:, :1024]
@@ -1518,13 +1383,13 @@ def fit_2d_gaussian(frame, x0=None, y0=None, x_stddev=1.0, y_stddev=1.0, theta=0
 
     # Check input and raise errors
     if frame.ndim != 2:
-        raise ValueError('frame should be a 2-dimensional array.')
+        raise ValueError('\n\nframe should be a 2-dimensional array.')
     if type(crop_radius) != int and crop_radius is not None:
-        raise TypeError('crop_radius must be integer or None.') 
+        raise TypeError('\n\ncrop_radius must be integer or None.') 
     if type(x0) not in [int, np.int32, np.int64] and y0 is not None:
-        raise TypeError('x0 must be integer or None.')
+        raise TypeError('\n\nx0 must be integer or None.')
     if type(y0) not in [int, np.int32, np.int64] and x0 is not None:
-        raise TypeError('y0 must be integer or None.')
+        raise TypeError('\n\ny0 must be integer or None.')
 
     # Set approximate center coordinates to center of frame if not specified
     if x0 is None:
@@ -1702,11 +1567,12 @@ def find_center_coordinates(list_frame_center_processed,
         path_plot_sub_images = os.path.splitext(path_sel)[0] + '.png'
         printandlog('\nCreating plot ' + path_plot_sub_images + ' showing sub-images of satellite spots with fitted coordinates.')
         fig, axs = plt.subplots(nrows=2, ncols=4, sharex=True, sharey=True, subplot_kw={'xticks': [], 'yticks': []}, figsize=(8, 4.3)) 
-        title_main = 'object_center_coordinates = %s' % (center_coordinates,)
+        center_coordinates_print = tuple(x + 1 for x in center_coordinates)
+        title_main = 'object_center_coordinates = %s' % (center_coordinates_print,)
         if center_coordinates == (477, 521, 1503, 511):
             title_main += ' (default)'
         title_main += '\ncenter_param_centering = %s' % (param_centering,)         
-        if param_centering == (12, 7, 30000):
+        if param_centering == (12, None, 30000):
             title_main += ' (default)'
         fig.suptitle(title_main, horizontalalignment='center')
         fig.subplots_adjust(top=0.7)
@@ -1758,7 +1624,7 @@ def find_center_coordinates(list_frame_center_processed,
         plt.figtext(left_center[0], 0.81, 'Left frame half', va='center', ha='center', size=12)
         plt.figtext(right_center[0], 0.81, 'Right frame half', va='center', ha='center', size=12)
         plt.savefig(path_plot_sub_images, dpi = 300, bbox_inches = 'tight')
-        plt.show()
+        # plt.show()
                
         # Write REG-file with fitted lines and circles indicating centers to use with FITS-files of processed center frames
         path_reg_file = os.path.splitext(path_sel)[0] + '.reg'
@@ -1790,7 +1656,7 @@ def find_center_coordinates(list_frame_center_processed,
     for i, path_sel in enumerate(path_processed_center_files):
         separator = ' '*(max_path_length - len(os.path.basename(path_sel)))
         printandlog(os.path.basename(path_sel) + separator + '    %.2f    %.2f    %.2f    %.2f' 
-                    % (x_center_fit[i, 0], y_center_fit[i, 0], x_center_fit[i, 1], y_center_fit[i, 1]), wrap=False)    
+                    % (x_center_fit[i, 0] + 1, y_center_fit[i, 0] + 1, x_center_fit[i, 1] + 1, y_center_fit[i, 1] + 1), wrap=False)    
     
     # Compute mean of fitted center coordinates    
     x_center = np.mean(x_center_fit, axis=0)
@@ -1806,7 +1672,7 @@ def find_center_coordinates(list_frame_center_processed,
         printandlog('\nFinal center coordinates (pixels):')
         printandlog('x_left' + separator + '         y_left' + separator + '         x_right' + separator + '         y_right', wrap=False)
         printandlog('%.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f' 
-                    % (x_center[0], x_center_std[0], y_center[0], y_center_std[0], x_center[1], x_center_std[1], y_center[1], y_center_std[1]), wrap=False)    
+                    % (x_center[0] + 1, x_center_std[0], y_center[0] + 1, y_center_std[0], x_center[1] + 1, x_center_std[1], y_center[1] + 1, y_center_std[1]), wrap=False)    
         
         # Print warning if there is significant deviation among the center coordinates found
         if any(np.append(x_center_std, y_center_std) > 0.5):
@@ -1815,7 +1681,7 @@ def find_center_coordinates(list_frame_center_processed,
         # Print mean center coordinates without error
         printandlog('\nFinal center coordinates (pixels):')
         printandlog('x_left    y_left    x_right    y_right')
-        printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center[0], y_center[0], x_center[1], y_center[1]))    
+        printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center[0] + 1, y_center[0] + 1, x_center[1] + 1, y_center[1] + 1))    
 
     # Assemble output
     center_coordinates = (x_center[0], y_center[0], x_center[1], y_center[1])
@@ -1942,16 +1808,21 @@ def process_object_frames(path_object_files,
     '''
     
     # Print centering method selected
+    center_coordinates_print = tuple(x + 1 for x in center_coordinates)
     if centering_method == 'center frames':
         printandlog('\nCentering frames with center coordinates found from CENTER-file(s):')
-        printandlog('(%.2f, %.2f, %.2f, %.2f)' % center_coordinates)
+        printandlog('(%.2f, %.2f, %.2f, %.2f)' % center_coordinates_print)
     elif centering_method == 'gaussian':
         printandlog('\nCentering frames by fitting a 2D Gaussian.')
+        printandlog('center_coordinates = ' + str(center_coordinates_print))
+        printandlog('param_centering = ' + str(param_centering)) 
     elif centering_method == 'cross-correlation':
         printandlog('\nCentering frames using cross-correlation.')
+        printandlog('center_coordinates = ' + str(center_coordinates_print))
+        printandlog('param_centering = ' + str(param_centering)) 
     elif centering_method == 'manual':
         printandlog('\nCentering frames with user-provided center coordinates:')
-        printandlog('(%.2f, %.2f, %.2f, %.2f)' % center_coordinates)
+        printandlog('(%.2f, %.2f, %.2f, %.2f)' % center_coordinates_print)
 
     # Assemble center coordinates in two arrays and subtract 1024 from the right x-coordinate to make it valid for a frame half
     x_center_0 = np.array([center_coordinates[0], center_coordinates[2] - 1024])
@@ -2157,8 +2028,7 @@ def process_object_frames(path_object_files,
                     width_figure = 40                  
                 plot_name = name_file_root + 'center_coordinates_' + x_y + '_' + left_right + '.png'            
                 path_plot = os.path.join(path_plots_dir, plot_name)
-                printandlog('\nCreating plot ' + path_plot + ' showing the center coordinates in the ' 
-                            + x_y + '-direction of the ' + left_right + ' frame halves.')
+                printandlog(path_plot, wrap=False)
                 image_number = np.arange(1, len(data)+1)
                 plt.figure(figsize = (width_figure, 3.0))
                 plt.plot(image_number, data, '-ok')
@@ -2173,13 +2043,14 @@ def process_object_frames(path_object_files,
                 ax.grid()
                 plt.tight_layout()
                 plt.savefig(path_plot, dpi=300, bbox_inches='tight')
-                plt.show()
+                # plt.show()
 
             # Plot center coordinates in x- and y-direction of left and right frame halves
-            plot_center_coordinates(data=x_center[:, 0], x_y='x', left_right='left')
-            plot_center_coordinates(data=y_center[:, 0], x_y='y', left_right='left')
-            plot_center_coordinates(data=x_center[:, 1], x_y='x', left_right='right')
-            plot_center_coordinates(data=y_center[:, 1], x_y='y', left_right='right') 
+            printandlog('\nCreating plots showing the fitted center coordinates of each image:')
+            plot_center_coordinates(data=x_center[:, 0] + 1, x_y='x', left_right='left')
+            plot_center_coordinates(data=y_center[:, 0] + 1, x_y='y', left_right='left')
+            plot_center_coordinates(data=x_center[:, 1] + 1, x_y='x', left_right='right')
+            plot_center_coordinates(data=y_center[:, 1] + 1, x_y='y', left_right='right') 
         
             # Compute standard deviation of determined center coordinates
             x_center_std = np.std(x_center, ddof=1, axis=0)
@@ -2190,7 +2061,7 @@ def process_object_frames(path_object_files,
             printandlog('\nMean center coordinates (pixels):')
             printandlog('x_left' + separator + '         y_left' + separator + '         x_right' + separator + '         y_right')
             printandlog('%.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f' 
-                        % (x_center_mean[0], x_center_std[0], y_center_mean[0], y_center_std[0], x_center_mean[1], x_center_std[1], y_center_mean[1], y_center_std[1]))    
+                        % (x_center_mean[0] + 1, x_center_std[0], y_center_mean[0] + 1, y_center_std[0], x_center_mean[1] + 1, x_center_std[1], y_center_mean[1] + 1, y_center_std[1]))    
             
             # Print warning if there is significant deviation among the center coordinates found
             if any(np.append(x_center_std, y_center_std) > 0.5):
@@ -2199,7 +2070,7 @@ def process_object_frames(path_object_files,
             # Print mean center coordinates without error
             printandlog('\nCenter coordinates (pixels):')
             printandlog('x_left    y_left    x_right    y_right')
-            printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center_mean[0], y_center_mean[0], x_center_mean[1], y_center_mean[1]))   
+            printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center_mean[0] + 1, y_center_mean[0] + 1, x_center_mean[1] + 1, y_center_mean[1] + 1))   
 
     if show_images_center_coordinates == True:
         # Compute number of figures, rows and figure size
@@ -2216,13 +2087,15 @@ def process_object_frames(path_object_files,
         # Plot sub-images used to determine center coordinates
         cmap = mpl.cm.viridis
         cmap.set_bad(color='gray')
+        
+        printandlog('\nCreating plot(s) showing the sub-images of each frame and the center coordinates fitted:')
         for i in range(number_figures):
             if number_figures == 1:
                 plot_name = name_file_root + 'centering_sub_images.png'            
             else:
                 plot_name = name_file_root + 'centering_sub_images_' + str(i + 1) + '.png'            
             path_plot = os.path.join(path_plots_dir, plot_name)
-            printandlog('\nCreating plot ' + path_plot + ' showing the sub-images of each frame and the center coordinates fitted.')
+            printandlog(path_plot, wrap=False)
             fig, axs = plt.subplots(nrows=number_rows[i], ncols=2, sharex=True, sharey=True, \
                                     subplot_kw={'xticks': [], 'yticks': []}, figsize=(width_figure, height_figure[i]))
             fig.subplots_adjust(top=0.7)
@@ -2250,7 +2123,7 @@ def process_object_frames(path_object_files,
                     axs[k].imshow(list_sub_image[k][0], cmap=cmap, origin='lower',interpolation='nearest')
                     axs[k].plot(list_x_fit_sub_image[k][0], list_y_fit_sub_image[k][0], 'rx', markersize=60/crop_radius)
             plt.savefig(path_plot, dpi=300, bbox_inches='tight')
-            plt.show()
+            # plt.show()
     
     return cube_single_sum, cube_single_difference, header
 
@@ -2495,6 +2368,74 @@ def process_flux_frames(path_flux_files,
     return frame_master_flux, frame_annulus_background
 
 ###############################################################################
+# annulus_1_to_0_based
+###############################################################################
+
+def annulus_1_to_0_based(annulus):
+    '''
+    Convert annulus parameters from 1- to 0-based indexing
+    
+    Input:
+        annulus: (list of) length-6-tuple(s) with parameters to generate annulus:
+            coord_center_x: x-coordinate of center (pixels; 1-based)
+            coord_center_y: y-coordinate of center (pixels; 1-based)
+            inner_radius: inner radius (pixels)
+            width: width (pixels)
+            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+
+    Output:
+        annulus: same as for input, but with coord_center_x and coord_center_y
+            0-based
+    
+    File written by Rob van Holstein
+    Function status: verified
+    ''' 
+
+    if type(annulus) is tuple:
+        annulus = (annulus[0] - 1,) + (annulus[1] - 1,) + annulus[2:]
+    elif type(annulus) is list:
+        for i,x in enumerate(annulus):
+            x = (x[0] - 1,) + (x[1] - 1,) + x[2:]
+            annulus[i] = x
+    
+    return annulus        
+            
+###############################################################################
+# annulus_0_to_1_based
+###############################################################################
+
+def annulus_0_to_1_based(annulus):
+    '''
+    Convert annulus parameters from 0- to 1-based indexing
+    
+    Input:
+        annulus: (list of) length-6-tuple(s) with parameters to generate annulus:
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            width: width (pixels)
+            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+
+    Output:
+        annulus: same as for input, but with coord_center_x and coord_center_y
+            1-based
+    
+    File written by Rob van Holstein
+    Function status: verified
+    ''' 
+
+    if type(annulus) is tuple:
+        annulus = (annulus[0] + 1,) + (annulus[1] + 1,) + annulus[2:]
+    elif type(annulus) is list:
+        for i,x in enumerate(annulus):
+            x = (x[0] + 1,) + (x[1] + 1,) + x[2:]
+            annulus[i] = x
+    
+    return annulus
+
+###############################################################################
 # perform_preprocessing
 ###############################################################################
 
@@ -2701,13 +2642,13 @@ def perform_preprocessing(frames_to_remove=[],
 
     # Read static master flat    
     if filter_used == 'FILT_BBF_Y':
-        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_Y.fits')
+        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Y.fits')
     elif filter_used == 'FILT_BBF_J':
-        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_J.fits')
+        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_J.fits')
     elif filter_used == 'FILT_BBF_H':
-        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_H.fits')
+        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_H.fits')
     elif filter_used == 'FILT_BBF_Ks':
-        path_static_flat = os.path.join(path_static_flat_badpixelmap, 'masterflat_Ks.fits')
+        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Ks.fits')
     
     frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
     
@@ -2717,7 +2658,7 @@ def perform_preprocessing(frames_to_remove=[],
     frame_master_flat[frame_master_flat == 0] = 1
 
     # Read static bad pixel map
-    frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_flat_badpixelmap, 'master_badpix.fits'), silent=True)[0])
+    frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_calib_dir, 'master_badpix.fits'), silent=True)[0])
 
     #TODO: Here read static master dark,background frames (in all filters) in case there are no sky frames
     
@@ -2755,19 +2696,7 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('\n###############################################################################')
         printandlog('# Processing CENTER-files')
         printandlog('###############################################################################')       
-        
-#        # Define or read centering parameters and print them on screen
-#        if param_centering == 'default':
-#            printandlog('\nUsing the default centering parameters:')
-#            param_centering = (477, 521, 1503, 511, 12, 7, 30000)
-#        else:
-#            printandlog('\nUsing user-defined centering parameters:')
-#        printandlog(param_centering)
-#TODO: Remove 3 lines below
-#        separator_1 = ' '*(14 - len('%s'% param_centering[4]))
-#        printandlog('x_left    y_left    x_right    y_right    crop_radius   sigfactor')
-#        printandlog('%.2f    %.2f    %.2f    %.2f     %s    ' % param_centering[:5] + separator_1 + '%.1f' % param_centering[5])
-            
+                    
         # Process the center files            
         list_frame_center_processed, header_center = process_center_frames(path_center_files=path_center_files, 
                                                                            indices_to_remove_center=indices_to_remove_center, 
@@ -2826,6 +2755,11 @@ def perform_preprocessing(frames_to_remove=[],
                 fh.write('%s\n' % path_sel)
         printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, 'path_object_files.txt') + '.', wrap=False)
 
+        # Write indices of OBJECT-files to a .txt-file to be able to read them later for plot of header angles
+        with open(os.path.join(path_preprocessed_dir, 'file_index_object.txt'), 'w') as fh:
+            fh.write('%s' % file_index_object)
+        printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, 'file_index_object.txt') + '.', wrap=False)
+
     ###############################################################################
     # Computing master sky for flux images
     ###############################################################################
@@ -2863,14 +2797,14 @@ def perform_preprocessing(frames_to_remove=[],
         if type(flux_annulus_background) == tuple or type(flux_annulus_background) == list:
             printandlog('\nThe background will be determined with a user-defined annulus or several user-defined annuli:')
             if type(flux_annulus_background) == tuple:
-                printandlog(flux_annulus_background)
+                printandlog(annulus_0_to_1_based(flux_annulus_background))
             elif type(flux_annulus_background) == list:
                 for x in flux_annulus_background:
-                    printandlog(x)
+                    printandlog(annulus_0_to_1_based(x))
         elif flux_annulus_background == 'large annulus':
             flux_annulus_background = (511.5, 511.5, 320, 60, 0, 360)
             printandlog('\nThe background will be determined with a star-centered annulus located far away from the star:')
-            printandlog(flux_annulus_background)
+            printandlog(annulus_0_to_1_based(flux_annulus_background))
 
         # Processthe flux files
         frame_master_flux, frame_annulus_background_flux = process_flux_frames(path_flux_files=path_flux_files, 
@@ -3361,9 +3295,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                               annulus_star, 
                                               annulus_background, 
                                               combination_method_polarization='least squares', 
-                                              trimmed_mean_proportion_to_cut_polarization=0.1, 
+                                              trimmed_mean_prop_to_cut_polar=0.1, 
                                               combination_method_intensity='mean', 
-                                              trimmed_mean_proportion_to_cut_intensity=0.1, 
+                                              trimmed_mean_prop_to_cut_intens=0.1, 
                                               single_posang_north_up=True):
     '''
     Calculate incident I_Q-, I_U-, Q- and U-images by correcting for the instrumental polarization effects of IRDIS using the polarimetric instrument model
@@ -3391,12 +3325,12 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
         combination_method_polarization: method to be used to produce the incident Q- and U-images, 
             'least squares', 'trimmed mean' or 'median' (default = 'least squares')
-        trimmed_mean_proportion_to_cut_polarization: fraction to cut off of both tails of the distribution if 
+        trimmed_mean_prop_to_cut_polar: fraction to cut off of both tails of the distribution if 
             combination_method_polarization = 'trimmed mean' (default = 0.1) 
         combination_method_intensity: method to be used to produce the incident I_Q- and I_U-images, 
             'mean', 'trimmed mean' or 'median' (default = 'mean')
-        trimmed_mean_proportion_to_cut_intensity: fraction to cut off of both tails of the distribution if 
-            trimmed_mean_proportion_to_cut_intensity = 'trimmed mean' (default = 0.1) 
+        trimmed_mean_prop_to_cut_intens: fraction to cut off of both tails of the distribution if 
+            trimmed_mean_prop_to_cut_intens = 'trimmed mean' (default = 0.1) 
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
@@ -3526,7 +3460,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.tight_layout()
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
-    plt.show()     
+    # plt.show()     
     
     ###############################################################################
     # Compute model coefficient matrix, IP and cross-talk elements
@@ -3705,7 +3639,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.tight_layout()
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
-    plt.show()
+    # plt.show()
 
     # Plot elements Q->Q and U->Q from model as a function of HWP cycle number
     plot_name = name_file_root + 'model_crosstalk_transmission.png'
@@ -3730,7 +3664,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.tight_layout()
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
-    plt.show()    
+    # plt.show()    
       
     ###############################################################################
     # Compute incident Q- and U-images by correcting for instrumental polarization effects
@@ -3784,9 +3718,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     
     elif combination_method_polarization == 'trimmed mean': 
         # Compute incident Q- and U-images from the trimmed mean of incident cubes
-        printandlog('\nComputing the incident Q- and U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_proportion_to_cut_polarization) + '.')
-        frame_Q_incident = trim_mean(cube_Q_incident, proportiontocut=trimmed_mean_proportion_to_cut_polarization, axis=0)
-        frame_U_incident = trim_mean(cube_U_incident, proportiontocut=trimmed_mean_proportion_to_cut_polarization, axis=0)
+        printandlog('\nComputing the incident Q- and U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_prop_to_cut_polar) + '.')
+        frame_Q_incident = trim_mean(cube_Q_incident, proportiontocut=trimmed_mean_prop_to_cut_polar, axis=0)
+        frame_U_incident = trim_mean(cube_U_incident, proportiontocut=trimmed_mean_prop_to_cut_polar, axis=0)
     
     elif combination_method_polarization == 'median': 
         # Compute incident Q- and U-images from the median of incident cubes 
@@ -3817,9 +3751,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     
     elif combination_method_intensity == 'trimmed mean': 
         # Compute incident I_Q- and I_U-images from the trimmed mean
-        printandlog('\nComputing the incident I_Q- and I_U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_proportion_to_cut_intensity) + '.')
-        frame_I_Q_incident = trim_mean(cube_I_Q_incident, proportiontocut=trimmed_mean_proportion_to_cut_intensity, axis=0)
-        frame_I_U_incident = trim_mean(cube_I_U_incident, proportiontocut=trimmed_mean_proportion_to_cut_intensity, axis=0)
+        printandlog('\nComputing the incident I_Q- and I_U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_prop_to_cut_intens) + '.')
+        frame_I_Q_incident = trim_mean(cube_I_Q_incident, proportiontocut=trimmed_mean_prop_to_cut_intens, axis=0)
+        frame_I_U_incident = trim_mean(cube_I_U_incident, proportiontocut=trimmed_mean_prop_to_cut_intens, axis=0)
     
     elif combination_method_intensity == 'median': 
         # Compute incident I_Q- and I_U-images from the median
@@ -3967,9 +3901,9 @@ def perform_postprocessing(cube_single_sum,
                            double_difference_type='standard', 
                            remove_vertical_band_detector_artefact=True, 
                            combination_method_polarization='least squares', 
-                           trimmed_mean_proportion_to_cut_polarization=0.1, 
+                           trimmed_mean_prop_to_cut_polar=0.1, 
                            combination_method_intensity='mean', 
-                           trimmed_mean_proportion_to_cut_intensity=0.1, 
+                           trimmed_mean_prop_to_cut_intens=0.1, 
                            single_posang_north_up=True, 
                            normalized_polarization_images=False):
     '''
@@ -4011,12 +3945,12 @@ def perform_postprocessing(cube_single_sum,
             the double-difference Q- and U-images. If False don't remove it (default = True).
         combination_method_polarization: method to be used to produce the incident Q- and U-images, 
             'least squares', 'trimmed mean' or 'median' (default = 'least squares')
-        trimmed_mean_proportion_to_cut_polarization: fraction to cut off of both tails of the distribution if 
+        trimmed_mean_prop_to_cut_polar: fraction to cut off of both tails of the distribution if 
             combination_method_polarization = 'trimmed mean' (default = 0.1) 
         combination_method_intensity: method to be used to produce the incident I_Q- and I_U-images, 
             'mean', 'trimmed mean' or 'median' (default = 'mean')
-        trimmed_mean_proportion_to_cut_intensity: fraction to cut off of both tails of the distribution if 
-            trimmed_mean_proportion_to_cut_intensity = 'trimmed mean' (default = 0.1) 
+        trimmed_mean_prop_to_cut_intens: fraction to cut off of both tails of the distribution if 
+            trimmed_mean_prop_to_cut_intens = 'trimmed mean' (default = 0.1) 
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
@@ -4054,10 +3988,10 @@ def perform_postprocessing(cube_single_sum,
     if type(annulus_star) == tuple or type(annulus_star) == list:
         printandlog('\nThe star polarization will be determined with a user-defined annulus or several user-defined annuli:')
         if type(annulus_star) == tuple:
-            printandlog(annulus_star)
+            printandlog(annulus_0_to_1_based(annulus_star))
         elif type(annulus_star) == list:
             for x in annulus_star:
-                printandlog(x)
+                printandlog(annulus_0_to_1_based(x))
     elif annulus_star == 'ao residuals':
         if filter_used == 'FILT_BBF_Y':
             annulus_star = (511.5, 511.5, 40, 25, 0, 360)
@@ -4068,26 +4002,26 @@ def perform_postprocessing(cube_single_sum,
         elif filter_used == 'FILT_BBF_Ks':
             annulus_star = (511.5, 511.5, 80, 40, 0, 360)  
         printandlog('\nThe star polarization will be determined with a star-centered annulus located over the AO residuals:')
-        printandlog(annulus_star)
+        printandlog(annulus_0_to_1_based(annulus_star))
         if coronagraph_used == 'N_NS_CLEAR':
             printandlog('\nWARNING, the data is non-coronagraphic so there might be little flux at the AO residuals. Determining the star polarization using an aperture at the position of the central star (\'star aperture\') will probably yield better results.')
     elif annulus_star == 'star aperture':
         annulus_star = (511.5, 511.5, 0, 11, 0, 360)
         printandlog('\nThe star polarization will be determined with an aparture located at the position of the central star:')
-        printandlog(annulus_star)
+        printandlog(annulus_0_to_1_based(annulus_star))
     
     # Define and print annulus to determine the background from
     if type(annulus_background) == tuple or type(annulus_background) == list:
         printandlog('\nThe background will be determined with a user-defined annulus or several user-defined annuli:')
         if type(annulus_background) == tuple:
-            printandlog(annulus_background)
+            printandlog(annulus_0_to_1_based(annulus_background))
         elif type(annulus_background) == list:
             for x in annulus_background:
-                printandlog(x)
+                printandlog(annulus_0_to_1_based(x))
     elif annulus_background == 'large annulus':
         annulus_background = (511.5, 511.5, 360, 60, 0, 360)
         printandlog('\nThe background will be determined with a star-centered annulus located far away from the central star:')
-        printandlog(annulus_background)
+        printandlog(annulus_0_to_1_based(annulus_background))
     
     ###############################################################################
     # Compute double sum and difference
@@ -4133,9 +4067,9 @@ def perform_postprocessing(cube_single_sum,
                                                 annulus_star=annulus_star, 
                                                 annulus_background=annulus_background, 
                                                 combination_method_polarization=combination_method_polarization, 
-                                                trimmed_mean_proportion_to_cut_polarization=trimmed_mean_proportion_to_cut_polarization, 
+                                                trimmed_mean_prop_to_cut_polar=trimmed_mean_prop_to_cut_polar, 
                                                 combination_method_intensity=combination_method_intensity, 
-                                                trimmed_mean_proportion_to_cut_intensity=trimmed_mean_proportion_to_cut_intensity, 
+                                                trimmed_mean_prop_to_cut_intens=trimmed_mean_prop_to_cut_intens, 
                                                 single_posang_north_up=single_posang_north_up)
     
     ###############################################################################
@@ -4266,7 +4200,7 @@ def perform_postprocessing(cube_single_sum,
         plt.tight_layout()
         plt.savefig(os.path.join(path_reduced_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
         plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
-        plt.show()
+        # plt.show()
         
         # Plot AoLP from annulus as function of HWP cycle number
         plot_name_star_AoLP = name_file_root + 'star_pol_AoLP.png'
@@ -4287,7 +4221,7 @@ def perform_postprocessing(cube_single_sum,
         plt.tight_layout()
         plt.savefig(os.path.join(path_reduced_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
         plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
-        plt.show()
+        # plt.show()
         
         printandlog('\nHorizontal trends in the data points of the plots ' + plot_name_star_quDoLP + ' and ' + plot_name_star_AoLP + ' indicate that the instrumental polarization effects have been removed successfully. However, this is only true provided that:')
         printandlog('\n1) the observations are taken with a sufficiently large range of parallactic and altitude angles,')
@@ -4395,494 +4329,610 @@ def perform_postprocessing(cube_single_sum,
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)    
 
 ###############################################################################
-###############################################################################
-## Run pipeline
-###############################################################################
+# run_pipeline
 ###############################################################################
 
-# Start taking time
-time_start = time.time()
-
-###############################################################################
-# Check whether input values are valid (note that checks do not account for all possibilities)
-###############################################################################
-
-# path_main_dir
-if type(path_main_dir) is not str:
-    raise TypeError('\'path_main_dir\' should be of type string.')
-
-# frames_to_remove
-if type(frames_to_remove) is not list:
-      raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
-  
-if len(frames_to_remove) != 0:
-    if any([type(x) not in [int, tuple] for x in frames_to_remove]):
-        raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
-    if any([len(x) is not 2 for x in frames_to_remove if type(x) is tuple]):
-        raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
-    elif any([type(y) is not int for x in frames_to_remove if type(x) is tuple for y in x]):
-        raise TypeError('\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
-
-# sigma_filtering 
-if sigma_filtering not in [True, False]:
-    raise ValueError('\'sigma_filtering\' should be either True or False.')   
-
-# object_collapse_ndit
-if object_collapse_ndit not in [True, False]:
-    raise ValueError('\'object_collapse_ndit\' should be either True or False.')   
-                          
-# show_images_center_coordinates
-if show_images_center_coordinates not in [True, False]:
-    raise ValueError('\'show_images_center_coordinates\' should be either True or False.')   
-
-# object_centering_method
-if object_centering_method not in ['automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual']:
-    raise ValueError('\'object_centering_method\' should be \'automatic\', \'center frames\', \'gaussian\', \'cross-correlation\' or \'manual\'.')
-
-# center_subtract_object
-if center_subtract_object not in [True, False]:
-    raise ValueError('\'center_subtract_object\' should be either True or False.')   
-
-# object_center_coordinates
-if type(object_center_coordinates) is not tuple or len(object_center_coordinates) is not 4:
-    raise TypeError('\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
-
-if any([type(x) not in [int, float] for x in object_center_coordinates]):
-    raise TypeError('\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
-
-# center_param_centering
-if type(center_param_centering) is not tuple or len(center_param_centering) is not 3:
-    raise TypeError('\'center_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
-
-if type(center_param_centering[0]) is not int and center_param_centering[0] is not None:
-    raise TypeError('The first element of \'center_param_centering\' (\'crop_radius\') should be a positive integer or None.')
-
-if type(center_param_centering[0]) is int and center_param_centering[0] <= 0:
-    raise ValueError('The first element of \'center_param_centering\' (\'crop_radius\') should be a positive integer or None.')
-
-if type(center_param_centering[1]) not in [int, float] and center_param_centering[1] is not None:
-    raise TypeError('The second element of \'center_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
-
-if type(center_param_centering[1]) in [int, float] and center_param_centering[1] <= 0:
-    raise ValueError('The second element of \'center_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
-
-if type(center_param_centering[2]) not in [int, float] and center_param_centering[2] is not None:
-    raise TypeError('The third element of \'center_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
-
-if type(center_param_centering[2]) in [int, float] and center_param_centering[2] <= 0:
-    raise ValueError('The third element of \'center_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
-
-# object_param_centering
-if type(object_param_centering) is not tuple or len(object_param_centering) is not 3:
-    raise TypeError('\'object_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
-
-if type(object_param_centering[0]) is not int and object_param_centering[0] is not None:
-    raise TypeError('The first element of \'object_param_centering\' (\'crop_radius\') should be a positive integer or None.')
-
-if type(object_param_centering[0]) is int and object_param_centering[0] <= 0:
-    raise ValueError('The first element of \'object_param_centering\' (\'crop_radius\') should be a positive integer or None.')
-
-if type(object_param_centering[1]) not in [int, float] and object_param_centering[1] is not None:
-    raise TypeError('The second element of \'object_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
-
-if type(object_param_centering[1]) in [int, float] and object_param_centering[1] <= 0:
-    raise ValueError('The second element of \'object_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
-
-if type(object_param_centering[2]) not in [int, float] and object_param_centering[2] is not None:
-    raise TypeError('The third element of \'object_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
-
-if type(object_param_centering[2]) in [int, float] and object_param_centering[2] <= 0:
-    raise ValueError('The third element of \'object_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
-
-# flux_centering_method
-if flux_centering_method not in ['gaussian', 'manual']:
-    raise ValueError('\'flux_centering_method\' should be either \'gaussian\' or \'manual\'.')
-
-# flux_center_coordinates
-if type(flux_center_coordinates) is not tuple or len(flux_center_coordinates) is not 4:
-    raise TypeError('\'flux_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
-
-if any([type(x) not in [int, float] for x in flux_center_coordinates]):
-    raise TypeError('\'flux_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
-
-# flux_param_centering
-if type(flux_param_centering) is not tuple or len(flux_param_centering) is not 3:
-    raise TypeError('\'flux_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
-
-if type(flux_param_centering[0]) is not int and flux_param_centering[0] is not None:
-    raise TypeError('The first element of \'flux_param_centering\' (\'crop_radius\') should be a positive integer or None.')
-
-if type(flux_param_centering[0]) is int and flux_param_centering[0] <= 0:
-    raise ValueError('The first element of \'flux_param_centering\' (\'crop_radius\') should be a positive integer or None.')
-
-if type(flux_param_centering[1]) not in [int, float] and flux_param_centering[1] is not None:
-    raise TypeError('The second element of \'flux_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
-
-if type(flux_param_centering[1]) in [int, float] and flux_param_centering[1] <= 0:
-    raise ValueError('The second element of \'flux_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
-
-if type(flux_param_centering[2]) not in [int, float] and flux_param_centering[2] is not None:
-    raise TypeError('The third element of \'flux_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
-
-if type(flux_param_centering[2]) in [int, float] and flux_param_centering[2] <= 0:
-    raise ValueError('The third element of \'flux_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
-
-# flux_annulus_background
-if type(flux_annulus_background) not in [str, tuple, list]:
-    raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(flux_annulus_background) is str and flux_annulus_background is not 'large annulus':
-    raise ValueError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(flux_annulus_background) is tuple and len(flux_annulus_background) is not 6:
-    raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(flux_annulus_background) is tuple and any([type(x) not in [int, float] for x in flux_annulus_background]):
-    raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+def run_pipeline(path_main_dir):
+    '''  
+    Run the pipeline
     
-if type(flux_annulus_background) is list:
-    if any([type(x) is not tuple for x in flux_annulus_background]):
-        raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    elif any([len(x) is not 6 for x in flux_annulus_background]):
-        raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    elif any([type(y) not in [int, float] for x in flux_annulus_background for y in x]):
-        raise TypeError('\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    Input:
+        path_main_dir: string specifying path of main directory containing the 
+            configuration file 'config.conf' and the directory 'raw' with the
+            raw data
+       
+    File written by Rob van Holstein
+    Function status: verified
+    ''' 
 
-# save_preprocessed_data
-if save_preprocessed_data not in [True, False]:
-    raise ValueError('\'save_preprocessed_data\' should be either True or False.')   
-  
-# skip_preprocessing
-if skip_preprocessing not in [True, False]:
-    raise ValueError('\'skip_preprocessing\' should be either True or False.')   
-
-# double_difference_type
-if double_difference_type not in ['standard', 'normalized']:
-    raise ValueError('\'double_difference_type\' should be either \'standard\' or \'normalized\'.')
-
-# remove_vertical_band_detector_artefact    
-if remove_vertical_band_detector_artefact not in [True, False]:
-    raise ValueError('\'remove_vertical_band_detector_artefact\' should be either True or False.')   
-
-# annulus_star
-if type(annulus_star) not in [str, tuple, list]:
-    raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(annulus_star) is str and annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
-    raise ValueError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(annulus_star) is tuple and len(annulus_star) is not 6:
-    raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(annulus_star) is tuple and any([type(x) not in [int, float] for x in annulus_star]):
-    raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    # Start taking time
+    time_start = time.time()
     
-if type(annulus_star) is list:
-    if any([type(x) is not tuple for x in annulus_star]):
-        raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    elif any([len(x) is not 6 for x in annulus_star]):
-        raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    elif any([type(y) not in [int, float] for x in annulus_star for y in x]):
-        raise TypeError('\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-# annulus_background
-if type(annulus_background) not in [str, tuple, list]:
-    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(annulus_background) is str and annulus_background is not 'large annulus':
-    raise ValueError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(annulus_background) is tuple and len(annulus_background) is not 6:
-    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-
-if type(annulus_background) is tuple and any([type(x) not in [int, float] for x in annulus_background]):
-    raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    # Turn off pyfits FITS-warnings
+    warnings.filterwarnings('ignore', category=UserWarning)
+            
+    ###############################################################################
+    # Define global variables
+    ###############################################################################
     
-if type(annulus_background) is list:
-    if any([type(x) is not tuple for x in annulus_background]):
-        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    elif any([len(x) is not 6 for x in annulus_background]):
-        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    elif any([type(y) not in [int, float] for x in annulus_background for y in x]):
-        raise TypeError('\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    # Define which variables should be global
+    global pupil_offset
+    global true_north_correction
+    global msd
+    global path_raw_dir
+    global path_calib_dir
+    global path_sky_dir
+    global path_center_dir
+    global path_flux_dir
+    global path_sky_flux_dir
+    global path_preprocessed_dir
+    global path_reduced_dir
+    global path_reduced_star_pol_subtr_dir
+    global name_file_root
+    global path_log_file
+    global path_overview
+    global path_static_calib_dir
 
-# combination_method_polarization
-if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
-    raise ValueError('\'combination_method_polarization\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
+    # Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
+    pupil_offset = 135.99
+        
+    # Define true North correction (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
+    true_north_correction = -1.75
+        
+    # Define mean solar day (s)
+    msd = 86400
+    
+    # Define paths of directories
+    path_raw_dir = os.path.join(path_main_dir, 'raw')
+    path_calib_dir = os.path.join(path_main_dir, 'calibration')
+    path_sky_dir = os.path.join(path_calib_dir, 'sky')
+    path_center_dir = os.path.join(path_calib_dir, 'center')
+    path_flux_dir = os.path.join(path_calib_dir, 'flux')
+    path_sky_flux_dir = os.path.join(path_calib_dir, 'sky_flux')
+    path_preprocessed_dir = os.path.join(path_main_dir, 'preprocessed')
+    path_reduced_dir = os.path.join(path_main_dir, 'reduced')
+    path_reduced_star_pol_subtr_dir = os.path.join(path_main_dir, 'reduced_star_pol_subtr')
+        
+    # Check if raw directory exists, if not create it
+    if not os.path.exists(path_raw_dir):
+        os.makedirs(path_raw_dir)
+        raise IOError('\n\nThe raw directory {0:s} did not exist. It was created but you need to put your raw FITS-files there.'.format(path_raw_dir))
+    
+    # List FITS-files in raw directory
+    path_raw_files = glob.glob(os.path.join(path_raw_dir,'*.fits'))
+    
+    # Check if raw folder contains FITS-files
+    if len(path_raw_files) == 0:
+        raise IOError('\n\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
 
-# trimmed_mean_proportion_to_cut_polarization    
-if type(trimmed_mean_proportion_to_cut_polarization) not in [int, float]:
-    raise TypeError('\'trimmed_mean_proportion_to_cut_polarization\' should be of type int or float.')
+    # Define the base of the name of each file to be generated
+    header_first_file = pyfits.getheader(path_raw_files[0])
+    target_name = header_first_file['ESO OBS TARG NAME']
+    date_obs = header_first_file['DATE-OBS']
+    
+    name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
-if not 0 <= trimmed_mean_proportion_to_cut_polarization <= 1:
-    raise ValueError('\'trimmed_mean_proportion_to_cut_polarization\' should be in range 0 <= trimmed_mean_proportion_to_cut_polarization <= 1.')
-
-# combination_method_intensity
-if combination_method_intensity not in ['mean', 'trimmed mean', 'median']:
-    raise ValueError('\'combination_method_intensity\' should be \'mean\', \'trimmed mean\' or \'median\'.')
-
-# trimmed_mean_proportion_to_cut_intensity
-if type(trimmed_mean_proportion_to_cut_intensity) not in [int, float]:
-    raise TypeError('\'trimmed_mean_proportion_to_cut_intensity\' should be of type int or float.')
-
-if not 0 <= trimmed_mean_proportion_to_cut_intensity <= 1:
-    raise ValueError('\'trimmed_mean_proportion_to_cut_intensity\' should be in range 0 <= trimmed_mean_proportion_to_cut_intensity <= 1.')
-
-# single_posang_north_up
-if single_posang_north_up not in [True, False]:
-    raise ValueError('\'single_posang_north_up\' should be either True or False.')   
-
-# normalized_polarization_images
-if normalized_polarization_images not in [True, False]:
-    raise ValueError('\'normalized_polarization_images\' should be either True or False.')   
-
-###############################################################################
-# Convert input from 1-based to 0-based indexing
-###############################################################################
-
-# object_center_coordinates
-object_center_coordinates = tuple(x - 1 for x in object_center_coordinates)
-
-# flux_center_coordinates
-flux_center_coordinates = tuple(x - 1 for x in flux_center_coordinates)
-
-# flux_annulus_background
-if type(flux_annulus_background) is tuple:
-    flux_annulus_background = (flux_annulus_background[0] - 1,) + (flux_annulus_background[1] - 1,) + flux_annulus_background[2:]
-elif type(flux_annulus_background) is list:
-    for i,x in enumerate(flux_annulus_background):
-        x = (x[0] - 1,) + (x[1] - 1,) + x[2:]
-        flux_annulus_background[i] = x
-
-# frames_to_remove
-for i,x in enumerate(frames_to_remove):
-    if type(x) is tuple:
-        x = tuple(y - 1 for y in x)
-    else:
-        x -= 1
-    frames_to_remove[i] = x
-
-# annulus_star
-if type(annulus_star) is tuple:
-    annulus_star = (annulus_star[0] - 1,) + (annulus_star[1] - 1,) + annulus_star[2:]
-elif type(annulus_star) is list:
-    for i,x in enumerate(annulus_star):
-        x = (x[0] - 1,) + (x[1] - 1,) + x[2:]
-        annulus_star[i] = x
-
-# annulus_background
-if type(annulus_background) is tuple:
-    annulus_background = (annulus_background[0] - 1,) + (annulus_background[1] - 1,) + annulus_background[2:]
-elif type(annulus_background) is list:
-    for i,x in enumerate(annulus_background):
-        x = (x[0] - 1,) + (x[1] - 1,) + x[2:]
-        annulus_background[i] = x
+    # Define paths of log file, header overview and directory containing static calibrations
+    path_log_file = os.path.join(path_main_dir, name_file_root + 'LOG.txt')
+    path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
+    path_static_calib_dir = os.path.dirname(__file__)
+    
+    ###############################################################################
+    # Check if there is a configuration file and start writing log file
+    ###############################################################################
       
-###############################################################################
-# Define global variables
-###############################################################################
-
-# Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
-pupil_offset = 135.99
+    # Define the path of the configuration file and check if it exists
+    path_config_file = os.path.join(path_main_dir, 'config.conf')
+    if not os.path.exists(path_config_file):
+        raise IOError('\n\nThere is no configuration file ' + path_config_file + '.')
     
-# Define true North correction (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
-true_north_correction = -1.75
+    # Create boolean saying whether log file already existed
+    log_file_existed = os.path.exists(path_log_file)
     
-# Define mean solar day (s)
-msd = 86400
-   
-# Define directory names
-path_raw_dir = os.path.join(path_main_dir, 'raw')
-path_calib_dir = os.path.join(path_main_dir, 'calibration')
-path_sky_dir = os.path.join(path_calib_dir, 'sky')
-path_center_dir = os.path.join(path_calib_dir, 'center')
-path_flux_dir = os.path.join(path_calib_dir, 'flux')
-path_sky_flux_dir = os.path.join(path_calib_dir, 'sky_flux')
-path_preprocessed_dir = os.path.join(path_main_dir, 'preprocessed')
-path_reduced_dir = os.path.join(path_main_dir, 'reduced')
-path_reduced_star_pol_subtr_dir = os.path.join(path_main_dir, 'reduced_star_pol_subtr')
-
-# Check if raw directory exists, if not create it
-if not os.path.exists(path_raw_dir):
-    os.makedirs(path_raw_dir)
-    raise IOError('The raw directory {0:s} did not exist. It was created but you need to put your raw FITS-files there.'.format(path_raw_dir))
-
-# Define the base of the name of each file to be generated
-header_first_file = pyfits.getheader(glob.glob(os.path.join(path_raw_dir,'*.fits'))[0])
-target_name = header_first_file['ESO OBS TARG NAME']
-date_obs = header_first_file['DATE-OBS']
-
-name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
-
-###############################################################################
-# Run pre-processing and post-processing functions
-###############################################################################
-
-# Turn off pyfits FITS-warnings
-warnings.filterwarnings('ignore', category=UserWarning)
-
-# Define path of log file and delete it if it already exists
-path_log_file = os.path.join(path_main_dir, name_file_root + 'LOG.txt')
-
-if os.path.exists(path_log_file) == False:
-    # Start log file
+    if log_file_existed == True:
+        # Save relevant lines from pre-processing
+        log_file_lines = [x.rstrip('\n') for x in open(path_log_file, 'r')]
+        if '# Starting post-processing' in log_file_lines:
+            log_file_lines = log_file_lines[log_file_lines.index('# Starting pre-processing') - 2: \
+                                            log_file_lines.index('# Starting post-processing') - 2]
+        else:
+            log_file_lines = None
+        
+        # Empty existing log file
+        open(path_log_file, 'w').close()
+        
+    # Start writing log file
     printandlog('\n###############################################################################')
-    printandlog('# Starting pre-processing')
-    printandlog('###############################################################################') 
-    printandlog('\nCreating log file ' + path_log_file + '.')
-elif os.path.exists(path_log_file) == True and skip_preprocessing == False:
-    # Empty existing log file and start writing
-    open(path_log_file, 'w').close()
+    printandlog('# Important notice')
+    printandlog('###############################################################################')
+    printandlog('\nWhen publishing data reduced with IRDAP you must cite van Holstein et al.')
+    printandlog('(2019): <ADS link>.')
+    printandlog('For data in pupil-tracking mode you must additionally cite van Holstein et al.')
+    printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
+    printandlog('\nFull documentation: http://www.spherepol.nl.')
+    printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl.')
+    printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein.')
     printandlog('\n###############################################################################')
-    printandlog('# Starting pre-processing')
+    printandlog('# Preparing data reduction')
     printandlog('###############################################################################') 
-    printandlog('\nWARNING, the log file ' + path_log_file + ' will be overwritten.')
-elif os.path.exists(path_log_file) == True and skip_preprocessing == True:
-    # Remove all lines concerned with the post-processing from the log file
-    log_file_lines = [x.rstrip('\n') for x in open(path_log_file, 'r')]
-    log_file_lines = log_file_lines[:log_file_lines.index('# Starting post-processing') - 1]
-    open(path_log_file, 'w').close()
-    for line in log_file_lines:                            
-        print(line, file=open(path_log_file, 'a'))
-   
-if skip_preprocessing == False:
-    # Pre-process raw data
-    cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization \
-    = perform_preprocessing(frames_to_remove=frames_to_remove, 
-                            sigma_filtering=sigma_filtering, 
-                            object_collapse_ndit=object_collapse_ndit, 
-                            show_images_center_coordinates=show_images_center_coordinates, 
-                            object_centering_method=object_centering_method, 
-                            center_subtract_object=center_subtract_object, 
-                            object_center_coordinates=object_center_coordinates, 
-                            center_param_centering=center_param_centering,
-                            object_param_centering=object_param_centering,
-                            flux_centering_method=flux_centering_method, 
-                            flux_center_coordinates=flux_center_coordinates, 
-                            flux_param_centering=flux_param_centering, 
-                            flux_annulus_background=flux_annulus_background, 
-                            save_preprocessed_data=save_preprocessed_data, 
-                            combination_method_polarization=combination_method_polarization)
+    if log_file_existed == False:
+        printandlog('\nCreated log file ' + path_log_file + '.')
+    elif log_file_existed == True:
+        printandlog('\nWARNING, the log file ' + path_log_file + ' has been overwritten.')
 
-    # Print that post-processing starts
-    printandlog('\n###############################################################################')
-    printandlog('# Starting post-processing')
-    printandlog('###############################################################################') 
-    printandlog('\nContinuing with the pre-processed data.')
-                
-elif skip_preprocessing == True:
-    # Define paths to read pre-processed data and headers from
-    path_cube_single_sum = os.path.join(path_preprocessed_dir, 'cube_single_sum.fits')
-    path_cube_single_difference = os.path.join(path_preprocessed_dir, 'cube_single_difference.fits')
-    path_object_files_text = os.path.join(path_preprocessed_dir, 'path_object_files.txt')
-   
-    if os.path.exists(path_cube_single_sum) and os.path.exists(path_cube_single_difference) and os.path.exists(path_object_files_text):
+    ###############################################################################
+    # Retrieve and define input parameters
+    ###############################################################################
+    
+    # Read configuration file
+    printandlog('\nReading configuration file ' + path_config_file + '.')
+    
+    sigma_filtering, \
+    object_collapse_ndit, \
+    object_centering_method, \
+    skip_preprocessing, \
+    frames_to_remove, \
+    annulus_star, \
+    annulus_background, \
+    combination_method_polarization, \
+    combination_method_intensity, \
+    normalized_polarization_images, \
+    center_subtract_object, \
+    center_param_centering, \
+    object_center_coordinates, \
+    object_param_centering, \
+    flux_centering_method, \
+    flux_center_coordinates, \
+    flux_param_centering, \
+    flux_annulus_background, \
+    double_difference_type, \
+    trimmed_mean_prop_to_cut_polar, \
+    trimmed_mean_prop_to_cut_intens, \
+    single_posang_north_up \
+    = read_config_file(path_config_file)
+    
+    # Define some fixed input parameters
+    save_preprocessed_data = True
+    show_images_center_coordinates = True
+    remove_vertical_band_detector_artefact = True
+    
+#    # Save a copy of configuration file to main directory    
+#    path_config_file_copy = os.path.join(path_main_dir, name_file_root + os.path.basename(path_config_file))
+#    shutil.copyfile(path_config_file, path_config_file_copy)
+#    printandlog('\nCreated a copy of the configuration file ' + path_config_file_copy + '.')
+
+
+#@@@@@@@@@@@@@@@@@@@
+#
+## if run first time, copy log file + print statement
+## if re-run pipeline, copy log file + same statement
+## if run with skip preprocessing
+#    # if no old config file, raise error
+#    # if there is an old config file, read preprocessing lines and paste in new one, then save result
+#
+#
+#    if skip_preprocessing == True:
+#        config_file_lines = [x.rstrip('\n') for x in open(path_config_file, 'r')]
+#        lines_basic_preprocessing = config_file_lines[config_file_lines.index('[Basic pre-processing options]') + 2: \
+#                                                      config_file_lines.index('[Basic post-processing options]') - 1]
+#        lines_advanced_preprocessing = config_file_lines[config_file_lines.index('[Advanced pre-processing options]') + 3: \
+#                                                         config_file_lines.index('[Advanced post-processing options]') - 1]    
+#    
+#    # Save a copy of configuration file to main directory    
+#    path_config_file_copy = os.path.join(path_main_dir, name_file_root + os.path.basename(path_config_file))
+#    shutil.copyfile(path_config_file, path_config_file_copy)
+#    printandlog('\nCreated a copy of the configuration file ' + path_config_file_copy + '.')
+#
+#    if skip_preprocessing == True:
+#
+#    
+#    # Create boolean saying whether log file already existed
+#    log_file_existed = os.path.exists(path_log_file)
+#    
+#    if log_file_existed == True:
+#        # Save relevant lines from pre-processing
+#        log_file_lines = [x.rstrip('\n') for x in open(path_log_file, 'r')]
+#        if '# Starting post-processing' in log_file_lines:
+#            log_file_lines = log_file_lines[log_file_lines.index('# Starting pre-processing') - 2: \
+#                                            log_file_lines.index('# Starting post-processing') - 2]
+#        else:
+#            log_file_lines = None
+#        
+#        # Empty existing log file
+#        open(path_log_file, 'w').close()
+#
+#
+#    if log_file_existed is False:
+#        raise IOError('\n\nThere was no log file from a previous reduction. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+#    elif log_file_lines is None:
+#        raise IOError('\n\nThe pre-processing part of the reduction is not complete in the log file. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+#        
+#        # Write lines from pre-processing of previous log file
+#        for line in log_file_lines:                         
+#            print(line, file=open(path_log_file, 'a'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ###############################################################################
+    # Check whether input values are valid (note that checks do not account for all possibilities)
+    ###############################################################################
+        
+    printandlog('\nChecking input parameters of configuration file.')
+    
+    # frames_to_remove
+    if type(frames_to_remove) is not list:
+          raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+      
+    if len(frames_to_remove) != 0:
+        if any([type(x) not in [int, tuple] for x in frames_to_remove]):
+            raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+        if any([len(x) != 2 for x in frames_to_remove if type(x) is tuple]):
+            raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+        elif any([type(y) is not int for x in frames_to_remove if type(x) is tuple for y in x]):
+            raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+    
+    # sigma_filtering 
+    if sigma_filtering not in [True, False]:
+        raise ValueError('\n\n\'sigma_filtering\' should be either True or False.')   
+    
+    # object_collapse_ndit
+    if object_collapse_ndit not in [True, False]:
+        raise ValueError('\n\n\'object_collapse_ndit\' should be either True or False.')   
+                              
+    # show_images_center_coordinates
+    if show_images_center_coordinates not in [True, False]:
+        raise ValueError('\n\n\'show_images_center_coordinates\' should be either True or False.')   
+    
+    # object_centering_method
+    if object_centering_method not in ['automatic', 'center frames', 'gaussian', 'cross-correlation', 'manual']:
+        raise ValueError('\n\n\'object_centering_method\' should be \'automatic\', \'center frames\', \'gaussian\', \'cross-correlation\' or \'manual\'.')
+    
+    # center_subtract_object
+    if center_subtract_object not in [True, False]:
+        raise ValueError('\n\n\'center_subtract_object\' should be either True or False.')   
+    
+    # object_center_coordinates
+    if type(object_center_coordinates) is not tuple or len(object_center_coordinates) != 4:
+        raise TypeError('\n\n\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+    
+    if any([type(x) not in [int, float] for x in object_center_coordinates]):
+        raise TypeError('\n\n\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+    
+    # center_param_centering
+    if type(center_param_centering) is not tuple or len(center_param_centering) != 3:
+        raise TypeError('\n\n\'center_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
+    
+    if type(center_param_centering[0]) is not int and center_param_centering[0] is not None:
+        raise TypeError('\n\nThe first element of \'center_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+    
+    if type(center_param_centering[0]) is int and center_param_centering[0] <= 0:
+        raise ValueError('\n\nThe first element of \'center_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+    
+    if type(center_param_centering[1]) not in [int, float] and center_param_centering[1] is not None:
+        raise TypeError('\n\nThe second element of \'center_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+    
+    if type(center_param_centering[1]) in [int, float] and center_param_centering[1] <= 0:
+        raise ValueError('\n\nThe second element of \'center_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+    
+    if type(center_param_centering[2]) not in [int, float] and center_param_centering[2] is not None:
+        raise TypeError('\n\nThe third element of \'center_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+    
+    if type(center_param_centering[2]) in [int, float] and center_param_centering[2] <= 0:
+        raise ValueError('\n\nThe third element of \'center_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+    
+    # object_param_centering
+    if type(object_param_centering) is not tuple or len(object_param_centering) != 3:
+        raise TypeError('\n\n\'object_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
+    
+    if type(object_param_centering[0]) is not int and object_param_centering[0] is not None:
+        raise TypeError('\n\nThe first element of \'object_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+    
+    if type(object_param_centering[0]) is int and object_param_centering[0] <= 0:
+        raise ValueError('\n\nThe first element of \'object_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+    
+    if type(object_param_centering[1]) not in [int, float] and object_param_centering[1] is not None:
+        raise TypeError('\n\nThe second element of \'object_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+    
+    if type(object_param_centering[1]) in [int, float] and object_param_centering[1] <= 0:
+        raise ValueError('\n\nThe second element of \'object_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+    
+    if type(object_param_centering[2]) not in [int, float] and object_param_centering[2] is not None:
+        raise TypeError('\n\nThe third element of \'object_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+    
+    if type(object_param_centering[2]) in [int, float] and object_param_centering[2] <= 0:
+        raise ValueError('\n\nThe third element of \'object_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+    
+    # flux_centering_method
+    if flux_centering_method not in ['gaussian', 'manual']:
+        raise ValueError('\n\n\'flux_centering_method\' should be either \'gaussian\' or \'manual\'.')
+    
+    # flux_center_coordinates
+    if type(flux_center_coordinates) is not tuple or len(flux_center_coordinates) != 4:
+        raise TypeError('\n\n\'flux_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+    
+    if any([type(x) not in [int, float] for x in flux_center_coordinates]):
+        raise TypeError('\n\n\'flux_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+    
+    # flux_param_centering
+    if type(flux_param_centering) is not tuple or len(flux_param_centering) != 3:
+        raise TypeError('\n\n\'flux_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
+    
+    if type(flux_param_centering[0]) is not int and flux_param_centering[0] is not None:
+        raise TypeError('\n\nThe first element of \'flux_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+    
+    if type(flux_param_centering[0]) is int and flux_param_centering[0] <= 0:
+        raise ValueError('\n\nThe first element of \'flux_param_centering\' (\'crop_radius\') should be a positive integer or None.')
+    
+    if type(flux_param_centering[1]) not in [int, float] and flux_param_centering[1] is not None:
+        raise TypeError('\n\nThe second element of \'flux_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+    
+    if type(flux_param_centering[1]) in [int, float] and flux_param_centering[1] <= 0:
+        raise ValueError('\n\nThe second element of \'flux_param_centering\' (\'sigfactor\') should be a positive integer, positive float or None.')
+    
+    if type(flux_param_centering[2]) not in [int, float] and flux_param_centering[2] is not None:
+        raise TypeError('\n\nThe third element of \'flux_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+    
+    if type(flux_param_centering[2]) in [int, float] and flux_param_centering[2] <= 0:
+        raise ValueError('\n\nThe third element of \'flux_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
+    
+    # flux_annulus_background
+    if type(flux_annulus_background) not in [str, tuple, list]:
+        raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(flux_annulus_background) is str and flux_annulus_background != 'large annulus':
+        raise ValueError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(flux_annulus_background) is tuple and len(flux_annulus_background) != 6:
+        raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(flux_annulus_background) is tuple and any([type(x) not in [int, float] for x in flux_annulus_background]):
+        raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        
+    if type(flux_annulus_background) is list:
+        if any([type(x) is not tuple for x in flux_annulus_background]):
+            raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([len(x) != 6 for x in flux_annulus_background]):
+            raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([type(y) not in [int, float] for x in flux_annulus_background for y in x]):
+            raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    # save_preprocessed_data
+    if save_preprocessed_data not in [True, False]:
+        raise ValueError('\n\n\'save_preprocessed_data\' should be either True or False.')   
+      
+    # skip_preprocessing
+    if skip_preprocessing not in [True, False]:
+        raise ValueError('\n\n\'skip_preprocessing\' should be either True or False.')   
+    
+    # double_difference_type
+    if double_difference_type not in ['standard', 'normalized']:
+        raise ValueError('\n\n\'double_difference_type\' should be either \'standard\' or \'normalized\'.')
+    
+    # remove_vertical_band_detector_artefact    
+    if remove_vertical_band_detector_artefact not in [True, False]:
+        raise ValueError('\n\n\'remove_vertical_band_detector_artefact\' should be either True or False.')   
+    
+    # annulus_star
+    if type(annulus_star) not in [str, tuple, list]:
+        raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(annulus_star) is str and annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
+        raise ValueError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(annulus_star) is tuple and len(annulus_star) != 6:
+        raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(annulus_star) is tuple and any([type(x) not in [int, float] for x in annulus_star]):
+        raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        
+    if type(annulus_star) is list:
+        if any([type(x) is not tuple for x in annulus_star]):
+            raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([len(x) != 6 for x in annulus_star]):
+            raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([type(y) not in [int, float] for x in annulus_star for y in x]):
+            raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    # annulus_background
+    if type(annulus_background) not in [str, tuple, list]:
+        raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(annulus_background) is str and annulus_background != 'large annulus':
+        raise ValueError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(annulus_background) is tuple and len(annulus_background) != 6:
+        raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(annulus_background) is tuple and any([type(x) not in [int, float] for x in annulus_background]):
+        raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        
+    if type(annulus_background) is list:
+        if any([type(x) is not tuple for x in annulus_background]):
+            raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([len(x) != 6 for x in annulus_background]):
+            raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([type(y) not in [int, float] for x in annulus_background for y in x]):
+            raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    # combination_method_polarization
+    if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
+        raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
+    
+    # trimmed_mean_prop_to_cut_polar    
+    if type(trimmed_mean_prop_to_cut_polar) not in [int, float]:
+        raise TypeError('\n\n\'trimmed_mean_prop_to_cut_polar\' should be of type int or float.')
+    
+    if not 0 <= trimmed_mean_prop_to_cut_polar <= 1:
+        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_polar\' should be in range 0 <= trimmed_mean_prop_to_cut_polar <= 1.')
+    
+    # combination_method_intensity
+    if combination_method_intensity not in ['mean', 'trimmed mean', 'median']:
+        raise ValueError('\n\n\'combination_method_intensity\' should be \'mean\', \'trimmed mean\' or \'median\'.')
+    
+    # trimmed_mean_prop_to_cut_intens
+    if type(trimmed_mean_prop_to_cut_intens) not in [int, float]:
+        raise TypeError('\n\n\'trimmed_mean_prop_to_cut_intens\' should be of type int or float.')
+    
+    if not 0 <= trimmed_mean_prop_to_cut_intens <= 1:
+        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_intens\' should be in range 0 <= trimmed_mean_prop_to_cut_intens <= 1.')
+    
+    # single_posang_north_up
+    if single_posang_north_up not in [True, False]:
+        raise ValueError('\n\n\'single_posang_north_up\' should be either True or False.')   
+    
+    # normalized_polarization_images
+    if normalized_polarization_images not in [True, False]:
+        raise ValueError('\n\n\'normalized_polarization_images\' should be either True or False.')   
+    
+    printandlog('\nThe input parameters have passed all checks.')
+
+    ###############################################################################
+    # Convert input from 1-based to 0-based indexing
+    ###############################################################################
+    
+    # object_center_coordinates
+    object_center_coordinates = tuple(x - 1 for x in object_center_coordinates)
+    
+    # flux_center_coordinates
+    flux_center_coordinates = tuple(x - 1 for x in flux_center_coordinates)
+    
+    # flux_annulus_background
+    flux_annulus_background = annulus_1_to_0_based(flux_annulus_background)
+    
+    # frames_to_remove
+    for i,x in enumerate(frames_to_remove):
+        if type(x) is tuple:
+            x = tuple(y - 1 for y in x)
+        else:
+            x -= 1
+        frames_to_remove[i] = x
+    
+    # annulus_star
+    annulus_star = annulus_1_to_0_based(annulus_star)
+
+    # annulus_background
+    annulus_background = annulus_1_to_0_based(annulus_background)
+
+    ###############################################################################
+    # Run pre-processing and post-processing functions
+    ###############################################################################
+       
+    if skip_preprocessing == False:
+        # Pre-process raw data
+        printandlog('\n###############################################################################')
+        printandlog('# Starting pre-processing')
+        printandlog('###############################################################################')
+        printandlog('\nStarting pre-processing of raw data.')
+        
+        cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization \
+        = perform_preprocessing(frames_to_remove=frames_to_remove, 
+                                sigma_filtering=sigma_filtering, 
+                                object_collapse_ndit=object_collapse_ndit, 
+                                show_images_center_coordinates=show_images_center_coordinates, 
+                                object_centering_method=object_centering_method, 
+                                center_subtract_object=center_subtract_object, 
+                                object_center_coordinates=object_center_coordinates, 
+                                center_param_centering=center_param_centering,
+                                object_param_centering=object_param_centering,
+                                flux_centering_method=flux_centering_method, 
+                                flux_center_coordinates=flux_center_coordinates, 
+                                flux_param_centering=flux_param_centering, 
+                                flux_annulus_background=flux_annulus_background, 
+                                save_preprocessed_data=save_preprocessed_data, 
+                                combination_method_polarization=combination_method_polarization)
+    
         # Print that post-processing starts
         printandlog('\n###############################################################################')
         printandlog('# Starting post-processing')
         printandlog('###############################################################################') 
-        printandlog('\nSkipping pre-processing and reading pre-processed data and headers.')
-        printandlog('')
+        printandlog('\nContinuing with the pre-processed data.')
+                    
+    elif skip_preprocessing == True:
+        if log_file_existed is False:
+            raise IOError('\n\nThere was no log file from a previous reduction. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+        elif log_file_lines is None:
+            raise IOError('\n\nThe pre-processing part of the reduction is not complete in the log file. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
         
-        # Read pre-processed single-sum and difference- images        
-        cube_single_sum = read_fits_files(path=path_cube_single_sum, silent=False)[0]
-        cube_single_difference = read_fits_files(path=path_cube_single_difference, silent=False)[0] 
-
-        # Read headers
-        header = [pyfits.getheader(x.rstrip('\n')) for x in open(path_object_files_text, 'r')]
-        printandlog('Read headers from OBJECT-files specified in ' + path_object_files_text + '.')
+        # Write lines from pre-processing of previous log file
+        for line in log_file_lines:                         
+            print(line, file=open(path_log_file, 'a'))
+        
+        # Define paths to read pre-processed data and headers from
+        path_cube_single_sum = os.path.join(path_preprocessed_dir, 'cube_single_sum.fits')
+        path_cube_single_difference = os.path.join(path_preprocessed_dir, 'cube_single_difference.fits')
+        path_object_files_text = os.path.join(path_preprocessed_dir, 'path_object_files.txt')
+        path_file_index_object = os.path.join(path_preprocessed_dir, 'file_index_object.txt')
+        
+        if os.path.exists(path_cube_single_sum) and os.path.exists(path_cube_single_difference) and os.path.exists(path_object_files_text) and os.path.exists(path_file_index_object):
+            # Print that post-processing starts
+            printandlog('\n###############################################################################')
+            printandlog('# Starting post-processing')
+            printandlog('###############################################################################') 
+            printandlog('\nSkipping pre-processing and reading pre-processed data and headers.')
+            printandlog('')
+            
+            # Read pre-processed single-sum and difference- images        
+            cube_single_sum = read_fits_files(path=path_cube_single_sum, silent=False)[0]
+            cube_single_difference = read_fits_files(path=path_cube_single_difference, silent=False)[0] 
     
-    else:
-        raise IOError('The files ' + path_cube_single_sum + ', ' + path_cube_single_difference + ' and/or ' + path_object_files_text + ' do not exist. Set skip_preprocessing to False and save_preprocessed_data to True to perform the pre-processing of the raw data and save the results.')
+            # Read headers
+            header = [pyfits.getheader(x.rstrip('\n')) for x in open(path_object_files_text, 'r')]
+            printandlog('Read headers from OBJECT-files specified in ' + path_object_files_text + '.')
+            
+            # Read indices of OBJECT-files
+            file_index_object = literal_eval([x for x in open(path_file_index_object, 'r')][0])
+            printandlog('Read indices of OBJECT-files from ' + path_file_index_object + '.')
 
-# Perform post-processing of data           
-perform_postprocessing(cube_single_sum=cube_single_sum, 
-                       cube_single_difference=cube_single_difference, 
-                       header=header, 
-                       file_index_object=file_index_object, 
-                       annulus_star=annulus_star, 
-                       annulus_background=annulus_background, 
-                       double_difference_type=double_difference_type, 
-                       remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact, 
-                       combination_method_polarization=combination_method_polarization, 
-                       trimmed_mean_proportion_to_cut_polarization=trimmed_mean_proportion_to_cut_polarization, 
-                       combination_method_intensity=combination_method_intensity, 
-                       trimmed_mean_proportion_to_cut_intensity=trimmed_mean_proportion_to_cut_intensity,
-                       single_posang_north_up=single_posang_north_up, 
-                       normalized_polarization_images=normalized_polarization_images)
-
-# Print time elapsed
-time_end = time.time()
-d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
-printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
-
-               
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-################################################################################
-## Create folder and copy script
-################################################################################
-#
-#def create_folder_copy_script(path_write_folder):
-#    '''
-#    Create a folder to write files to and copy used script to this folder
-#    
-#    Input:
-#        path_write_folder: path of folder to write .png- and .pdf images to; if None do not write files
-#        
-#    Output:
-#        path_write_folder_new: new path of write folder if folder already existed
-#            
-#    Written by Rob van Holstein
-#    Function status: verified   
-#    '''
-#
-##TODO: Check if path_current_script and name_current_script still work if this function is put in separate file
-#    
-#    # Create folder to write files to
-#    if not os.path.exists(path_write_folder):
-#        # If the folder does not exist yet, create it
-#        os.makedirs(path_write_folder)
-#        path_write_folder_new = path_write_folder
-#    else:
-#        # If the folder exists, check if folders with added numbers exist and create a folder with a higher number
-#        name_folder_addition = 2
-#        path_write_folder_new = path_write_folder + ' ' + str(name_folder_addition)
-#        
-#        while os.path.exists(path_write_folder_new):
-#            name_folder_addition += 1
-#            path_write_folder_new = path_write_folder + ' ' + str(name_folder_addition)
-#            
-#        os.makedirs(path_write_folder_new)
-#    
-#    print('\nWriting files in', path_write_folder_new)
-#    
-#    # Copy script that is run to output folder    
-#    path_current_script = os.path.abspath(__file__)
-#    name_current_script = os.path.basename(__file__)
-#    path_copy_script = path_write_folder_new + '\\' + name_current_script[:name_current_script.rfind('.')] + \
-#                       '_as_run' + name_current_script[name_current_script.rfind('.'):]
-#    
-#    shutil.copy2(path_current_script, path_copy_script)
-#    
-#    return path_write_folder_new
-#
+            printandlog('\nRetained part of previous log file pertaining to pre-processing.')
+                        
+        else:
+            raise IOError('\n\nThe files ' + path_cube_single_sum + ', ' + path_cube_single_difference + ', ' + path_object_files_text + ' and/or ' + path_file_index_object + ' do not exist. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+    
+    # Perform post-processing of data           
+    perform_postprocessing(cube_single_sum=cube_single_sum, 
+                           cube_single_difference=cube_single_difference, 
+                           header=header, 
+                           file_index_object=file_index_object, 
+                           annulus_star=annulus_star, 
+                           annulus_background=annulus_background, 
+                           double_difference_type=double_difference_type, 
+                           remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact, 
+                           combination_method_polarization=combination_method_polarization, 
+                           trimmed_mean_prop_to_cut_polar=trimmed_mean_prop_to_cut_polar, 
+                           combination_method_intensity=combination_method_intensity, 
+                           trimmed_mean_prop_to_cut_intens=trimmed_mean_prop_to_cut_intens,
+                           single_posang_north_up=single_posang_north_up, 
+                           normalized_polarization_images=normalized_polarization_images)
+    
+    # Print time elapsed
+    time_end = time.time()
+    d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
+    printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
