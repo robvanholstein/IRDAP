@@ -28,9 +28,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from setuptools import setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+    
 setup(
    name='irdap',
-   version='v2019-05-08',
+   version='2019.5.11',
    author='R.G. van Holstein',
    author_email='vanholstein@strw.leidenuniv.nl',
    packages=['irdap'],
@@ -38,7 +41,7 @@ setup(
    download_url='https://github.com/robvanholstein/IRDAP/archive/master.zip',
    license='GNU General Public License v3.0',
    description='Pipeline for accurate reduction of SPHERE-IRDIS polarimetric data.',
-   long_description=open('README').read(),
+   long_description=long_description,
    python_requires='>=3',
    install_requires=[
       "numpy >= 1.16.1",
@@ -55,10 +58,9 @@ setup(
    'Development Status :: 3 - Alpha',
    'Intended Audience :: Science/Research',
    'Topic :: Scientific/Engineering :: Astronomy',
-   'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'
+   'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
    'Programming Language :: Python :: 3.6',
    ],
-    
    include_package_data=True, # So that non .py files make it onto pypi, and then back !
    entry_points={'console_scripts': ['irdap = irdap.__main__:main']},
 )

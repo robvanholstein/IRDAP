@@ -60,13 +60,16 @@ def main(args=None):
     # Define the arser including the description and epilog
     parser = argparse.ArgumentParser(description='IRDAP (IRDIS Data-reduction for Accurate Polarimetry) is a pipeline for\n' +
                                                  'accurate reduction of SPHERE-IRDIS polarimetric data.\n\n' + 
-                                                 'To run IRDAP, create a directory (e.g. "/home/T Cha 2016-02-20") containing a\n' +
+                                                 'To run IRDAP, create a directory (e.g. "/home/T_Cha_2016-02-20") containing a\n' +
                                                  'subdirectory called "raw" in which you place the raw FITS-files. Then in the\n' +
-                                                 'shell navigate to the directory (e.g. "cd /home/T Cha 2016-02-20") and type\n' +
+                                                 'terminal navigate to the directory (e.g. "cd /home/T_Cha_2016-02-20") and type\n' +
                                                  '"irdap --makeconfig" to create a default configuration file "config.conf" in\n' +
                                                  'this directory. You can then adjust the parameters in the configuration file\n' +
-                                                 'with a text editor. Finally in the shell type "irdap --run" to perform the\n' +
+                                                 'with a text editor. Finally in the terminal type "irdap --run" to perform the\n' +
                                                  'data reduction.\n\n' +
+                                                 'If this is the first time you use IRDAP, it is recommended to run the demo\n' + 
+                                                 'first by using the terminal to navigate to a directory of your choice and\n' +
+                                                 'typing irdap --demo.\n\n' + 
                                                  'When publishing data reduced with IRDAP you must cite van Holstein et al.\n' +
                                                  '(2019): <ADS link>.\n' +
                                                  'For data in pupil-tracking mode you must additionally cite van Holstein et al.\n' +
@@ -79,7 +82,7 @@ def main(args=None):
     # Add parser arguments
     parser.add_argument('-v', '--version', action='version', version=('IRDAP %s' % __version__))
     parser.add_argument('-d', '--demo', action='store_true',
-                        help='run pipeline with example data of the circumstellar disk\nof T Cha')
+                        help='run pipeline in current working directory with example\ndata of the circumstellar disk of T Cha')
     parser.add_argument('-o', '--headers', action='store_true',
                         help='create overview of relevant headers of FITS-files in raw\nsubdirectory')
     parser.add_argument('-c', '--makeconfig', action='store_true',
@@ -87,7 +90,7 @@ def main(args=None):
     parser.add_argument('-r', '--run', action='store_true',
                         help='run pipeline using configuration file in current working\ndirectory')                    
     
-    # Use current working directory (of shell) as path of main directory of reduction    
+    # Use current working directory (of terminal) as path of main directory of reduction    
     path_main_dir = os.getcwd()
 
     # Evaluate and act upon user arguments
@@ -113,6 +116,6 @@ def main(args=None):
 # Run the function main
 ###############################################################################
 
-# Run function when called, i.e. in the shell one can just write "irdap --run" i.o. "python -m irdap --run"
+# Run function when called, i.e. in the terminal one can just write "irdap --run" i.o. "python -m irdap --run"
 if __name__ == "__main__":
     main()
