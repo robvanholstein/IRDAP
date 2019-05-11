@@ -33,10 +33,10 @@ import os
 import argparse
 from argparse import RawTextHelpFormatter
 from .irdap import __version__
+from .irdap import run_demo
 from .irdap import create_overview_headers_main
 from .irdap import make_config
 from .irdap import run_pipeline
-
 
 ###############################################################################
 # main
@@ -78,6 +78,8 @@ def main(args=None):
     
     # Add parser arguments
     parser.add_argument('-v', '--version', action='version', version=('IRDAP %s' % __version__))
+    parser.add_argument('-d', '--demo', action='store_true',
+                        help='run pipeline with example data of the circumstellar disk\nof T Cha')
     parser.add_argument('-o', '--headers', action='store_true',
                         help='create overview of relevant headers of FITS-files in raw\nsubdirectory')
     parser.add_argument('-c', '--makeconfig', action='store_true',
@@ -91,7 +93,11 @@ def main(args=None):
     # Evaluate and act upon user arguments
     args = parser.parse_args()
  
-    if args.headers:
+    if args.demo:
+        # Run example reduction
+        run_demo(path_main_dir)
+        
+    elif args.headers:
         # Create an overview of relevant headers
         create_overview_headers_main(path_main_dir)
     

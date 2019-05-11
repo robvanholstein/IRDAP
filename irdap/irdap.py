@@ -4330,6 +4330,124 @@ def perform_postprocessing(cube_single_sum,
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)    
 
 ###############################################################################
+# run_demo
+###############################################################################    
+
+def run_demo(path_main_dir):
+    '''
+    Run example reduction with data from T Cha as published in Pohl et al.
+    (2017)
+    
+    Input:
+        path_main_dir: string specifying path to main directory
+    
+    File written by Rob van Holstein
+    Function status: verified    
+    '''
+
+    print_wrap('\nStarting example reduction using data of the circumstellar ' +
+               'disk of T Cha as published in Pohl et al. (2017) and used ' + 
+               'in van Holstein et al. (2019)')
+    
+    # Define path of raw directory and raise error if it already exist
+    path_raw_dir = os.path.join(path_main_dir, 'raw')
+
+    if os.path.exists(path_raw_dir):
+        raise IOError('\n\nThere is already a "raw" subdirectory in current working ' + 
+                      'directory. Please remove it before running the demo.')
+    
+    #TODO: Really download the data
+    # Download example data to example_data directory if it does not exist yet + ask for permission to download
+    
+    # Copy example data directory to raw subdirectory of main directory 
+    path_example_dir = r'C:\Users\Rob\Documents\PhD\Projects\IRDAP\irdap\irdap\example_data'
+    shutil.copytree(path_example_dir, path_raw_dir)
+
+    # Create a configuration file in the main directory
+    make_config(path_main_dir)
+    
+    # Run the pipeline
+    run_pipeline(path_main_dir)
+
+###############################################################################
+# make_config
+###############################################################################    
+
+def make_config(path_main_dir):
+    '''
+    Create the default configuration file in the main directory
+    
+    Input:
+        path_main_dir: string specifying path to main directory
+    
+    File written by Rob van Holstein
+    Function status: verified    
+    '''
+    
+    # Define paths of default configuration file and configuration file to be written
+    path_default_config_file = os.path.join(os.path.dirname(__file__), 'config.conf')
+    path_config_file_write = os.path.join(path_main_dir, os.path.basename(path_default_config_file))
+    
+    if os.path.exists(path_config_file_write):
+        # Ask if user wants to overwrite the configuration file
+        overwrite = input_wrap('\nThe configuration file ' + path_config_file_write + 
+                               ' already exists. Do you want to overwrite it? (y/n) ')
+        if overwrite == 'n':
+            print_wrap('\nNo configuration file has been created.')
+        elif overwrite != 'y':
+            print_wrap('\nThe provided input \'' + str(overwrite) + '\' is not valid.')
+    
+    if not os.path.exists(path_config_file_write) or overwrite == 'y':
+        # Copy default configuration file to main directory
+        shutil.copyfile(path_default_config_file, path_config_file_write)
+        print_wrap('\nCreated a default configuration file ' + path_config_file_write + '.')
+        
+###############################################################################
+# create_overview_headers_main
+###############################################################################    
+    
+def create_overview_headers_main(path_main_dir):
+    '''
+    Create an overview of relevant FITS-headers and write it to a text-file
+    from the __main__.py file
+    
+    Input:
+        path_main_dir: string specifying path to main directory
+        
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Define path of raw directory
+    path_raw_dir = os.path.join(path_main_dir, 'raw')
+
+    # Check if raw directory exists, if not create it
+    if not os.path.exists(path_raw_dir):
+        os.makedirs(path_raw_dir)
+        print_wrap('\nThe raw directory {0:s} did not exist. It was created but you need to put your raw FITS-files there.'.format(path_raw_dir))
+    else:
+        # List FITS-files in raw directory
+        path_raw_files = glob.glob(os.path.join(path_raw_dir,'*.fits'))
+        
+        # Check if raw folder contains FITS-files
+        if len(path_raw_files) == 0:
+            print_wrap('\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
+        else:
+            # Define the base of the name of each file to be generated
+            header_first_file = pyfits.getheader(path_raw_files[0])
+            target_name = header_first_file['ESO OBS TARG NAME']
+            date_obs = header_first_file['DATE-OBS']
+            
+            name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
+        
+            # Define path to header overview to be created
+            path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
+          
+            # Create overview of headers
+            create_overview_headers(path_raw_dir, path_overview, log=False)
+            print_wrap('\nCreated an overview of the headers ' + path_overview + '.')
+            
+###############################################################################
 # run_pipeline
 ###############################################################################
 
@@ -4887,83 +5005,3 @@ def run_pipeline(path_main_dir):
     time_end = time.time()
     d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
     printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
-   
-    
-    
-###############################################################################
-# make_config
-###############################################################################    
-
-def make_config(path_main_dir):
-    '''
-    Create the default configuration file in the main directory
-    
-    Input:
-        path_main_dir: string specifying path to main directory
-    
-    File written by Rob van Holstein
-    Function status: verified    
-    '''
-    
-    # Define paths of default configuration file and configuration file to be written
-    path_default_config_file = os.path.join(os.path.dirname(__file__), 'config.conf')
-    path_config_file_write = os.path.join(path_main_dir, os.path.basename(path_default_config_file))
-    
-    if os.path.exists(path_config_file_write):
-        # Ask if user wants to overwrite the configuration file
-        overwrite = input_wrap('\nThe configuration file ' + path_config_file_write + 
-                               ' already exists. Do you want to overwrite it? (y/n) ')
-        if overwrite == 'n':
-            print_wrap('\nNo configuration file has been created.')
-        elif overwrite != 'y':
-            print_wrap('\nThe provided input \'' + str(overwrite) + '\' is not valid.')
-    
-    if not os.path.exists(path_config_file_write) or overwrite == 'y':
-        # Copy default configuration file to main directory
-        shutil.copyfile(path_default_config_file, path_config_file_write)
-        print_wrap('\nCreated a default configuration file ' + path_config_file_write + '.')
-        
-###############################################################################
-# create_overview_headers_main
-###############################################################################    
-    
-def create_overview_headers_main(path_main_dir):
-    '''
-    Create an overview of relevant FITS-headers and write it to a text-file
-    from the __main__.py file
-    
-    Input:
-        path_main_dir: string specifying path to main directory
-        
-    File written by Rob van Holstein
-    Function status: verified
-    '''
-
-    # Define path of raw directory
-    path_raw_dir = os.path.join(path_main_dir, 'raw')
-
-    # Check if raw directory exists, if not create it
-    if not os.path.exists(path_raw_dir):
-        os.makedirs(path_raw_dir)
-        print_wrap('\nThe raw directory {0:s} did not exist. It was created but you need to put your raw FITS-files there.'.format(path_raw_dir))
-    else:
-        # List FITS-files in raw directory
-        path_raw_files = glob.glob(os.path.join(path_raw_dir,'*.fits'))
-        
-        # Check if raw folder contains FITS-files
-        if len(path_raw_files) == 0:
-            print_wrap('\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
-        else:
-            # Define the base of the name of each file to be generated
-            header_first_file = pyfits.getheader(path_raw_files[0])
-            target_name = header_first_file['ESO OBS TARG NAME']
-            date_obs = header_first_file['DATE-OBS']
-            
-            name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
-        
-            # Define path to header overview to be created
-            path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
-          
-            # Create overview of headers
-            create_overview_headers(path_raw_dir, path_overview, log=False)
-            print_wrap('\nCreated an overview of the headers ' + path_overview + '.')
