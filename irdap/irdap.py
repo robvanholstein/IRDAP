@@ -37,7 +37,6 @@ import glob
 import time
 import datetime
 import warnings
-import shutil
 import configparser
 import textwrap
 import numpy as np
@@ -162,7 +161,7 @@ def wrapstr(string):
     
     return textwrap.fill(string, width=80, 
                          replace_whitespace=False,
-                         drop_whitespace=False,
+                         drop_whitespace=True,
                          break_long_words=False)
     
 ###############################################################################
@@ -4495,91 +4494,41 @@ def run_pipeline(path_main_dir):
     save_preprocessed_data = True
     show_images_center_coordinates = True
     remove_vertical_band_detector_artefact = True
+
+    ###############################################################################
+    # Make a copy of configuration file
+    ###############################################################################
     
-#    # Save a copy of configuration file to main directory    
-#    path_config_file_copy = os.path.join(path_main_dir, name_file_root + os.path.basename(path_config_file))
-#    shutil.copyfile(path_config_file, path_config_file_copy)
-#    printandlog('\nCreated a copy of the configuration file ' + path_config_file_copy + '.')
+    # Read lines of configuration file
+    config_file_lines = [x for x in open(path_config_file, 'r')]
+    
+    # Define path of copy of configuration file
+    path_config_file_copy = os.path.join(path_main_dir, name_file_root + os.path.basename(path_config_file))
 
+    if skip_preprocessing == True:
+        if not os.path.exists(path_config_file_copy):
+            raise IOError('\n\nThere was no copy of the configuration file from a previous reduction. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
 
-#@@@@@@@@@@@@@@@@@@@
-#
-## if run first time, copy log file + print statement
-## if re-run pipeline, copy log file + same statement
-## if run with skip preprocessing
-#    # if no old config file, raise error
-#    # if there is an old config file, read preprocessing lines and paste in new one, then save result
-#
-#
-#    if skip_preprocessing == True:
-#        config_file_lines = [x.rstrip('\n') for x in open(path_config_file, 'r')]
-#        lines_basic_preprocessing = config_file_lines[config_file_lines.index('[Basic pre-processing options]') + 2: \
-#                                                      config_file_lines.index('[Basic post-processing options]') - 1]
-#        lines_advanced_preprocessing = config_file_lines[config_file_lines.index('[Advanced pre-processing options]') + 3: \
-#                                                         config_file_lines.index('[Advanced post-processing options]') - 1]    
-#    
-#    # Save a copy of configuration file to main directory    
-#    path_config_file_copy = os.path.join(path_main_dir, name_file_root + os.path.basename(path_config_file))
-#    shutil.copyfile(path_config_file, path_config_file_copy)
-#    printandlog('\nCreated a copy of the configuration file ' + path_config_file_copy + '.')
-#
-#    if skip_preprocessing == True:
-#
-#    
-#    # Create boolean saying whether log file already existed
-#    log_file_existed = os.path.exists(path_log_file)
-#    
-#    if log_file_existed == True:
-#        # Save relevant lines from pre-processing
-#        log_file_lines = [x.rstrip('\n') for x in open(path_log_file, 'r')]
-#        if '# Starting post-processing' in log_file_lines:
-#            log_file_lines = log_file_lines[log_file_lines.index('# Starting pre-processing') - 2: \
-#                                            log_file_lines.index('# Starting post-processing') - 2]
-#        else:
-#            log_file_lines = None
-#        
-#        # Empty existing log file
-#        open(path_log_file, 'w').close()
-#
-#
-#    if log_file_existed is False:
-#        raise IOError('\n\nThere was no log file from a previous reduction. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
-#    elif log_file_lines is None:
-#        raise IOError('\n\nThe pre-processing part of the reduction is not complete in the log file. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
-#        
-#        # Write lines from pre-processing of previous log file
-#        for line in log_file_lines:                         
-#            print(line, file=open(path_log_file, 'a'))
+        # Read lines of existing copy of configuration file
+        config_file_lines_old = [x for x in open(path_config_file_copy, 'r')]
+        
+        # Define indices of lines pertaining to pre-processing input parameters
+        n0 = config_file_lines.index('[Basic pre-processing options]\n') + 2
+        n1 = config_file_lines.index('[Basic post-processing options]\n') - 1
+        n2 = config_file_lines.index('[Advanced pre-processing options]\n') + 3
+        n3 = config_file_lines.index('[Advanced post-processing options]\n') - 1 
+        
+        # Replace pre-processing lines of configuration file by those from the previous copy 
+        config_file_lines[n0:n1] = config_file_lines_old[n0:n1]
+        config_file_lines[n2:n3] = config_file_lines_old[n2:n3]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # Write lines in copy of configuration file and save to main directory
+    with open(path_config_file_copy, 'w') as f:
+        for x in config_file_lines:
+            f.write(x)
+    printandlog('\nCreated a copy of the used configuration file ' + path_config_file_copy + '.')
+    if skip_preprocessing == True:
+        printandlog('Because the pre-processing is skipped, the pre-processing input parameters from the previous reduction have been used for this copy.')
 
     ###############################################################################
     # Check whether input values are valid (note that checks do not account for all possibilities)
