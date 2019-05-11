@@ -1,0 +1,156 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Installation &#8212; IRDAP 2019.5.11 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Usage instructions" href="running.html" />
+    <link rel="prev" title="Welcome to IRDAP’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>fcmaker is available on pypi, which makes its installation easier than ever.
+In a terminal, type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">fcmaker</span>
+</pre></div>
+</div>
+<p>And that should take care of things.</p>
+<p>The most recent release of fcmaker is also available for download from its <a class="reference external" href="https://github.com/fpavogt/fcmaker/releases/latest/">Github repository</a>.
+Interested users can fork the fcmaker repository if they want to get access to the
+latest updates not yet released. <em>Push requests</em> for bug fixes and new features are
+welcome and will be examined in detail.</p>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>fcmaker is written in Python 3.6. The following packages are required for it to work
+properly:</p>
+<ul class="simple">
+<li>aplpy (1.1.1 or above)</li>
+<li>astroplan</li>
+<li>astropy (3.0 or above)</li>
+<li>astroquery (0.3.4 or above)</li>
+<li>matplotlib (2.0.2 or above)</li>
+<li>numpy (1.13.1 or or above)</li>
+<li>p2api (0.92 or above)</li>
+<li>pillow (4.2.1 or above)</li>
+<li>pytz (2018 or above)</li>
+<li>PyYAML (3.12 or above)</li>
+<li>scipy (0.19.0 or above)</li>
+</ul>
+<p>Optional:</p>
+<ul class="simple">
+<li>Montage and montage-wrapper (0.9.9 or above, only until the next release of aplpy)</li>
+<li>Proper system-wide LateX installation (allows for prettier plots)</li>
+</ul>
+<p>The Montage package is required to rotate the finding charts North, even if the underlying
+FITS file isn’t. It won’t be required once aplpy gets upgraded.</p>
+</div>
+<div class="section" id="testing-the-installation">
+<h2>Testing the installation<a class="headerlink" href="#testing-the-installation" title="Permalink to this headline">¶</a></h2>
+<p>In a terminal shell, try to access the basic help of fcmaker:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">fcmaker</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>If that works, chances are, you will probably be fine. Note that fcmaker requires a
+connection to the internet to work (even in local mode).</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">IRDAP</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Usage instructions</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to IRDAP’s documentation!</a></li>
+      <li>Next: <a href="running.html" title="next chapter">Usage instructions</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, R.G. van Holstein.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
