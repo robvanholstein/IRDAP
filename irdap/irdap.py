@@ -4360,7 +4360,7 @@ def run_demo(path_main_dir):
     # Download example data to example_data directory if it does not exist yet + ask for permission to download
     
     # Copy example data directory to raw subdirectory of main directory 
-    path_example_dir = r'C:\Users\Rob\Documents\PhD\Projects\IRDAP\irdap\irdap\example_data'
+    path_example_dir = os.path.join(os.path.dirname(__file__), 'example_data')
     shutil.copytree(path_example_dir, path_raw_dir)
 
     # Create a configuration file in the main directory
@@ -4469,7 +4469,10 @@ def run_pipeline(path_main_dir):
     
     # Turn off pyfits FITS-warnings
     warnings.filterwarnings('ignore', category=UserWarning)
-            
+
+    # Print that data-reduction starts    
+    print_wrap('\nStarting data reduction.')
+        
     ###############################################################################
     # Define global variables
     ###############################################################################
