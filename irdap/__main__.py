@@ -30,16 +30,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # Import packages
 import sys
 import os
-import shutil
 import argparse
-import glob
-import astropy.io.fits as pyfits
 from argparse import RawTextHelpFormatter
 from .irdap import __version__
-from .irdap import create_overview_headers
-from .irdap import print_wrap
-from .irdap import input_wrap
+from .irdap import create_overview_headers_main
+from .irdap import make_config
 from .irdap import run_pipeline
+
 
 ###############################################################################
 # main
@@ -95,56 +92,15 @@ def main(args=None):
     args = parser.parse_args()
  
     if args.headers:
-        # Define path of raw directory
-        path_raw_dir = os.path.join(path_main_dir, 'raw')
-
-        # Check if raw directory exists, if not create it
-        if not os.path.exists(path_raw_dir):
-            os.makedirs(path_raw_dir)
-            print_wrap('\nThe raw directory {0:s} did not exist. It was created but you need to put your raw FITS-files there.'.format(path_raw_dir))
-        else:
-            # List FITS-files in raw directory
-            path_raw_files = glob.glob(os.path.join(path_raw_dir,'*.fits'))
-            
-            # Check if raw folder contains FITS-files
-            if len(path_raw_files) == 0:
-                print_wrap('\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
-            else:
-                # Define the base of the name of each file to be generated
-                header_first_file = pyfits.getheader(path_raw_files[0])
-                target_name = header_first_file['ESO OBS TARG NAME']
-                date_obs = header_first_file['DATE-OBS']
-                
-                name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
-            
-                # Define path to header overview to be created
-                path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
-              
-                # Create overview of headers
-                create_overview_headers(path_raw_dir, path_overview, log=False)
-                print_wrap('\nCreated an overview of the headers ' + path_overview + '.')
+        # Create an overview of relevant headers
+        create_overview_headers_main(path_main_dir)
     
     elif args.makeconfig:
-        # Define paths of default configuration file and configuration file to be written
-        path_default_config_file = os.path.join(os.path.dirname(__file__), 'config.conf')
-        path_config_file_write = os.path.join(path_main_dir, os.path.basename(path_default_config_file))
+        # Create a default configuration file
+        make_config(path_main_dir)
         
-        if os.path.exists(path_config_file_write):
-            # Ask if user wants to overwrite the configuration file
-            overwrite = input_wrap('\nThe configuration file ' + path_config_file_write + 
-                                   ' already exists. Do you want to overwrite it? (y/n) ')
-            if overwrite == 'n':
-                print_wrap('\nNo configuration file has been created.')
-            elif overwrite != 'y':
-                print_wrap('\nThe provided input \'' + str(overwrite) + '\' is not valid.')
-
-        if not os.path.exists(path_config_file_write) or overwrite == 'y':
-            # Copy default configuration file to main directory
-            shutil.copyfile(path_default_config_file, path_config_file_write)
-            print_wrap('\nCreated a default configuration file ' + path_config_file_write + '.')
-
     elif args.run:
-        # Run the pipeline
+        # Run the pipeline 
         run_pipeline(path_main_dir)
 
 ###############################################################################

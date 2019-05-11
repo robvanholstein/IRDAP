@@ -37,6 +37,7 @@ import glob
 import time
 import datetime
 import warnings
+import shutil
 import configparser
 import textwrap
 import numpy as np
@@ -246,6 +247,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
         path_overview: string specifying path of header overview to be created
         log: if True print and log statement that overview has been created, if
             False do not print anything
+            
     File written by Rob van Holstein
     Function status: verified
     '''
@@ -4885,3 +4887,83 @@ def run_pipeline(path_main_dir):
     time_end = time.time()
     d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
     printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
+   
+    
+    
+###############################################################################
+# make_config
+###############################################################################    
+
+def make_config(path_main_dir):
+    '''
+    Create the default configuration file in the main directory
+    
+    Input:
+        path_main_dir: string specifying path to main directory
+    
+    File written by Rob van Holstein
+    Function status: verified    
+    '''
+    
+    # Define paths of default configuration file and configuration file to be written
+    path_default_config_file = os.path.join(os.path.dirname(__file__), 'config.conf')
+    path_config_file_write = os.path.join(path_main_dir, os.path.basename(path_default_config_file))
+    
+    if os.path.exists(path_config_file_write):
+        # Ask if user wants to overwrite the configuration file
+        overwrite = input_wrap('\nThe configuration file ' + path_config_file_write + 
+                               ' already exists. Do you want to overwrite it? (y/n) ')
+        if overwrite == 'n':
+            print_wrap('\nNo configuration file has been created.')
+        elif overwrite != 'y':
+            print_wrap('\nThe provided input \'' + str(overwrite) + '\' is not valid.')
+    
+    if not os.path.exists(path_config_file_write) or overwrite == 'y':
+        # Copy default configuration file to main directory
+        shutil.copyfile(path_default_config_file, path_config_file_write)
+        print_wrap('\nCreated a default configuration file ' + path_config_file_write + '.')
+        
+###############################################################################
+# create_overview_headers_main
+###############################################################################    
+    
+def create_overview_headers_main(path_main_dir):
+    '''
+    Create an overview of relevant FITS-headers and write it to a text-file
+    from the __main__.py file
+    
+    Input:
+        path_main_dir: string specifying path to main directory
+        
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Define path of raw directory
+    path_raw_dir = os.path.join(path_main_dir, 'raw')
+
+    # Check if raw directory exists, if not create it
+    if not os.path.exists(path_raw_dir):
+        os.makedirs(path_raw_dir)
+        print_wrap('\nThe raw directory {0:s} did not exist. It was created but you need to put your raw FITS-files there.'.format(path_raw_dir))
+    else:
+        # List FITS-files in raw directory
+        path_raw_files = glob.glob(os.path.join(path_raw_dir,'*.fits'))
+        
+        # Check if raw folder contains FITS-files
+        if len(path_raw_files) == 0:
+            print_wrap('\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
+        else:
+            # Define the base of the name of each file to be generated
+            header_first_file = pyfits.getheader(path_raw_files[0])
+            target_name = header_first_file['ESO OBS TARG NAME']
+            date_obs = header_first_file['DATE-OBS']
+            
+            name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
+        
+            # Define path to header overview to be created
+            path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
+          
+            # Create overview of headers
+            create_overview_headers(path_raw_dir, path_overview, log=False)
+            print_wrap('\nCreated an overview of the headers ' + path_overview + '.')
