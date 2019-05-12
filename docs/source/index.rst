@@ -3,19 +3,51 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to IRDAP's documentation!
+.. |stars| image:: https://img.shields.io/github/stars/robvanholstein/IRDAP.svg?style=social&label=Stars
+   :target: https://github.com/robvanholstein/IRDAP/
+   
+.. |watch| image:: https://img.shields.io/github/watchers/robvanholstein/IRDAP.svg?style=social&label=Watch
+   :target: https://github.com/robvanholstein/IRDAP/
+   
+.. |pypi| image:: https://img.shields.io/pypi/v/irdap.svg?colorB=<brightgreen>
+    :target: https://pypi.python.org/pypi/irdap/
+
+.. |github| image:: https://img.shields.io/github/release/robvanholstein/IRDAP.svg
+   :target: https://github.com/robvanholstein/IRDAP/ 
+   
+.. |last-commit| image:: https://img.shields.io/github/last-commit/robvanholstein/IRDAP.svg?colorB=e6c000
+   :target: https://github.com/robvanholstein/IRDAP/
+   
+.. IRDAP |stars| |watch|
+
+IRDAP
 =================================
 
+|pypi| |github| |last-commit| 
+  
+Contents
+---------
 .. toctree::
    :maxdepth: 1
-	
+   
+   Home <self>
    installation
    running
+   changelog
+   acknowledge
+   GitHub link <https://github.com/robvanholstein/IRDAP>
 
+----
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+Copyright notice:
+ 
+The IRDAP Python module is free software: you can redistribute it and/or modify it under 
+the terms of the GNU General Public License as published by the Free Software Foundation, 
+version 3 of the License.
+ 
+The IRDAP Python module is distributed in the hope that it will be useful, but without 
+any warranty; without even the implied warranty of merchantability or fitness for a 
+particular purpose. See the GNU General Public License for more details.
+ 
+You should have received a copy of the GNU General Public License along with the IRDAP 
+Python module. If not, see http://www.gnu.org/licenses/.

@@ -14,8 +14,7 @@ For data in pupil-tracking mode you must additionally cite van Holstein et al.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+the Free Software Foundation, either version 3 of the License.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -4350,6 +4349,16 @@ def run_demo(path_main_dir):
     
     #TODO: Really download the data (https://pynpoint.readthedocs.io/en/latest/running.html)
     # Download example data to example_data directory if it does not exist yet + ask for permission to download
+    
+    # 'https://github.com/robvanholstein/IRDAP/raw/master/irdap/example_data/'
+    # 'SPHER.2016-02-20T07_00_44.006.fits'
+    # 'SPHER.2016-02-20T07_02_09.295.fits'
+    # 'SPHER.2016-02-20T07_02_49.297.fits'
+    # 'SPHER.2016-02-20T07_03_27.243.fits'
+    # 'SPHER.2016-02-20T07_04_07.281.fits'
+    # 'SPHER.2016-02-20T08_25_14.427.fits'
+    
+    
     
     # Copy example data directory to raw subdirectory of main directory 
     path_example_dir = os.path.join(os.path.dirname(__file__), 'example_data')

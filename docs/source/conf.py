@@ -12,10 +12,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../..'))
 
+from irdap.irdap import __version__
 
 # -- Project information -----------------------------------------------------
 
@@ -24,9 +25,9 @@ copyright = '2019, R.G. van Holstein'
 author = 'R.G. van Holstein'
 
 # The short X.Y version
-version = ''
+version = __version__
 # The full version, including alpha/beta/rc tags
-release = '2019.5.11'
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -40,14 +41,16 @@ release = '2019.5.11'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
+    'sphinx.ext.napoleon',
+#    'sphinx.ext.doctest',
+#    'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
-    'sphinx.ext.coverage',
+#    'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode',
+#    'sphinx.ext.ifconfig',
+#    'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'IPython.sphinxext.ipython_console_highlighting',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -75,7 +78,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -83,13 +86,33 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
+'''
+html_theme_options = {'headfont':'Arial',
+                      'bodyfont':'Helvetica',
+                      #'headbgcolor':'black',
+                      'headtextcolor':'#00334d',#'#264040',
+                      
+                      'codebgcolor':'#ffffcc',#'#d9f2d9',#'#cfe2e2',
+                      
+                      #'bgcolor':'black',
+                      'relbarbgcolor':'black',
+                      
+                      'sidebarbgcolor':'#1a1a1a',
+                      'sidebartextcolor':'#f2f2f2',
+                      'sidebarlinkcolor':'#b3cde5',
+                      
+                      'footerbgcolor':'#1a1a1a', 
+                      
+                      'relbarbgcolor':'#00334d',#'#264040',
+                      'relbartextcolor':'white',
+                      'relbarlinkcolor':'white',
+                      }
+'''
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -104,8 +127,8 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
-
+html_sidebars = {'**':['globaltoc.html', 'relations.html','searchbox.html'],
+}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

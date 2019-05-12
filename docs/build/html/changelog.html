@@ -1,0 +1,442 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Changelog &mdash; IRDAP 2019.5.11 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Acknowledging fcmaker" href="acknowledge.html" />
+    <link rel="prev" title="Usage instructions" href="running.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> IRDAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2019.5.11
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Usage instructions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog  </a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledge.html">Acknowledging fcmaker</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub link</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IRDAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Changelog  </li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="changelog-last-commit-issues">
+<span id="changelog"></span><h1>Changelog <a class="reference external" href="https://github.com/fpavogt/fcmaker"><img alt="last-commit" src="https://img.shields.io/github/last-commit/fpavogt/fcmaker.svg?colorB=e6c000" /></a> <a class="reference external" href="https://github.com/fpavogt/fcmaker/issues"><img alt="issues" src="https://img.shields.io/github/issues/fpavogt/fcmaker.svg?colorB=b4001e" /></a><a class="headerlink" href="#changelog-last-commit-issues" title="Permalink to this headline">¶</a></h1>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<ul class="last simple">
+<li>(!) for XSHOOTER, always place the slit horizontal (i.e. do not put the chart North)</li>
+<li>(!) formally validate the parallactic function</li>
+<li>(?) check connection to the online servers ahead of time, and issue a nice error if needed</li>
+<li>(?) include an instrument-free mode</li>
+<li>(?) add metadata to .jpg</li>
+<li>(?) add support for jitter in HAWKI (showing the max jitter area with a circle)</li>
+<li>(?) find a better way to display the allowed TT area for MUSE, e.g. shaded area with
+<code class="docutils literal notranslate"><span class="pre">shapley</span></code></li>
+<li>(?) make the obsdate an <code class="docutils literal notranslate"><span class="pre">fc_params</span></code> entry rather than a global variable</li>
+<li>(?) for time critical OBs, get the time from the OB</li>
+</ul>
+</div>
+<dl class="docutils">
+<dt>v103.1.1 October 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>fixed <a class="reference external" href="https://github.com/fpavogt/fcmaker/issues/10">#10</a>: added 180deg to the parallactic
+angle derived by the <code class="docutils literal notranslate"><span class="pre">UT2.parallactic_angle()</span></code> routine, to match the screen orientation at UT2.</li>
+</ul>
+</dd>
+<dt>v103.1.0 October 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>fixed a bug in the calculation of ESPRESSO left chart radius.</li>
+<li>fixed the axis of the nodding for XSHOOTER AutoNod templates.</li>
+<li>properly fixed issue <a class="reference external" href="https://github.com/fpavogt/fcmaker/issues/7">#7</a></li>
+<li>draw the XSHOOTER slits in full lines to improve clarity</li>
+<li>rotated the slit “P.A.” name by 180deg for XSHOOTER to match the UT2 screen</li>
+</ul>
+</dd>
+<dt>v103.0.0 October 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>changed versioning scheme to highlight the supported Period.</li>
+<li>renamed ‘O’ and ‘S’ to ‘Obj.’ and ‘Sky’ in the legend, for clarity.</li>
+<li>for XSHOOTER, show the footprint of the Acq. camera also at the <code class="docutils literal notranslate"><span class="pre">Target</span></code> position.</li>
+<li>suppressed all VOTableSpecWarning (they’re not my fault!)</li>
+<li>added support for ESPRESSO</li>
+<li>set astropy logging level to “WARNING” to clean up the prompt</li>
+<li>fixed the scalebar fontsize warning from aplpy</li>
+<li>added new blind-offset example for XSHOOTER in the doc</li>
+<li>fixed tiny bug in calculation of right-plot radius for XSHOOTER and MUSE, in case of blind offsets</li>
+</ul>
+</dd>
+<dt>v0.4.0 August 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>deal with multiple spaces in the local files, e.g. [O  S O]</li>
+<li>added test OBs on p2demo, reachable via <code class="docutils literal notranslate"><span class="pre">--demo</span></code> mode in fcmaker</li>
+<li>minor tweaks to the docs</li>
+</ul>
+</dd>
+<dt>v0.3.8 July 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>fixed issue <a class="reference external" href="https://github.com/fpavogt/fcmaker/issues/6">#6</a></li>
+<li>fixed issue <a class="reference external" href="https://github.com/fpavogt/fcmaker/issues/7">#7</a></li>
+<li>added a N-E arrow to the left plot (useful for custom FITS files not aligned NORTH)</li>
+<li>added a scale to the right plot</li>
+</ul>
+</dd>
+<dt>v0.3.7 July 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>fixed issue <a class="reference external" href="https://github.com/fpavogt/fcmaker/issues/4">#4</a></li>
+<li>By default, if there are no finding charts associated with an OB, just use the first slot to store the fcmaker one.</li>
+<li>for MUSE WFM, only show a purple cross-hair during the acquisition for the “movetopixel” template</li>
+</ul>
+</dd>
+<dt>v0.3.6 July 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>fixed <a class="reference external" href="https://github.com/fpavogt/fcmaker/issues/3">#3</a> for HAWKI and XSHOOTER OBs on p2</li>
+<li>for MUSE OBs on local mode, tries to display the TTS only if WFM-AO, or NFM.</li>
+</ul>
+</dd>
+<dt>v0.3.5 June 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>fixed bad bug when feeding no <code class="docutils literal notranslate"><span class="pre">obid</span></code></li>
+</ul>
+</dd>
+<dt>v0.3.4 June 2018, F.P.A. Vogt</dt>
+<dd><ul class="first last simple">
+<li>fixed missing relsize package in mplstyle</li>
+<li>added a check to make sure the user provides the wavelength of custom fits files</li>
+<li>added section about custom FITS file to the doc.</li>
+<li>fixed lack of <cite>ins_mode</cite> in new NFM OBs</li>
+<li>added new keywords for command line option, including <code class="docutils literal notranslate"><span class="pre">--p2uid</span></code>, <code class="docutils literal notranslate"><span class="pre">--obsid</span></code>,
+<code class="docutils literal notranslate"><span class="pre">--plot-loc</span></code>, <code class="docutils literal notranslate"><span class="pre">--data-loc</span></code>, <code class="docutils literal notranslate"><span class="pre">--bk-image</span></code> and <code class="docutils literal notranslate"><span class="pre">--bk-lam</span></code>.</li>
+</ul>
+</dd>
+<dt>v0.3.3 June 2018, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>corrected the orientation of the MUSE WFM field (180 flip required)</li>
+<li>added correct Cassegrain field-of-view of 7.4 arcmin in radius</li>
+<li>formalized support for MUSE NFM, including …</li>
+<li>the creation of mock bk_images from all the Gaia entries in the area.</li>
+<li>fixed bug in radius of allowed GS displayed</li>
+<li>fixed bug with chart tags (now displayed only when required)</li>
+<li>used telescope coordinates from ESO website</li>
+<li>added clear mark for slit PA in X-shooter charts</li>
+</ul>
+</dd>
+<dt>v0.3.2 May 2018, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>added *.fits to .gitignore</li>
+<li>added Pillow to the list of required packages (for direct jpg exports)</li>
+<li>added a few more Exceptions to fool-proof stuff</li>
+<li>bumped p2api version request to 0.92, to have the fix for ephemeris files</li>
+<li>added do_parang keyword: by-default, hide the instrument field-of-view if a parallactic angle is required</li>
+<li>updated Gaia DR2 article link in doc</li>
+<li>added symbols for OBs with moving targets or parallactic angles</li>
+<li>added *.pdf and *.jpg to .gitignore</li>
+<li>added AO support for HAWKI</li>
+<li>added RRM templates to MUSE and HAWKI</li>
+</ul>
+</dd>
+<dt>v0.3.1 May 2018, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>added XSHOOTER to the list of supported instruments</li>
+<li>gave up on using the OBS-DATE keywords to draw the proper motion tracks for stars in
+the field. Always use fcm_m.pm_track_time instead.</li>
+</ul>
+</dd>
+<dt>v0.3.0 May 2018, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>added 2 functions to run fcmaker from within a script (make_fc and make fc_local)</li>
+<li>restructured _main_.py and fcmaker.py as a result</li>
+<li>replaced ‘propagate_pm’ with new ‘SkyCoord.apply_space_motion()’ function from Astropy 3.0</li>
+<li>draw the proper motion vectors of the fastest stars in the field of view, using GAIA DR2.</li>
+<li>for these, if OBS-DATE is in the fits header, then plot the pm line between obstime and
+then. Else, plot as long as fcm_m.pm_track_time</li>
+<li>started working on support for XSHOOTER</li>
+<li>when DSS2 Red is not used for the zoomed-in view, still use it for the right-hand-side
+plot</li>
+<li>when reading a local file, only read the keywords that matter</li>
+<li>made the use of Python-Latex and No-montage the default (safer for new users)</li>
+<li>added support for moving targets with ephemeris files (on P2)</li>
+</ul>
+</dd>
+<dt>v0.2.1 January 2018, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>fixed a bad bug with the p2api import</li>
+</ul>
+</dd>
+<dt>v0.2.00 January 2018, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>remove local version of p2api in favor of pip one</li>
+<li>initial Github+pypi release</li>
+<li>fixed bug when no upload required (reply ‘0’)</li>
+</ul>
+</dd>
+<dt>v0.1.48 November 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>added Gallery page to docs, to show all local setup files, and some plots</li>
+<li>fixed LaTeX bug when flagging bad telluric stars</li>
+<li>added validity check of user Guide Stars (too close/far away ?)</li>
+<li>added ability to export to png directly (helps with direct inclusion in docs)</li>
+</ul>
+</dd>
+<dt>v0.1.47 November 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>added basic support for HAWKI, incl. Fast Phot acquisitions</li>
+<li>added query to UCAC2 via Vizier, to show which Guide Stars are suitable</li>
+<li>added check of TTS validity for MUSE AO (distance-wise), flagging the bad ones</li>
+<li>added variable size of the right-hand-side plot, to show all offsets, even the very
+large ones</li>
+<li>add pypi badge to main page</li>
+</ul>
+</dd>
+<dt>v0.1.46 November 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>fixed a bug when the length of offsets in smaller than <code class="docutils literal notranslate"><span class="pre">noff</span></code></li>
+<li>fixed a bug when there is only one AO TTS defined.</li>
+<li>added support for <code class="docutils literal notranslate"><span class="pre">MUSE_wfm_cal_astrom</span></code> and <code class="docutils literal notranslate"><span class="pre">MUSE_wfm_cal_specphot</span></code></li>
+</ul>
+</dd>
+<dt>v0.1.45 November 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>updated doc with correct example chart</li>
+</ul>
+</dd>
+<dt>v0.1.43 November 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>added <code class="docutils literal notranslate"><span class="pre">Intended</span> <span class="pre">audience</span></code>, <code class="docutils literal notranslate"><span class="pre">Topic</span></code> and <code class="docutils literal notranslate"><span class="pre">License</span></code> flags to pypi release</li>
+<li>implemented support for DETECTOR offsets in MUSE</li>
+<li>added the <code class="docutils literal notranslate"><span class="pre">--obsdate</span></code> flag, to feed the date of the observation to fcmaker</li>
+<li>added the <code class="docutils literal notranslate"><span class="pre">--obsdate</span></code> and <code class="docutils literal notranslate"><span class="pre">__version__</span></code> to the finding charts</li>
+<li>added support of target proper motion of 1st order (assuming flat sky)</li>
+<li>updated doc</li>
+</ul>
+</dd>
+<dt>v0.1.42 November 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>in case of large blind offset, have a flexible zoom level in the left plot panel</li>
+<li>added option to save to PDF in fcmaker_plots.make_fc() and __main__.py</li>
+<li>fixed all docstrings in p2api.py</li>
+<li>handle the orientation of custom background images by rotating the N-E arrows.</li>
+<li>added a default “target” field for all MUSE WFM (AO) observations, because this is where
+the system first closes the AO loop (before applying any of the offset in the observing
+sequence). This allows the observer to check that the TTS are also valid in this position.</li>
+<li>added legend to the charts</li>
+<li>restructured the plotting to better separate instrument-specific elements from generic
+ones. Created fcmaker_instrument_dispatch.py to that effect.</li>
+<li>added support for OBs with multiple science templates</li>
+<li>added the obId to chart</li>
+</ul>
+</dd>
+<dt>v0.1.41 November 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>propagated the PA of the acquisition frame to the Science sequence (MUSE)</li>
+<li>allowed to specify only 1 bk_image and bk_lams in automated mode</li>
+</ul>
+</dd>
+<dt>v0.1.40 October 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>included doc in pypi package</li>
+<li>updated doc</li>
+</ul>
+</dd>
+<dt>v0.1.26 October 2017, F.P.A. Vogt:</dt>
+<dd><ul class="first last simple">
+<li>pre-release</li>
+<li>initial doc assembled</li>
+</ul>
+</dd>
+</dl>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="acknowledge.html" class="btn btn-neutral float-right" title="Acknowledging fcmaker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="running.html" class="btn btn-neutral" title="Usage instructions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, R.G. van Holstein
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
