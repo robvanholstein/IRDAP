@@ -81,7 +81,7 @@ def main(args=None):
     # Add parser arguments
     parser.add_argument('-v', '--version', action='version', version=('IRDAP %s' % __version__))
     parser.add_argument('-d', '--demo', action='store_true',
-                        help='run pipeline in current working directory with example\ndata of the circumstellar disk of T Cha')
+                        help='run pipeline in current working directory with example\ndata of the circumstellar disk of T Cha (1 HWP cycle)')
     parser.add_argument('-o', '--headers', action='store_true',
                         help='create overview of relevant headers of FITS-files in raw\nsubdirectory')
     parser.add_argument('-c', '--makeconfig', action='store_true',

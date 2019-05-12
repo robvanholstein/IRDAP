@@ -4341,8 +4341,8 @@ def run_demo(path_main_dir):
     '''
 
     print_wrap('\nStarting example reduction using data of the circumstellar ' +
-               'disk of T Cha as published in Pohl et al. (2017) and used ' + 
-               'in van Holstein et al. (2019).')
+               'disk of T Cha (1 HWP cycle) as published in Pohl et al. (2017) ' +
+               'and used in van Holstein et al. (2019).')
     
     # Define path of raw directory and raise error if it already exist
     path_raw_dir = os.path.join(path_main_dir, 'raw')
