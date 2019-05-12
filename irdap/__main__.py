@@ -5,12 +5,12 @@ it.
 IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
-Full documentation: http://www.spherepol.nl.
-Feedback, questions, comments: vanholstein@strw.leidenuniv.nl.
+Full documentation: https://robvanholstein.github.io/IRDAP
+Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
-When publishing data reduced with IRDAP you must cite van Holstein et al. 
+When publishing data reduced with IRDAP, please cite van Holstein et al. 
 (2019): <ADS link>. 
-For data in pupil-tracking mode you must additionally cite van Holstein et al. 
+For data in pupil-tracking mode please additionally cite van Holstein et al. 
 (2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.
                                                  
 This program is free software: you can redistribute it and/or modify
@@ -51,7 +51,7 @@ def main(args=None):
     File written by Rob van Holstein
     Function status: verified       
     '''
-    
+
     if args is None:
         # Obtain arguments that user put in
         args = sys.argv[1:]
@@ -69,14 +69,14 @@ def main(args=None):
                                                  'If this is the first time you use IRDAP, it is recommended to run the demo\n' + 
                                                  'first by using the terminal to navigate to a directory of your choice and\n' +
                                                  'typing irdap --demo.\n\n' + 
-                                                 'When publishing data reduced with IRDAP you must cite van Holstein et al.\n' +
+                                                 'When publishing data reduced with IRDAP, please cite van Holstein et al.\n' +
                                                  '(2019): <ADS link>.\n' +
-                                                 'For data in pupil-tracking mode you must additionally cite van Holstein et al.\n' +
+                                                 'For data in pupil-tracking mode please additionally cite van Holstein et al.\n' +
                                                  '(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.',
-                                     epilog='Full documentation: http://www.spherepol.nl.\n' +
-                                             'Feedback, questions, comments: vanholstein@strw.leidenuniv.nl.\n\n' + 
-                                             'IRDAP Copyright (C) 2019 R.G. van Holstein.', 
-                                             formatter_class=RawTextHelpFormatter)
+                                     epilog='Full documentation: https://robvanholstein.github.io/IRDAP\n' +
+                                            'Feedback, questions, comments: vanholstein@strw.leidenuniv.nl\n\n' + 
+                                            'IRDAP Copyright (C) 2019 R.G. van Holstein', 
+                                            formatter_class=RawTextHelpFormatter)
     
     # Add parser arguments
     parser.add_argument('-v', '--version', action='version', version=('IRDAP %s' % __version__))

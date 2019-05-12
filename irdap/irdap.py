@@ -4,12 +4,12 @@ This file contains all functions used by IRDAP.
 IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
-Full documentation: http://www.spherepol.nl.
-Feedback, questions, comments: vanholstein@strw.leidenuniv.nl.
+Full documentation: https://robvanholstein.github.io/IRDAP
+Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
-When publishing data reduced with IRDAP you must cite van Holstein et al. 
+When publishing data reduced with IRDAP, please cite van Holstein et al. 
 (2019): <ADS link>. 
-For data in pupil-tracking mode you must additionally cite van Holstein et al. 
+For data in pupil-tracking mode please additionally cite van Holstein et al. 
 (2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
 This program is free software: you can redistribute it and/or modify
@@ -4342,7 +4342,8 @@ def run_demo(path_main_dir):
 
     print_wrap('\nStarting example reduction using data of the circumstellar ' +
                'disk of T Cha (1 HWP cycle) as published in Pohl et al. (2017) ' +
-               'and used in van Holstein et al. (2019).')
+               'and used in van Holstein et al. (2019) ' + 
+               '(<ADS link>).')
     
     # Define path of raw directory and raise error if it already exist
     path_raw_dir = os.path.join(path_main_dir, 'raw')
@@ -4587,13 +4588,13 @@ def run_pipeline(path_main_dir):
     printandlog('\n###############################################################################')
     printandlog('# Important notice')
     printandlog('###############################################################################')
-    printandlog('\nWhen publishing data reduced with IRDAP you must cite van Holstein et al.')
+    printandlog('\nWhen publishing data reduced with IRDAP, please cite van Holstein et al.')
     printandlog('(2019): <ADS link>.')
-    printandlog('For data in pupil-tracking mode you must additionally cite van Holstein et al.')
+    printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
     printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
-    printandlog('\nFull documentation: http://www.spherepol.nl.')
-    printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl.')
-    printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein.')
+    printandlog('\nFull documentation: https://robvanholstein.github.io/IRDAP')
+    printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl')
+    printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein')
     printandlog('\n###############################################################################')
     printandlog('# Preparing data reduction')
     printandlog('###############################################################################') 
