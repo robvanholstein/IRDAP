@@ -38,6 +38,7 @@ Contents
    
    Home <self>
    installation
+   example_reduction
    running
    changelog
    acknowledge

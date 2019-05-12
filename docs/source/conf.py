@@ -51,6 +51,7 @@ extensions = [
 #    'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'IPython.sphinxext.ipython_console_highlighting',
+    'sphinx.ext.autosectionlabel',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -78,7 +79,7 @@ language = None
 exclude_patterns = []
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = None
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -91,28 +92,11 @@ html_theme = 'sphinx_rtd_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-'''
-html_theme_options = {'headfont':'Arial',
-                      'bodyfont':'Helvetica',
-                      #'headbgcolor':'black',
-                      'headtextcolor':'#00334d',#'#264040',
-                      
-                      'codebgcolor':'#ffffcc',#'#d9f2d9',#'#cfe2e2',
-                      
-                      #'bgcolor':'black',
-                      'relbarbgcolor':'black',
-                      
-                      'sidebarbgcolor':'#1a1a1a',
-                      'sidebartextcolor':'#f2f2f2',
-                      'sidebarlinkcolor':'#b3cde5',
-                      
-                      'footerbgcolor':'#1a1a1a', 
-                      
-                      'relbarbgcolor':'#00334d',#'#264040',
-                      'relbartextcolor':'white',
-                      'relbarlinkcolor':'white',
+
+html_theme_options = {                      
+                      'titles_only': True,
                       }
-'''
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

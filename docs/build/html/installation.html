@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Usage instructions" href="running.html" />
+    <link rel="next" title="Example Reduction" href="example_reduction.html" />
     <link rel="prev" title="IRDAP" href="index.html" /> 
 
   
@@ -84,11 +84,8 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#testing-the-installation">Testing the installation</a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_reduction.html">Example Reduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="running.html">Usage instructions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledge.html">Acknowledging fcmaker</a></li>
@@ -159,49 +156,28 @@
             
   <div class="section" id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<p>fcmaker is available on pypi, which makes its installation easier than ever.
-In a terminal, type:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">fcmaker</span>
+<p>IRDAP is written for Python 3.6 and 3.7 and is available on <a class="reference external" href="https://pypi.org/project/irdap/">PyPi</a>.
+To install IRDAP simply type in a terminal:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">irdap</span>
 </pre></div>
 </div>
-<p>And that should take care of things.</p>
-<p>The most recent release of fcmaker is also available for download from its <a class="reference external" href="https://github.com/fpavogt/fcmaker/releases/latest/">Github repository</a>.
-Interested users can fork the fcmaker repository if they want to get access to the
-latest updates not yet released. <em>Push requests</em> for bug fixes and new features are
-welcome and will be examined in detail.</p>
-<div class="section" id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
-<p>fcmaker is written in Python 3.6. The following packages are required for it to work
-properly:</p>
-<ul class="simple">
-<li>aplpy (1.1.1 or above)</li>
-<li>astroplan</li>
-<li>astropy (3.0 or above)</li>
-<li>astroquery (0.3.4 or above)</li>
-<li>matplotlib (2.0.2 or above)</li>
-<li>numpy (1.13.1 or or above)</li>
-<li>p2api (0.92 or above)</li>
-<li>pillow (4.2.1 or above)</li>
-<li>pytz (2018 or above)</li>
-<li>PyYAML (3.12 or above)</li>
-<li>scipy (0.19.0 or above)</li>
-</ul>
-<p>Optional:</p>
-<ul class="simple">
-<li>Montage and montage-wrapper (0.9.9 or above, only until the next release of aplpy)</li>
-<li>Proper system-wide LateX installation (allows for prettier plots)</li>
-</ul>
-<p>The Montage package is required to rotate the finding charts North, even if the underlying
-FITS file isn’t. It won’t be required once aplpy gets upgraded.</p>
+<p>Because IRDAP is being actively developed, it is recommended to regularly check for updates through:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">irdap</span>
+</pre></div>
 </div>
+<p>and install the latest version.</p>
+<p>The most recent release of IRDAP is also available for download from its
+<a class="reference external" href="https://github.com/robvanholstein/IRDAP/releases/latest/">Github repository</a>.</p>
 <div class="section" id="testing-the-installation">
 <h2>Testing the installation<a class="headerlink" href="#testing-the-installation" title="Permalink to this headline">¶</a></h2>
-<p>In a terminal shell, try to access the basic help of fcmaker:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">fcmaker</span> <span class="o">--</span><span class="n">help</span>
+<p>In a terminal, try to access the basic help and the version of IRDAP:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">help</span>
+
+<span class="n">irdap</span> <span class="o">--</span><span class="n">version</span>
 </pre></div>
 </div>
-<p>If that works, chances are, you will probably be fine. Note that fcmaker requires a
-connection to the internet to work (even in local mode).</p>
+<p>If that works, IRDAP is most likely installed correctly.</p>
+<p>As a next step, it is recommended to run the <a class="reference internal" href="example_reduction.html#example-reduction"><span class="std std-ref">Example Reduction</span></a>.</p>
 </div>
 </div>
 
@@ -213,7 +189,7 @@ connection to the internet to work (even in local mode).</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="running.html" class="btn btn-neutral float-right" title="Usage instructions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="example_reduction.html" class="btn btn-neutral float-right" title="Example Reduction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral" title="IRDAP" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
