@@ -32,7 +32,7 @@ with open("README.md", "r") as fh:
     
 setup(
    name='irdap',
-   version='2019.5.11',
+   version='2019.5.12',
    author='R.G. van Holstein',
    author_email='vanholstein@strw.leidenuniv.nl',
    packages=['irdap'],

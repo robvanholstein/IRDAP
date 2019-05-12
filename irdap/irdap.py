@@ -25,7 +25,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''   
 
-__version__ = '2019.5.11'
+__version__ = '2019.5.12'
 
 ###############################################################################
 # Import packages
@@ -39,6 +39,7 @@ import warnings
 import shutil
 import configparser
 import textwrap
+import urllib
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -200,7 +201,10 @@ def input_wrap(string):
     Function status: verified  
     '''
     
-    return input(wrapstr(string))
+    return input(textwrap.fill(string, width=80, 
+                               replace_whitespace=False,
+                               drop_whitespace=False,
+                               break_long_words=False))
 
 ###############################################################################
 # printandlog
@@ -4327,7 +4331,7 @@ def perform_postprocessing(cube_single_sum,
 def run_demo(path_main_dir):
     '''
     Run example reduction with data from T Cha as published in Pohl et al.
-    (2017)
+    (2017) and  and used in van Holstein et al. (2019)
     
     Input:
         path_main_dir: string specifying path to main directory
@@ -4338,38 +4342,53 @@ def run_demo(path_main_dir):
 
     print_wrap('\nStarting example reduction using data of the circumstellar ' +
                'disk of T Cha as published in Pohl et al. (2017) and used ' + 
-               'in van Holstein et al. (2019)')
+               'in van Holstein et al. (2019).')
     
     # Define path of raw directory and raise error if it already exist
     path_raw_dir = os.path.join(path_main_dir, 'raw')
 
-    if os.path.exists(path_raw_dir):
-        raise IOError('\n\nThere is already a "raw" subdirectory in current working ' + 
-                      'directory. Please remove it before running the demo.')
+    if not os.path.exists(path_raw_dir):
+        # Create raw directory
+        os.makedirs(path_raw_dir)
+        print_wrap('\nCreated raw directory {0:s}'.format(path_raw_dir))
+  
+    # Define names of example data
+    name_example_files = ['SPHER.2016-02-20T07_00_44.006.fits', 
+                          'SPHER.2016-02-20T07_02_09.295.fits',
+                          'SPHER.2016-02-20T07_02_49.297.fits',
+                          'SPHER.2016-02-20T07_03_27.243.fits',
+                          'SPHER.2016-02-20T07_04_07.281.fits',
+                          'SPHER.2016-02-20T08_25_14.427.fits']
     
-    #TODO: Really download the data (https://pynpoint.readthedocs.io/en/latest/running.html)
-    # Download example data to example_data directory if it does not exist yet + ask for permission to download
-    
-    # 'https://github.com/robvanholstein/IRDAP/raw/master/irdap/example_data/'
-    # 'SPHER.2016-02-20T07_00_44.006.fits'
-    # 'SPHER.2016-02-20T07_02_09.295.fits'
-    # 'SPHER.2016-02-20T07_02_49.297.fits'
-    # 'SPHER.2016-02-20T07_03_27.243.fits'
-    # 'SPHER.2016-02-20T07_04_07.281.fits'
-    # 'SPHER.2016-02-20T08_25_14.427.fits'
-    
-    
-    
-    # Copy example data directory to raw subdirectory of main directory 
-    path_example_dir = os.path.join(os.path.dirname(__file__), 'example_data')
-    shutil.copytree(path_example_dir, path_raw_dir)
+    # Download example data to directory with example data
+    data_exists = all([os.path.exists(os.path.join(path_raw_dir, file)) for file in name_example_files])
+    if not data_exists:
+        # Ask if user wants to download the data
+        proceed_download = input_wrap('\nTo run the demo, 48.5 MB of data needs to be downloaded. Proceed? (y/n) ')
 
-    # Create a configuration file in the main directory
-    make_config(path_main_dir)
+        if proceed_download == 'y':
+            # Define URL of example data
+            url_example_data = 'https://github.com/robvanholstein/IRDAP/raw/master/irdap/example_data/'
     
-    # Run the pipeline
-    run_pipeline(path_main_dir)
+            # Download example data
+            print_wrap('\nDownloading data:\n')
+            for i, file in enumerate(name_example_files):
+                urllib.request.urlretrieve(url_example_data + file, os.path.join(path_raw_dir, file))
+                print_wrap('Downloaded file ' + str(i + 1) + '/' + str(len(name_example_files)) + ': ' + file)    
+        elif proceed_download == 'n':
+            print_wrap('\nNot downloading data, aborting.')
+        else:
+            print_wrap('\nThe provided input \'' + str(proceed_download) + '\' is not valid.') 
+    else:
+        print_wrap('\nExample data has been downloaded already.')
 
+    if data_exists or proceed_download == 'y':
+        # Create a configuration file in the main directory
+        make_config(path_main_dir)
+        
+        # Run the pipeline
+        run_pipeline(path_main_dir)
+            
 ###############################################################################
 # make_config
 ###############################################################################    
