@@ -4354,7 +4354,8 @@ def run_demo(path_main_dir):
         print_wrap('\nCreated raw directory {0:s}'.format(path_raw_dir))
   
     # Define names of example data
-    name_example_files = ['SPHER.2016-02-20T07_00_44.006.fits', 
+    name_example_files = ['SPHER.2016-02-20T06_59_15.857.fits',
+                          'SPHER.2016-02-20T07_00_44.006.fits', 
                           'SPHER.2016-02-20T07_02_09.295.fits',
                           'SPHER.2016-02-20T07_02_49.297.fits',
                           'SPHER.2016-02-20T07_03_27.243.fits',
