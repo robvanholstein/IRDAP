@@ -4345,13 +4345,8 @@ def run_demo(path_main_dir):
                'and used in van Holstein et al. (2019) ' + 
                '(<ADS link>).')
     
-    # Define path of raw directory and raise error if it already exist
+    # Define path of raw directory
     path_raw_dir = os.path.join(path_main_dir, 'raw')
-
-    if not os.path.exists(path_raw_dir):
-        # Create raw directory
-        os.makedirs(path_raw_dir)
-        print_wrap('\nCreated raw directory {0:s}'.format(path_raw_dir))
   
     # Define names of example data
     name_example_files = ['SPHER.2016-02-20T06_59_15.857.fits',
@@ -4369,6 +4364,11 @@ def run_demo(path_main_dir):
         proceed_download = input_wrap('\nTo run the demo, 56.6 MB of data needs to be downloaded. Proceed? (y/n) ')
 
         if proceed_download == 'y':
+            if not os.path.exists(path_raw_dir):
+                # Create raw directory
+                os.makedirs(path_raw_dir)
+                print_wrap('\nCreated raw directory {0:s}'.format(path_raw_dir))
+
             # Define URL of example data
             url_example_data = 'https://github.com/robvanholstein/IRDAP/raw/master/irdap/example_data/'
     
