@@ -1,0 +1,22 @@
+irdap package
+=============
+
+Submodules
+----------
+
+irdap.irdap module
+------------------
+
+.. automodule:: irdap.irdap
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: irdap
+    :members:
+    :undoc-members:
+    :show-inheritance:

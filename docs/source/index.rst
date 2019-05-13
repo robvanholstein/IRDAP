@@ -23,13 +23,18 @@
 
 .. |license| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
     :target: https://github.com/robvanholstein/IRDAP/blob/master/LICENSE
+
+.. |ads| image:: https://img.shields.io/badge/ads-%3CADS%20link%3E-blueviolet.svg
+	:target: <ADS link>
+	
+.. Made ads-link above on https://shields.io/ with "your badge"
 	
 .. IRDAP |stars| |watch|
 
 IRDAP
 =================================
 
-|pypi| |python| |github| |last-commit| |license|
+|pypi| |python| |github| |last-commit| |license| |ads|
   
 Contents
 ---------
@@ -42,7 +47,7 @@ Contents
    running
    changelog
    acknowledge
-   GitHub link <https://github.com/robvanholstein/IRDAP>
+   GitHub <https://github.com/robvanholstein/IRDAP>
 
 ----
 

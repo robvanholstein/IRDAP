@@ -1,0 +1,1716 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>irdap package &mdash; IRDAP 2019.5.12 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Changelog" href="changelog.html" />
+    <link rel="prev" title="irdap" href="modules.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> IRDAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2019.5.12
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_reduction.html">Example reduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Usage instructions</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">irdap</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">irdap package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledge.html">Acknowledging fcmaker</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub link</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IRDAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">irdap</a> &raquo;</li>
+        
+      <li>irdap package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/irdap.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="irdap-package">
+<h1>irdap package<a class="headerlink" href="#irdap-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-irdap.irdap">
+<span id="irdap-irdap-module"></span><h2>irdap.irdap module<a class="headerlink" href="#module-irdap.irdap" title="Permalink to this headline">¶</a></h2>
+<p>This file contains all functions used by IRDAP.</p>
+<p>IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
+Copyright (C) 2019 R.G. van Holstein</p>
+<p>Full documentation: <a class="reference external" href="https://robvanholstein.github.io/IRDAP">https://robvanholstein.github.io/IRDAP</a>
+Feedback, questions, comments: <a class="reference external" href="mailto:vanholstein&#37;&#52;&#48;strw&#46;leidenuniv&#46;nl">vanholstein<span>&#64;</span>strw<span>&#46;</span>leidenuniv<span>&#46;</span>nl</a></p>
+<p>When publishing data reduced with IRDAP, please cite van Holstein et al.
+(2019): &lt;ADS link&gt;.
+For data in pupil-tracking mode please additionally cite van Holstein et al.
+(2017): <a class="reference external" href="http://adsabs.harvard.edu/abs/2017SPIE10400E..15V">http://adsabs.harvard.edu/abs/2017SPIE10400E..15V</a>.</p>
+<p>This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License.</p>
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;<a class="reference external" href="https://www.gnu.org/licenses/">https://www.gnu.org/licenses/</a>&gt;.</p>
+<dl class="function">
+<dt id="irdap.irdap.annulus_0_to_1_based">
+<code class="descclassname">irdap.irdap.</code><code class="descname">annulus_0_to_1_based</code><span class="sig-paren">(</span><em>annulus</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.annulus_0_to_1_based" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert annulus parameters from 0- to 1-based indexing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>annulus</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>annulus</strong> – 1-based</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">same as for input, but with coord_center_x and coord_center_y</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.annulus_1_to_0_based">
+<code class="descclassname">irdap.irdap.</code><code class="descname">annulus_1_to_0_based</code><span class="sig-paren">(</span><em>annulus</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.annulus_1_to_0_based" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert annulus parameters from 1- to 0-based indexing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>annulus</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus:</em>) – coord_center_x: x-coordinate of center (pixels; 1-based)
+coord_center_y: y-coordinate of center (pixels; 1-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>annulus</strong> – 0-based</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">same as for input, but with coord_center_x and coord_center_y</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.check_sort_data_create_directories">
+<code class="descclassname">irdap.irdap.</code><code class="descname">check_sort_data_create_directories</code><span class="sig-paren">(</span><em>frames_to_remove=[]</em>, <em>combination_method_polarization='least squares'</em>, <em>object_centering_method='automatic'</em>, <em>save_preprocessed_data=True</em>, <em>show_images_center_coordinates=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.check_sort_data_create_directories" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the FITS-headers of the data in the raw directory, remove files and
+frames as specified by the user, sort the data and create directories to
+write processed data to.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>frames_to_remove</strong> (<em>list of integers and length-2-tuples of integers</em>) – indicating which files and frames to remove (0-based). A complete
+file can be removed by specifying its integer index, while a frame
+of specific file can be removed by specifying a tuple
+(file_index, frame_index) (default = []).</li>
+<li><strong>combination_method_polarization</strong> (<em>method to be used to produce the</em>) – incident Q- and U-images, ‘least squares’, ‘trimmed mean’ or ‘median’.
+In this function, if combination_method_polarization is forced
+to ‘least squares’ in case there is an unequal number of Q- and
+U-measurements (default = ‘least squares’).</li>
+<li><strong>object_centering_method</strong> (<em>method to center the OBJECT-frames. In this</em>) – function, if object_centering_method is ‘automatic’, it is set to
+‘center frames’ if there are CENTER-files, and is set to ‘
+gaussian’ if there are no CENTER-files. If object_centering_method
+is ‘center frames’ or ‘manual’, use fixed coordinates as provided by
+center_coordinates. If ‘gaussian’, fit a 2D Gaussian to each frame.
+If ‘cross-correlation’, fit a 2D Gaussian to the first frame and then
+use cross-correlation to align (register) the other frames onto the
+centered first  frame. For ‘gaussian’ and ‘cross-correlation’
+center_coordinates is used as initial guess of the center
+coordinates and the determined center coordinates are plotted for
+each image (default = ‘automatic’).</li>
+<li><strong>save_preprocessed_data</strong> (<em>If True</em><em>, </em><em>save preprocessed cubes of single-sum</em>) – and single-difference images in the ‘preprocessed’ folder so that
+the preprocessing can be skipped when re-running the pipeline
+(default = True).</li>
+<li><strong>show_images_center_coordinates</strong> (<em>If True</em><em>, </em><em>plot the sub-images showing the</em>) – center coordinates for each frame. The plots allow for checking
+whether the centering is correct and to scan the data for frames
+with bad quality (default = True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Note that combination_method_polarization, object_centering_method,
+save_preprocessed_data and show_images_center_coordinates are input to this
+function as they are required for the sorting of the data or preparing the
+pre-processing, not to actually perform centering for example.</p>
+<p>Note that path_raw_dir, path_sky_dir, path_center_dir, path_flux_dir,
+path_sky_flux_dir, path_preprocessed_dir, path_reduced_dir,
+path_reduced_star_pol_subtr_dir and path_overview are global variables to
+the function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>path_object_files</strong> (<em>list of paths to raw OBJECT-files</em>)</li>
+<li><strong>path_sky_files</strong> (<em>list of paths to raw SKY-files for OBJECT</em>)</li>
+<li><strong>path_center_files</strong> (<em>list of paths to raw CENTER-files</em>)</li>
+<li><strong>path_object_center_files</strong> (<em>list of paths to raw OBJECT-files to be</em>) – subtracted from raw CENTER-files</li>
+<li><strong>path_flux_files</strong> (<em>list of paths to raw FLUX-files</em>)</li>
+<li><strong>path_sky_flux_files</strong> (<em>list of paths to raw SKY-files for FLUX</em>)</li>
+<li><strong>indices_to_remove_object</strong> (<em>list of 1-D arrays with indices of frames to</em>) – be removed for each OBJECT-file. If no frames are to be removed the
+array is empty.</li>
+<li><strong>indices_to_remove_sky</strong> (<em>list of 1-D arrays with indices of frames to</em>) – be removed for each SKY-file. If no frames are to be removed the
+array is empty.</li>
+<li><strong>indices_to_remove_center</strong> (<em>list of 1-D arrays with indices of frames to</em>) – be removed for each CENTER-file. If no frames are to be removed the
+array is empty.</li>
+<li><strong>indices_to_remove_object_center</strong> (<em>list of 1-D arrays with indices of frames</em>) – to be removed for each OBJECT-file to be subtracted from a CENTER-file.
+If no frames are to be removed the array is empty.</li>
+<li><strong>indices_to_remove_flux</strong> (<em>list of 1-D arrays with indices of frames to</em>) – be removed for each FLUX-file. If no frames are to be removed the
+array is empty.</li>
+<li><strong>indices_to_remove_sky_flux</strong> (<em>list of 1-D arrays with indices of frames to</em>) – be removed for each SKY-file to be subtracted from the FLUX-file(s).
+If no frames are to be removed the array is empty.</li>
+<li><strong>file_index_object</strong> (<em>list of file indices of OBJECT-files (0-based)</em>)</li>
+<li><strong>file_index_flux</strong> (<em>list of file indices of FLUX-files (0-based)</em>)</li>
+<li><strong>object_centering_method</strong> (<em>method to center the OBJECT-frames, ‘center frames’,</em>) – ‘gaussian’, cross-correlation’ or ‘manual’.</li>
+<li><strong>combination_method_polarization</strong> (<em>method to be used to produce the</em>) – incident Q- and U-images, ‘least squares’, ‘trimmed mean’ or ‘median’</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein; based on function by Christian Ginski
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_annulus_values">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_annulus_values</code><span class="sig-paren">(</span><em>cube</em>, <em>param</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_annulus_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Obtain values of an image cube in an annulus (cube can have more than
+3 dimensions; the cut is made in the last 2 dimensions)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube</strong> (<em>image cube</em><em> or </em><em>frame to obtain values from</em>) – </li>
+<li><strong>param</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus coordinates:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>values_annulus</strong> (<em>values of the image cube in the annulus</em>)</li>
+<li><strong>frame_annulus</strong> (<em>frame showing the annulus used to obtain the values</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_azimuthal_stokes_parameters">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_azimuthal_stokes_parameters</code><span class="sig-paren">(</span><em>frame_Q</em>, <em>frame_U</em>, <em>rotation_angle=0</em>, <em>center_coordinates=None</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_azimuthal_stokes_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute images of azimuthal stokes parameters Q_phi and U_phi using defintions of
+van Holstein et al. (2019)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>frame_Q</strong> (<em>Stokes Q-image</em>) – </li>
+<li><strong>frame_U</strong> (<em>Stokes U-image</em>) – </li>
+<li><strong>rotation_angle</strong> (<em>additional image rotation</em><em> (</em><em>deg</em><em>)</em>) – </li>
+<li><strong>center_coordinates</strong> (<em>tuple containing center coordinates in x and y; if</em>) – None, use center of frame</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>Q_phi</strong> (<em>azimuthal Stokes Q_phi-image</em>)</li>
+<li><strong>U_phi</strong> (<em>azimuthal Stokes U_phi-image</em>)</li>
+<li><strong>phi</strong> (<em>frame showing values of the angle phi (deg)</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Q_phi &gt; 0 for azimuthal polarization and Q_phi &lt; 0 for radial polarization</p>
+</div>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_double_sum_double_difference">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_double_sum_double_difference</code><span class="sig-paren">(</span><em>cube_single_sum</em>, <em>cube_single_difference</em>, <em>header</em>, <em>double_difference_type='standard'</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_double_sum_double_difference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute double-sum I_Q- and I_U-images and double-difference Q- and U-images</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_single_sum</strong> (<em>cube of single-sum I_Q^+</em><em>, </em><em>I_Q^-</em><em>, </em><em>I_U^+ and I_U^- intensity images</em>) – </li>
+<li><strong>cube_single_difference</strong> (<em>cube of single-difference Q^+</em><em>, </em><em>Q^-</em><em>, </em><em>U^+ and U^- images</em>) – </li>
+<li><strong>header</strong> (<em>list of FITS-headers of raw science frames</em>) – </li>
+<li><strong>double_difference_type</strong> (<em>type of double difference to be computed</em><em>, </em><em>either</em>) – </li>
+<li><strong>or 'normalized'</strong><strong> (</strong><strong>see van Holstein et al. 2019; default = 'standard'</strong><strong>)</strong> (<em>'standard'</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>cube_I_Q_double_sum</strong> (<em>cube of double-sum I_Q-images</em>)</li>
+<li><strong>cube_I_U_double_sum</strong> (<em>cube of double-sum I_U-images</em>)</li>
+<li><strong>cube_Q_double_difference</strong> (<em>cube of double-difference Q-images</em>)</li>
+<li><strong>cube_U_double_difference</strong> (<em>cube of double-difference U-images</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_final_images">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_final_images</code><span class="sig-paren">(</span><em>frame_I_Q</em>, <em>frame_I_U</em>, <em>frame_Q</em>, <em>frame_U</em>, <em>header</em>, <em>single_posang_north_up=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_final_images" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute final images of polarimetric data reduction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>frame_I_Q</strong> (<em>I_Q-image</em>) – </li>
+<li><strong>frame_I_U</strong> (<em>I_U-image</em>) – </li>
+<li><strong>frame_Q</strong> (<em>Q-image</em>) – </li>
+<li><strong>frame_U</strong> (<em>U-image</em>) – </li>
+<li><strong>header</strong> (<em>list of headers of raw science frames</em>) – </li>
+<li><strong>single_posang_north_up</strong> (<em>if True the images produced are oriented with North up; if False the images have the image orientation of the</em>) – raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator
+position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more
+than one derotator position angle, because in these cases the final images produced always have North up</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>frame_I_tot</strong> (<em>total-intensity image</em>)</li>
+<li><strong>frame_Q_phi</strong> (<em>image of Q_phi</em>)</li>
+<li><strong>frame_U_phi</strong> (<em>image of U_phi</em>)</li>
+<li><strong>frame_I_pol</strong> (<em>polarized-intensity image</em>)</li>
+<li><strong>frame_AoLP</strong> (<em>image of angle of linear polarization computed from Q- and U-images</em>)</li>
+<li><strong>frame_DoLP</strong> (<em>image of degree of linear polarization computed from Q-, U-, I_Q- and I-U-images</em>)</li>
+<li><strong>frame_q</strong> (<em>image of normalized Stokes q</em>)</li>
+<li><strong>frame_u</strong> (<em>image of normalized Stokes u</em>)</li>
+<li><strong>frame_AoLP_norm</strong> (<em>image of angle of linear polarization computed using the normalized q- and u-images</em>)</li>
+<li><strong>frame_DoLP_norm</strong> (<em>image of degree of linear polarization computed using the normalized q- and u-images</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_fwhm_separation">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_fwhm_separation</code><span class="sig-paren">(</span><em>filter_used</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_fwhm_separation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute theoretical full width half maximum (FWHM) of point spread function
+of IRDIS and separation of satellite spots in CENTER-files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filter_used</strong> (<em>string of filter from header 'ESO INS1 FILT ID'</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
+<li><strong>fwhm</strong> (<em>full width half maximum (pixels)</em>)</li>
+<li><strong>separation</strong> (<em>separation of satellite spots (pixels)</em>)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein; based on a function by Julien Milli
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_irdis_model_coefficient_matrix">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_irdis_model_coefficient_matrix</code><span class="sig-paren">(</span><em>p1</em>, <em>p2</em>, <em>a1</em>, <em>a2</em>, <em>theta_hwp1</em>, <em>theta_hwp2</em>, <em>theta_der1</em>, <em>theta_der2</em>, <em>dates</em>, <em>filter_used</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_irdis_model_coefficient_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate coefficient matrix for the IRDIS polarimetry model correction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>p1</strong> (<em>array</em><em> or </em><em>list of mean parallactic angles of the first measurements used to compute the double sum and double difference</em><em> (</em><em>p^+</em><em>)</em>) – </li>
+<li><strong>p2</strong> (<em>array</em><em> or </em><em>list of mean parallactic angles of the second measurements used to compute the double sum and double difference</em><em> (</em><em>p^-</em><em>)</em>) – </li>
+<li><strong>a1</strong> (<em>array</em><em> or </em><em>list of mean altitude angles of the first measurements used to compute the double sum and double difference</em><em> (</em><em>a^+</em><em>)</em>) – </li>
+<li><strong>a2</strong> (<em>array</em><em> or </em><em>list of mean altitude angles of the second measurements used to compute the double sum and double difference</em><em> (</em><em>a^-</em><em>)</em>) – </li>
+<li><strong>theta_hwp1</strong> (<em>array</em><em> or </em><em>list of mean HWP angles of the first measurements used to compute the double sum and double difference</em><em> (</em><em>theta_hwp^+</em><em>)</em>) – </li>
+<li><strong>theta_hwp2</strong> (<em>array</em><em> or </em><em>list of mean HWP angles of the second measurements used to compute the double sum and double difference</em><em> (</em><em>theta_hwp^-</em><em>)</em>) – </li>
+<li><strong>theta_der1</strong> (<em>array</em><em> or </em><em>list of mean derotator angles of the first measurements used to compute the double sum and double difference</em><em> (</em><em>theta_der^+</em><em>)</em>) – </li>
+<li><strong>theta_der2</strong> (<em>array</em><em> or </em><em>list of mean derotator angles of the second measurements used to compute the double sum and double difference</em><em> (</em><em>theta_der^-</em><em>)</em>) – </li>
+<li><strong>dates</strong> (<em>array</em><em> or </em><em>list of dates of observations</em><em> (</em><em>format 'YYYY-MM-DD'</em><em>, </em><em>e.g.: '2018-09-30'</em><em>)</em>) – </li>
+<li><strong>filter_used</strong> (<em>string specifying filter used for observations</em><em> (</em><em>'FILT_BBF_Y'</em><em>, </em><em>'FILT_BBF_J'</em><em>, </em><em>'FILT_BBF_H'</em><em> or </em><em>'FILT_BBF_Ks'</em><em>)</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>X</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">coefficient matrix containing the double difference row vectors describing the measurements</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_mean_angle">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_mean_angle</code><span class="sig-paren">(</span><em>angles</em>, <em>degree_radian='degree'</em>, <em>axis=None</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_mean_angle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate mean of angles using mean of circular quantities</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>angles</strong> (<em>list</em><em> or </em><em>array of angles</em>) – </li>
+<li><strong>degree_radian</strong> (<em>if 'degree' input and output are in degree; else in radians</em>) – </li>
+<li><strong>axis</strong> (<em>axis to compute mean over; None</em><em> or </em><em>int</em><em> or </em><em>tuple of ints</em><em> (</em><em>default = None</em><em>)</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>mean_angle</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">scalar of mean angle</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_polarizer_mueller_matrix">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_polarizer_mueller_matrix</code><span class="sig-paren">(</span><em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_polarizer_mueller_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Mueller matrix of a polarizer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>d</strong> (<em>diattenuation of polarizer</em><em> (</em><em>-1 &lt;= d &lt;= 1</em><em>)</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>M</strong></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">Mueller matrix of a polarizer</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_reflection_mueller_matrix">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_reflection_mueller_matrix</code><span class="sig-paren">(</span><em>epsilon</em>, <em>Delta</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_reflection_mueller_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Mueller matrix describing a linear diattenuator and retarder
+(e.g. reflection off a mirror)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>epsilon</strong> (<em>linear diattenuation</em><em> (</em><em>-1 &lt;= epsilon &lt;= 1</em><em>, </em><em>ideally epsilon = 0</em><em>)</em>) – </li>
+<li><strong>Delta</strong> (<em>linear retardance</em><em> (</em><em>deg; 0 deg &lt;= Delta &lt; 360 deg</em><em>, </em><em>ideally Delta = 180 deg</em><em>)</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>M</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Mueller matrix of linear diattenuator and retarder</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.compute_rotation_mueller_matrix">
+<code class="descclassname">irdap.irdap.</code><code class="descname">compute_rotation_mueller_matrix</code><span class="sig-paren">(</span><em>alpha</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.compute_rotation_mueller_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Mueller matrix describing the rotation of the reference frame</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>alpha</strong> (<em>angle of rotation</em><em> (</em><em>deg</em><em>)</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>T</strong></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">rotation Mueller matrix</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.correct_instrumental_polarization_effects">
+<code class="descclassname">irdap.irdap.</code><code class="descname">correct_instrumental_polarization_effects</code><span class="sig-paren">(</span><em>cube_I_Q_double_sum</em>, <em>cube_I_U_double_sum</em>, <em>cube_Q_double_difference</em>, <em>cube_U_double_difference</em>, <em>header</em>, <em>file_index_object</em>, <em>annulus_star</em>, <em>annulus_background</em>, <em>combination_method_polarization='least squares'</em>, <em>trimmed_mean_prop_to_cut_polar=0.1</em>, <em>combination_method_intensity='mean'</em>, <em>trimmed_mean_prop_to_cut_intens=0.1</em>, <em>single_posang_north_up=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.correct_instrumental_polarization_effects" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate incident I_Q-, I_U-, Q- and U-images by correcting for the instrumental polarization effects of IRDIS using the polarimetric instrument model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_I_Q_double_sum</strong> (<em>cube of double-sum intensity I_Q-images in order of HWP cycles</em>) – </li>
+<li><strong>cube_I_U_double_sum</strong> (<em>cube of double-sum intensity I_U-images in order of HWP cycles</em>) – </li>
+<li><strong>cube_Q_double_difference</strong> (<em>cube of double-difference Stokes Q-images in order of HWP cycles</em>) – </li>
+<li><strong>cube_U_double_difference</strong> (<em>cube of double-difference Stokes U-images in order of HWP cycles</em>) – </li>
+<li><strong>header</strong> (<em>list of FITS-headers of OBJECT-files</em>) – </li>
+<li><strong>file_index_object</strong> (<em>list of file indices of OBJECT-files</em><em> (</em><em>0-based</em><em>)</em>) – </li>
+<li><strong>annulus_star</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus to measure polarization of star:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)</li>
+<li><strong>annulus_background</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus to measure and subtract background:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)</li>
+<li><strong>combination_method_polarization</strong> (<em>method to be used to produce the incident Q- and U-images</em><em>,</em>) – ‘least squares’, ‘trimmed mean’ or ‘median’ (default = ‘least squares’)</li>
+<li><strong>trimmed_mean_prop_to_cut_polar</strong> (<em>fraction to cut off of both tails of the distribution if</em>) – combination_method_polarization = ‘trimmed mean’ (default = 0.1)</li>
+<li><strong>combination_method_intensity</strong> (<em>method to be used to produce the incident I_Q- and I_U-images</em><em>,</em>) – ‘mean’, ‘trimmed mean’ or ‘median’ (default = ‘mean’)</li>
+<li><strong>trimmed_mean_prop_to_cut_intens</strong> (<em>fraction to cut off of both tails of the distribution if</em>) – trimmed_mean_prop_to_cut_intens = ‘trimmed mean’ (default = 0.1)</li>
+<li><strong>single_posang_north_up</strong> (<em>if True the images produced are oriented with North up; if False the images have the image orientation of the</em>) – raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator
+position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more
+than one derotator position angle, because in these cases the final images produced always have North up</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>frame_I_Q_incident</strong> (<em>polarimetric model-corrected incident I_Q-image</em>)</li>
+<li><strong>frame_I_U_incident</strong> (<em>polarimetric model-corrected incident I_U-image</em>)</li>
+<li><strong>frame_Q_incident</strong> (<em>polarimetric model-corrected incident Q-image</em>)</li>
+<li><strong>frame_U_incident</strong> (<em>polarimetric model-corrected incident U-image</em>)</li>
+<li><strong>cube_I_Q_incident</strong> (<em>cube of polarimetric model-corrected incident I_Q-images for each HWP cycle</em>)</li>
+<li><strong>cube_I_U_incident</strong> (<em>cube of polarimetric model-corrected incident I_U-images for each HWP cycle</em>)</li>
+<li><strong>cube_Q_incident</strong> (<em>cube of polarimetric model-corrected incident Q-images for each HWP cycle</em>)</li>
+<li><strong>cube_U_incident</strong> (<em>cube of polarimetric model-corrected incident U-images for each HWP cycle</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.create_overview_headers">
+<code class="descclassname">irdap.irdap.</code><code class="descname">create_overview_headers</code><span class="sig-paren">(</span><em>path_raw_dir</em>, <em>path_overview</em>, <em>log=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.create_overview_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an overview of relevant FITS-headers and write it to a text-file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>path_raw_dir</strong> (<em>string specifying path of raw directory</em>) – </li>
+<li><strong>path_overview</strong> (<em>string specifying path of header overview to be created</em>) – </li>
+<li><strong>log</strong> (<em>if True print and log statement that overview has been created</em><em>, </em><em>if</em>) – False do not print anything</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.create_overview_headers_main">
+<code class="descclassname">irdap.irdap.</code><code class="descname">create_overview_headers_main</code><span class="sig-paren">(</span><em>path_main_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.create_overview_headers_main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an overview of relevant FITS-headers and write it to a text-file
+from the __main__.py file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path_main_dir</strong> (<em>string specifying path to main directory</em>) – </td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.create_sub_image">
+<code class="descclassname">irdap.irdap.</code><code class="descname">create_sub_image</code><span class="sig-paren">(</span><em>frame</em>, <em>x0</em>, <em>y0</em>, <em>crop_radius</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.create_sub_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a square sub-image by cropping it from an image frame</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>frame</strong> (<em>image frame to be cropped</em>) – </li>
+<li><strong>x0</strong> (<em>x-coordinate of center of sub-image</em>) – </li>
+<li><strong>y0</strong> (<em>y-coordinate of center of sub-image</em>) – </li>
+<li><strong>crop_radius</strong> (<em>half the length of the sides of the square sub-image. If</em>) – None the complete frame is returned as the sub-image.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>sub_image</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">sub-image</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.determine_star_polarization">
+<code class="descclassname">irdap.irdap.</code><code class="descname">determine_star_polarization</code><span class="sig-paren">(</span><em>cube_I_Q</em>, <em>cube_I_U</em>, <em>cube_Q</em>, <em>cube_U</em>, <em>annulus_star</em>, <em>annulus_background</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.determine_star_polarization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine polarization of star in annulus</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube_I_Q</strong> (<em>cube of I_Q-images</em>) – </li>
+<li><strong>cube_I_U</strong> (<em>cube of I_U-images</em>) – </li>
+<li><strong>cube_Q</strong> (<em>cube of Q-images</em>) – </li>
+<li><strong>cube_U</strong> (<em>cube of U-images</em>) – </li>
+<li><strong>annulus_star</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus to measure polarization of star:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)</li>
+<li><strong>annulus_background</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus to measure and subtract background:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>q</strong> (<em>normalized Stokes q measured in annulus</em>)</li>
+<li><strong>u</strong> (<em>normalized Stokes u measured in annulus</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.find_center_coordinates">
+<code class="descclassname">irdap.irdap.</code><code class="descname">find_center_coordinates</code><span class="sig-paren">(</span><em>list_frame_center_processed</em>, <em>path_processed_center_files</em>, <em>center_coordinates=(477</em>, <em>521</em>, <em>1503</em>, <em>511)</em>, <em>param_centering=(12</em>, <em>None</em>, <em>30000)</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.find_center_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find coordinates of star center from processed CENTER frames. The function
+shows the fitted coordinates of the satellite spots in an image and writes
+a REG-file that indicates the fitted centers and that can be loaded as a
+region in the FITS-files of the processed center frames.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>list_frame_center_processed</strong> (<em>list of processed center frames</em>) – </li>
+<li><strong>path_processed_center_files</strong> (<em>list of paths to processed CENTER files</em>) – </li>
+<li><strong>center_coordinates</strong> (<em>length-4-tuple with initial guess of center coordinates</em>) – x_left: initial guess of x-coordinate of center of left frame half
+y_left: initial guess of y-coordinate of center of left frame half
+x_right: initial guess of x-coordinate of center of right frame half
+y_right: initial guess of y-coordinate of center of right frame half
+Note that the center coordinates are defined in the complete frame,
+i.e. with both detector halves (pixels; 0-based). The default value
+is (477, 521, 1503, 511).</li>
+<li><strong>param_centering</strong> (<em>length-3-tuple with parameters for 2D</em>) – <p>Gaussian fitting the centers of the satellite spots in the CENTER-frames:
+crop_radius: half the length of side of square cropped sub-images used</p>
+<blockquote>
+<div>to fit 2D Gaussian to (pixels). Must be integer. If None, the complete
+frame is used for the fitting and center_coordinates is ignored.</div></blockquote>
+<dl class="docutils">
+<dt>sigfactor: all sub-image pixels with values smaller than</dt>
+<dd>sigfactor*standard deviation are replaced by random Gaussian noise
+to mask them for fitting the 2D Gaussian. If None, no pixels are
+replaced by Gaussian noise.</dd>
+<dt>saturation_level: all pixels within the smallest circle encompassing</dt>
+<dd>the pixels with a value equal to or higher than saturation_level
+are ignored when fitting the 2D Gaussian. We use a circle because
+strongly saturated pixels in the peak of the PSF often have values
+lower than saturation_level. If None, no pixels are ignored.</dd>
+</dl>
+<p>The default value of param_centering is (12, None, 30000).</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>center_coordinates</strong> (<em>a length-4-tuple with the determined center</em>)</li>
+<li><strong>coordinates (pixels)</strong> (<em>(x_left, y_left, x_right, y_right)</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein; based on functions by Julien Milli and
+Christian Ginski
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.fit_2d_gaussian">
+<code class="descclassname">irdap.irdap.</code><code class="descname">fit_2d_gaussian</code><span class="sig-paren">(</span><em>frame</em>, <em>x0=None</em>, <em>y0=None</em>, <em>x_stddev=1.0</em>, <em>y_stddev=1.0</em>, <em>theta=0.0</em>, <em>crop_radius=None</em>, <em>sigfactor=None</em>, <em>saturation_level=None</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.fit_2d_gaussian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a 2D-Gaussian to an image frame and return the center coordinates</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>frame</strong> (<em>image frame to fit Gaussian to</em>) – </li>
+<li><strong>x0</strong> (<em>center x-coordinate of sub-image used to fit Gaussian</em><em> (</em><em>pixels</em><em>)</em><em> Must be</em>) – integer. If None, the center of the frame is used. Ignored when
+crop_radius is None (default = None).</li>
+<li><strong>y0</strong> (<em>center y-coordinate of sub-image used to fit Gaussian</em><em> (</em><em>pixels</em><em>)</em><em> Must be</em>) – integer. If None, the center of the frame is used. Ignored when
+crop_radius is None (default = None).</li>
+<li><strong>x_stddev</strong> (<em>standard deviation in x-direction of Gaussian before rotating</em>) – by theta (default = 1.0)</li>
+<li><strong>y_stddev</strong> (<em>standard deviation in y-direction of Gaussian before rotating</em>) – by theta (default = 1.0)</li>
+<li><strong>theta</strong> (<em>rotation angle of Gaussian in rad</em><em>, </em><em>positive clockwise</em>) – (default = 0.0)</li>
+<li><strong>crop_radius</strong> (<em>half the length of side of square cropped sub-images used</em>) – to fit Gaussian to (pixels). Must be integer. If None, the complete
+frame is used for the fitting and the values of x0 and y0 are
+ignored (default = None).</li>
+<li><strong>sigfactor</strong> (<em>all sub-image pixels with values smaller than</em>) – sigfactor*standard deviation are replaced by random Gaussian noise
+to mask them for fitting the 2D Gaussian. If None, no pixels are
+replaced by Gaussian noise (default = None).</li>
+<li><strong>saturation_level</strong> (<em>all pixels within the smallest circle encompassing</em>) – the pixels with a value equal to or higher than saturation_level
+are ignored when fitting the 2D Gaussian. We use a circle because
+strongly saturated pixels in the peak of the PSF often have values
+lower than the saturation level. If None, no pixels are ignored
+(default = None).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>x_fit</strong> (<em>x-coordinate of center of fitted Gaussian in complete frame (pixels)</em>)</li>
+<li><strong>y_fit</strong> (<em>y-coordinate of center of fitted Gaussian in complete frame (pixels)</em>)</li>
+<li><strong>x_fit_sub_image</strong> (<em>x-coordinate of center of fitted Gaussian in sub-image frame (pixels)</em>)</li>
+<li><strong>y_fit_sub_image</strong> (<em>y-coordinate of center of fitted Gaussian in sub-image frame (pixels)</em>)</li>
+<li><strong>sub_image</strong> (<em>cropped sub-image frame used to fit Gaussian to</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein; based on a function by Julien Milli
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.input_wrap">
+<code class="descclassname">irdap.irdap.</code><code class="descname">input_wrap</code><span class="sig-paren">(</span><em>string</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.input_wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Redefine input() function so that it prints the string wrapped to a maximum
+of 80 characters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>string</strong> (<em>string to use for input</em><em>(</em><em>) </em><em>function</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">result from input() function</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.make_config">
+<code class="descclassname">irdap.irdap.</code><code class="descname">make_config</code><span class="sig-paren">(</span><em>path_main_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.make_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the default configuration file in the main directory</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path_main_dir</strong> (<em>string specifying path to main directory</em>) – </td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.perform_postprocessing">
+<code class="descclassname">irdap.irdap.</code><code class="descname">perform_postprocessing</code><span class="sig-paren">(</span><em>cube_single_sum</em>, <em>cube_single_difference</em>, <em>header</em>, <em>file_index_object</em>, <em>annulus_star='automatic'</em>, <em>annulus_background='large annulus'</em>, <em>double_difference_type='standard'</em>, <em>remove_vertical_band_detector_artefact=True</em>, <em>combination_method_polarization='least squares'</em>, <em>trimmed_mean_prop_to_cut_polar=0.1</em>, <em>combination_method_intensity='mean'</em>, <em>trimmed_mean_prop_to_cut_intens=0.1</em>, <em>single_posang_north_up=True</em>, <em>normalized_polarization_images=False</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.perform_postprocessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform post-processing of data, including applying the model-based correction
+for the instrumental polarization effects, and save final images to FITS-files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>cube_single_sum</strong> (<em>cube of pre-processed single-sum images</em>) – </li>
+<li><strong>cube_single_difference</strong> (<em>cube of pre-processed single-difference images</em>) – </li>
+<li><strong>header</strong> (<em>list of FITS-headers of OBJECT-files</em>) – </li>
+<li><strong>file_index_object</strong> (<em>list of file indices of OBJECT-files</em><em> (</em><em>0-based</em><em>)</em>) – </li>
+<li><strong>annulus_star</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus to measure polarization of star:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+If string ‘ao residuals’ the annulus will be automatically determined and
+be star-centered and located over the AO residuals. The inner radius
+and width of the annulus will depend on the filter used. If
+‘star aperture’ a small aparture located at the position of
+the central star will be used. If ‘automatic’, annulus_star will
+first be set to ‘ao residuals’ in case of coronagraphic data, and to
+‘star aperture’ in case of non-coronagraphic data (default = ‘automatic’).</li>
+<li><strong>annulus_background</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus to measure and subtract background:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+If string ‘large annulus’ the annulus will be star-centered and
+located far away from the star with an inner radius of 360 pixels
+and a width of 60 pixels (default = ‘large annulus’).</li>
+<li><strong>double_difference_type</strong> (<em>type of double difference to be computed</em><em>, </em><em>either</em>) – </li>
+<li><strong>or 'normalized'</strong><strong> (</strong><strong>see van Holstein et al. 2019; default = 'standard'</strong><strong>)</strong> (<em>'standard'</em>) – </li>
+<li><strong>remove_vertical_band_detector_artefact</strong> (<em>If True remove the vertical band detector artefact seen in</em>) – the double-difference Q- and U-images. If False don’t remove it (default = True).</li>
+<li><strong>combination_method_polarization</strong> (<em>method to be used to produce the incident Q- and U-images</em><em>,</em>) – ‘least squares’, ‘trimmed mean’ or ‘median’ (default = ‘least squares’)</li>
+<li><strong>trimmed_mean_prop_to_cut_polar</strong> (<em>fraction to cut off of both tails of the distribution if</em>) – combination_method_polarization = ‘trimmed mean’ (default = 0.1)</li>
+<li><strong>combination_method_intensity</strong> (<em>method to be used to produce the incident I_Q- and I_U-images</em><em>,</em>) – ‘mean’, ‘trimmed mean’ or ‘median’ (default = ‘mean’)</li>
+<li><strong>trimmed_mean_prop_to_cut_intens</strong> (<em>fraction to cut off of both tails of the distribution if</em>) – trimmed_mean_prop_to_cut_intens = ‘trimmed mean’ (default = 0.1)</li>
+<li><strong>single_posang_north_up</strong> (<em>if True the images produced are oriented with North up; if False the images have the image orientation of the</em>) – raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator
+position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more
+than one derotator position angle, because in these cases the final images produced always have North up</li>
+<li><strong>normalized_polarization_images</strong> (<em>if True create final images of degree of linear polarization</em><em>, </em><em>normalized Stokes q and u</em>) – and degree and angle of linear polarization computed from q and u; such images only have meaning if all flux in the images
+originates from the astrophysical source of interest (default = False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.perform_preprocessing">
+<code class="descclassname">irdap.irdap.</code><code class="descname">perform_preprocessing</code><span class="sig-paren">(</span><em>frames_to_remove=[]</em>, <em>sigma_filtering=True</em>, <em>object_collapse_ndit=False</em>, <em>show_images_center_coordinates=True</em>, <em>object_centering_method='automatic'</em>, <em>center_subtract_object=True</em>, <em>object_center_coordinates=(477</em>, <em>521</em>, <em>1503</em>, <em>511)</em>, <em>center_param_centering=(12</em>, <em>None</em>, <em>30000)</em>, <em>object_param_centering=(60</em>, <em>None</em>, <em>30000)</em>, <em>flux_centering_method='gaussian'</em>, <em>flux_center_coordinates=(477</em>, <em>521</em>, <em>1503</em>, <em>511)</em>, <em>flux_param_centering=(60</em>, <em>None</em>, <em>30000)</em>, <em>flux_annulus_background='large annulus'</em>, <em>save_preprocessed_data=True</em>, <em>combination_method_polarization='least squares'</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.perform_preprocessing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data,
+background subtraction, flat-fielding, bad pixel removal, centering and compution
+of the single-sum and -difference images used in the post-processing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>frames_to_remove</strong> (<em>list of integers and length-2-tuples of integers</em>) – indicating which files and frames to remove (0-based). A complete
+file can be removed by specifying its integer index, while a frame
+of specific file can be removed by specifying a tuple
+(file_index, frame_index). If no files or frames should be removed,
+use an empty list [] (default = []). The files are sorted in
+chronological order from oldest to newest.</li>
+<li><strong>sigma_filtering</strong> (<em>if True</em><em>, </em><em>remove bad pixels remaining after applying</em>) – master bad pixel map using sigma-filtering (default = True). Applies
+to all file-types (OBJECT, CENTER, SKY and FLUX).</li>
+<li><strong>object_collapse_ndit</strong> (<em>If True</em><em>, </em><em>compute the mean over the</em><em> (</em><em>NDIT</em><em>) </em><em>frames of</em>) – the OBJECT-files before subtracting the background, flat-fielding, bad
+pixel removal and centering to speed up the preprocessing. If False,
+perform the above steps for each frame and after that compute the
+mean over the frames (default = False).</li>
+<li><strong>show_images_center_coordinates</strong> (<em>If True</em><em>, </em><em>plot the sub-images showing the</em>) – center coordinates for each frame of the OBJECT- and FLUX-files.
+The plots allow for checking whether the centering is correct and
+to scan the data for frames with bad quality (default = True).</li>
+<li><strong>object_centering_method</strong> (<em>method to center the OBJECT-frames. If</em>) – ‘center frames’ or ‘manual’, use fixed coordinates as provided by
+object_center_coordinates. If ‘gaussian’, fit a 2D Gaussian to each frame.
+If ‘cross-correlation’, fit a 2D Gaussian to the first frame and then
+use cross-correlation to align (register) the other frames onto the
+centered first  frame. For ‘gaussian’ and ‘cross-correlation’
+object_center_coordinates is used as initial guess of the center
+coordinates and the determined center coordinates are plotted for
+each image. If ‘automatic’, object_centering_method is set to
+‘center frames’ if there are CENTER-files, and is set to ‘gaussian’
+if there are no CENTER-files (default = ‘automatic’).</li>
+<li><strong>center_subtract_object</strong> (<em>if True subtract the OBJECT-file</em><em>(</em><em>s</em><em>) </em><em>taken</em>) – closest in time from the CENTER-file(s) (default = True). This generally
+results in a more accurate determination of the center coordinates
+as the background and any other celestial objects in the field of view
+are suppressed. When the difference between the image orientations of
+the CENTER- and OBJECT-frames is large (i.e. difference in derotator
+position angle for field-tracking and difference in parallactic angle
+for pupil-tracking), the OBJECT-frame will be rotated around the initial
+guess of the centers as defined by object_center_coordinates before
+subtracting it from the CENTER-file.</li>
+<li><strong>object_center_coordinates</strong> (<em>length-4-tuple with center coordinates of OBJECT-frames:</em>) – x_left: x-coordinate of center of left frame half
+y_left: y-coordinate of center of left frame half
+x_right: x-coordinate of center of right frame half
+y_right: y-coordinate of center of right frame half
+Note that the center coordinates are defined in the complete frame,
+i.e. with both detector halves (pixels; 0-based). The default value
+is (477, 521, 1503, 511).</li>
+<li><strong>center_param_centering</strong> (<em>length-3-tuple with parameters for</em>) – <p>2D Gaussian fitting the centers of the satellite spots in the CENTER-frames:
+crop_radius: half the length of side of square cropped sub-images used</p>
+<blockquote>
+<div>to fit 2D Gaussian to (pixels). Must be integer. If None, the complete
+frame is used for the fitting and center_coordinates is ignored.</div></blockquote>
+<dl class="docutils">
+<dt>sigfactor: all sub-image pixels with values smaller than</dt>
+<dd>sigfactor*standard deviation are replaced by random Gaussian noise
+to mask them for fitting the 2D Gaussian. If None, no pixels are
+replaced by Gaussian noise.</dd>
+<dt>saturation_level: all pixels within the smallest circle encompassing</dt>
+<dd>the pixels with a value equal to or higher than saturation_level
+are ignored when fitting the 2D Gaussian. We use a circle because
+strongly saturated pixels in the peak of the PSF often have values
+lower than saturation_level. If None, no pixels are ignored.</dd>
+</dl>
+<p>The default value of center_param_centering is (12, None, 30000).
+center_param_centering is only used when object_centering_method
+is ‘center frames’.</p>
+</li>
+<li><strong>object_param_centering</strong> (<em>length-3-tuple with parameters for centering of</em>) – <p>OBJECT-frames by fitting a 2D Gaussian or using cross-correlation:
+crop_radius: half the length of the sides of the square cropped</p>
+<blockquote>
+<div>sub-images used to fit the 2D Gaussian to and used for
+cross-correlating the images (pixels). Must be integer. The
+sub-image is centered on the coordinates as provided by
+center_coordinates. If None, the complete frame is used for the
+fitting and center_coordinates is ignored. The value of
+crop_radius is also used to create the sub-images when
+show_images_center_coordinates = True.</div></blockquote>
+<dl class="docutils">
+<dt>sigfactor: all sub-image pixels with values smaller than</dt>
+<dd>sigfactor*standard deviation are replaced by random Gaussian noise
+to mask them for fitting the 2D Gaussian. If None, no pixels are
+replaced by Gaussian noise.</dd>
+<dt>saturation_level: all pixels within the smallest circle encompassing</dt>
+<dd>the pixels with a value equal to or higher than saturation_level
+are ignored when fitting the 2D Gaussian. We use a circle because
+strongly saturated pixels in the peak of the PSF often have values
+lower than saturation_level. If None, no pixels are ignored.</dd>
+</dl>
+<p>The default value of object_param_centering is (12, 7, 30000).
+object_param_centering is only used when object_centering_method is
+‘gaussian’ or ‘cross-correlation’.</p>
+</li>
+<li><strong>flux_centering_method</strong> (<em>method to center the FLUX-frames. If 'manual'</em><em>, </em><em>use fixed</em>) – coordinates as provided by flux_center_coordinates. If ‘gaussian’, fit
+a 2D Gaussian to each frame. For ‘gaussian’ flux_center_coordinates is
+used as initial guess of the center coordinates and the determined
+center coordinates are plotted for each image (default = ‘gaussian’).</li>
+<li><strong>flux_center_coordinates</strong> (<em>length-4-tuple with center coordinates of FLUX-frames:</em>) – x_left: x-coordinate of center of left frame half
+y_left: y-coordinate of center of left frame half
+x_right: x-coordinate of center of right frame half
+y_right: y-coordinate of center of right frame half
+Note that the center coordinates are defined in the complete frame,
+i.e. with both detector halves (pixels; 0-based). The default value
+is (477, 521, 1503, 511).</li>
+<li><strong>flux_param_centering</strong> (<em>length-3-tuple with parameters for centering of</em>) – <p>FLUX-frames by fitting a 2D Gaussian:
+crop_radius: half the length of the sides of the square cropped</p>
+<blockquote>
+<div>sub-images used to fit the 2D Gaussian to (pixels). Must be
+integer. The sub-image is centered on the coordinates as
+provided by center_coordinates. If None, the complete frame is
+used for the fitting and center_coordinates is ignored. The
+value of crop_radius is also used to create the sub-images when
+show_images_center_coordinates = True.</div></blockquote>
+<dl class="docutils">
+<dt>sigfactor: all sub-image pixels with values smaller than</dt>
+<dd>sigfactor*standard deviation are replaced by random Gaussian noise
+to mask them for fitting the 2D Gaussian. If None, no pixels are
+replaced by Gaussian noise.</dd>
+<dt>saturation_level: all pixels within the smallest circle encompassing</dt>
+<dd>the pixels with a value equal to or higher than saturation_level
+are ignored when fitting the 2D Gaussian. We use a circle because
+strongly saturated pixels in the peak of the PSF often have values
+lower than saturation_level. If None, no pixels are ignored.</dd>
+</dl>
+<p>The default value of flux_param_centering is (60, None, 30000).
+flux_param_centering is only used when flux_centering_method is ‘gaussian’.</p>
+</li>
+<li><strong>flux_annulus_background</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters</em>) – <p>to generate annulus to measure and subtract background in master flux frame:
+coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and</p>
+<blockquote>
+<div>rotating counterclockwise)</div></blockquote>
+<dl class="docutils">
+<dt>end_angle: end angle of annulus sector (deg; 0 due right and</dt>
+<dd>rotating counterclockwise)</dd>
+</dl>
+<p>If string ‘large annulus’ the annulus will be star-centered and
+located far away from the star with an inner radius of 320 pixels
+and a width of 60 pixels (default = ‘large annulus’).</p>
+</li>
+<li><strong>save_preprocessed_data</strong> (<em>If True</em><em>, </em><em>save preprocessed cubes of single-sum</em>) – and single-difference images in the ‘preprocessed’ folder so that
+the preprocessing can be skipped when re-running the pipeline
+(default = True).</li>
+<li><strong>combination_method_polarization</strong> (<em>method to be used to produce the</em>) – incident Q- and U-images, ‘least squares’, ‘trimmed mean’ or ‘median’
+(default = ‘least squares’)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>cube_single_sum</strong> (<em>cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^-intensity images</em>)</li>
+<li><strong>cube_single_difference</strong> (<em>cube of single-difference Q^+, Q^-, U^+ and U^-images</em>)</li>
+<li><strong>header</strong> (<em>list of FITS-headers of raw science frames</em>)</li>
+<li><strong>file_index_object</strong> (<em>list of file indices of OBJECT-files (0-based)</em>)</li>
+<li><strong>combination_method_polarization</strong> (<em>method to be used to produce the</em>) – incident Q- and U-images, ‘least squares’, ‘trimmed mean’ or ‘median’</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein; based on function by Christian Ginski
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.print_wrap">
+<code class="descclassname">irdap.irdap.</code><code class="descname">print_wrap</code><span class="sig-paren">(</span><em>string</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.print_wrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a string that is wrapped to a maximum of 80 characters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>string</strong> (<em>string to print</em>) – </td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.printandlog">
+<code class="descclassname">irdap.irdap.</code><code class="descname">printandlog</code><span class="sig-paren">(</span><em>single_object</em>, <em>wrap=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.printandlog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a single object (string) on screen and save it to a log file. The log
+file is located at path_log_file, which is a global variable to the
+funtion.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>single_object</strong> (<em>single object</em><em> (</em><em>string</em><em>) </em><em>to be printed and logged</em>) – </li>
+<li><strong>wrap</strong> (<em>if True</em><em>, </em><em>wrap print statements to a maximum of 80 character. If</em>) – False, do not wrap print statements (default = True).</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.process_center_frames">
+<code class="descclassname">irdap.irdap.</code><code class="descname">process_center_frames</code><span class="sig-paren">(</span><em>path_center_files</em>, <em>indices_to_remove_center</em>, <em>path_object_center_files</em>, <em>indices_to_remove_object_center</em>, <em>frame_master_flat</em>, <em>frame_master_bpm</em>, <em>frame_master_sky</em>, <em>center_subtract_object=True</em>, <em>center_coordinates=(477</em>, <em>521</em>, <em>1503</em>, <em>511)</em>, <em>sigma_filtering=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.process_center_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process the CENTER frames by subtracting the background, flat-fielding,
+removing bad pixels and computing the mean over the NDIT’s</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path_center_files</strong> (<em>list of paths to raw CENTER-files</em>) – </li>
+<li><strong>indices_to_remove_center</strong> (<em>list of arrays with indices of frames to remove</em>) – for each CENTER-file</li>
+<li><strong>path_object_center_files</strong> (<em>list of paths to raw OBJECT-files to be</em>) – subtracted from raw CENTER-files</li>
+<li><strong>indices_to_remove_object_center</strong> (<em>list of arrays with indices of frames to</em>) – remove for each OBJECT-file to be subtracted from raw CENTER-files</li>
+<li><strong>frame_master_flat</strong> (<em>master flat frame</em>) – </li>
+<li><strong>frame_master_bpm</strong> (<em>frame indicating location of bad pixels with 0's and good</em>) – pixels with 1’s</li>
+<li><strong>frame_master_sky</strong> (<em>master sky frame for OBJECT-</em><em> (or </em><em>CENTER</em><em>)</em><em>-files</em>) – </li>
+<li><strong>center_subtract_object</strong> (<em>if True subtract the OBJECT-file taken</em>) – closest in time from the CENTER-file (default = True). This generally
+results in a more accurate determination of the center coordinates
+as the background and any other celestial objects in the field of view
+are suppressed. When the difference between the image orientations of
+the CENTER- and OBJECT-frames is large (i.e. difference in derotator
+position angle for field-tracking and difference in parallactic angle
+for pupil-tracking), the OBJECT-frame will be rotated around the initial
+guess of the centers as defined by center_coordinates before
+subtracting it from the CENTER-file.</li>
+<li><strong>center_coordinates</strong> (<em>length-4-tuple with initial guess of center coordinates</em>) – x_left: initial guess of x-coordinate of center of left frame half
+y_left: initial guess of y-coordinate of center of left frame half
+x_right: initial guess of x-coordinate of center of right frame half
+y_right: initial guess of y-coordinate of center of right frame half
+Note that the center coordinates are defined in the complete frame,
+i.e. with both detector halves (pixels; 0-based). The default value
+is (477, 521, 1503, 511).</li>
+<li><strong>sigma_filtering</strong> (<em>if True remove bad pixels remaining after applying</em>) – master bad pixel map using sigma-filtering (default = True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>list_frame_center_processed</strong> (<em>list of processed center frames</em>)</li>
+<li><strong>header</strong> (<em>list of headers of center files</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.process_flux_frames">
+<code class="descclassname">irdap.irdap.</code><code class="descname">process_flux_frames</code><span class="sig-paren">(</span><em>path_flux_files</em>, <em>file_index_flux</em>, <em>indices_to_remove_flux</em>, <em>frame_master_flat</em>, <em>frame_master_bpm</em>, <em>frame_master_sky_flux</em>, <em>annulus_background</em>, <em>sigma_filtering=True</em>, <em>centering_method='gaussian'</em>, <em>center_coordinates=(477</em>, <em>521</em>, <em>1503</em>, <em>511)</em>, <em>param_centering=(60</em>, <em>None</em>, <em>30000)</em>, <em>collapse_ndit=False</em>, <em>show_images_center_coordinates=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.process_flux_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a master flux-frame from the FLUX-files. Function performs the same
+steps as process_object_frames, but only uses the single-sum (total
+intensity) image and additionally subtracts the background</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path_flux_files</strong> (<em>list of paths to raw FLUX-files</em>) – </li>
+<li><strong>file_index_flux</strong> (<em>list of file indices of FLUX-files</em><em> (</em><em>0-based</em><em>)</em>) – </li>
+<li><strong>indices_to_remove_flux</strong> (<em>list of arrays with indices of frames to remove</em>) – for each FLUX-file</li>
+<li><strong>frame_master_flat</strong> (<em>master flat frame</em>) – </li>
+<li><strong>frame_master_bpm</strong> (<em>frame indicating location of bad pixels with 0's and</em>) – good pixels with 1’s</li>
+<li><strong>frame_master_sky_flux</strong> (<em>master sky frame for FLUX-files</em>) – </li>
+<li><strong>annulus_background</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters</em>) – <p>to generate annulus to measure and subtract background:
+coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and</p>
+<blockquote>
+<div>rotating counterclockwise)</div></blockquote>
+<dl class="docutils">
+<dt>end_angle: end angle of annulus sector (deg; 0 due right and</dt>
+<dd>rotating counterclockwise)</dd>
+</dl>
+</li>
+<li><strong>sigma_filtering</strong> (<em>if True remove bad pixels remaining after applying</em>) – master bad pixel map using sigma-filtering (default = True)</li>
+<li><strong>centering_method</strong> (<em>method to center the images. If 'manual'</em><em>, </em><em>use fixed</em>) – coordinates as provided by center_coordinates. If ‘gaussian’, fit
+a 2D Gaussian to each frame. For ‘gaussian’ center_coordinates is
+used as initial guess of the center coordinates and the determined
+center coordinates are plotted for each image (default = ‘gaussian’).</li>
+<li><strong>center_coordinates</strong> (<em>length-4-tuple with center coordinates</em>) – x_left: x-coordinate of center of left frame half
+y_left: y-coordinate of center of left frame half
+x_right: x-coordinate of center of right frame half
+y_right: y-coordinate of center of right frame half
+Note that the center coordinates are defined in the complete frame,
+i.e. with both detector halves (pixels; 0-based). The default value
+is (477, 521, 1503, 511).</li>
+<li><strong>param_centering</strong> (<em>length-3-tuple with parameters for centering by fitting</em>) – <p>a 2D Gaussian:
+crop_radius: half the length of the sides of the square cropped</p>
+<blockquote>
+<div>sub-images used to fit the 2D Gaussian to (pixels). Must be
+integer. The sub-image is centered on the coordinates as
+provided by center_coordinates. If None, the complete frame is
+used for the fitting and center_coordinates is ignored. The
+value of crop_radius is also used to create the sub-images when
+show_images_center_coordinates = True.</div></blockquote>
+<dl class="docutils">
+<dt>sigfactor: all sub-image pixels with values smaller than</dt>
+<dd>sigfactor*standard deviation are replaced by random Gaussian noise
+to mask them for fitting the 2D Gaussian. If None, no pixels are
+replaced by Gaussian noise.</dd>
+<dt>saturation_level: all pixels within the smallest circle encompassing</dt>
+<dd>the pixels with a value equal to or higher than saturation_level
+are ignored when fitting the 2D Gaussian. We use a circle because
+strongly saturated pixels in the peak of the PSF often have values
+lower than saturation_level. If None, no pixels are ignored.</dd>
+</dl>
+<p>The default value of param_centering is (60, None, 30000). param_centering
+is only used when centering_method is ‘gaussian’.</p>
+</li>
+<li><strong>collapse_ndit</strong> (<em>If True</em><em>, </em><em>compute the mean over the</em><em> (</em><em>NDIT</em><em>) </em><em>frames of a</em>) – file before subtracting the background, flat-fielding, bad pixel
+removal and centering. If False, perform the above steps for each
+frame and after that compute the mean over the frames
+(default = False).</li>
+<li><strong>show_images_center_coordinates</strong> (<em>If True</em><em>, </em><em>plot the sub-images showing the</em>) – center coordinates for each frame. The plots allow for checking
+whether the centering is correct and to scan the data for frames
+with bad quality (default = True).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>frame_master_flux</strong> (<em>master flux frame</em>)</li>
+<li><strong>frame_annulus_background</strong> (<em>frame showing annulus used to determine background</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.process_object_frames">
+<code class="descclassname">irdap.irdap.</code><code class="descname">process_object_frames</code><span class="sig-paren">(</span><em>path_object_files</em>, <em>file_index_object</em>, <em>indices_to_remove_object</em>, <em>frame_master_flat</em>, <em>frame_master_bpm</em>, <em>frame_master_sky</em>, <em>sigma_filtering=True</em>, <em>centering_method='center frames'</em>, <em>center_coordinates=(477</em>, <em>521</em>, <em>1503</em>, <em>511)</em>, <em>param_centering=(60</em>, <em>None</em>, <em>30000)</em>, <em>collapse_ndit=False</em>, <em>show_images_center_coordinates=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.process_object_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process the OBJECT frames by subtracting the background, flat-fielding,
+removing bad pixels, centering, computing the mean over the NDIT’s and
+computing the single sum and difference images.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path_object_files</strong> (<em>list of paths to raw OBJECT-files</em>) – </li>
+<li><strong>file_index_object</strong> (<em>list of file indices of OBJECT-files</em><em> (</em><em>0-based</em><em>)</em>) – </li>
+<li><strong>indices_to_remove_object</strong> (<em>list of arrays with indices of frames to remove for each OBJECT-file</em>) – </li>
+<li><strong>frame_master_flat</strong> (<em>master flat frame</em>) – </li>
+<li><strong>frame_master_bpm</strong> (<em>frame indicating location of bad pixels with 0's and</em>) – good pixels with 1’s</li>
+<li><strong>frame_master_sky</strong> (<em>master sky frame for OBJECT-files</em>) – </li>
+<li><strong>sigma_filtering</strong> (<em>if True remove bad pixels remaining after applying</em>) – master bad pixel map using sigma-filtering (default = True)</li>
+<li><strong>centering_method</strong> (<em>method to center the images. If 'center frames' or</em>) – ‘manual’, use fixed coordinates as provided by center_coordinates.
+If ‘gaussian’, fit a 2D Gaussian to each frame. If
+‘cross-correlation’, fit a 2D Gaussian to the first frame and then
+use cross-correlation to align (register) the other frames onto the
+centered first  frame. For ‘gaussian’ and ‘cross-correlation’
+center_coordinates is used as initial guess of the center
+coordinates and the determined center coordinates are plotted for
+each image (default = ‘center frames’).</li>
+<li><strong>center_coordinates</strong> (<em>length-4-tuple with center coordinates</em>) – x_left: x-coordinate of center of left frame half
+y_left: y-coordinate of center of left frame half
+x_right: x-coordinate of center of right frame half
+y_right: y-coordinate of center of right frame half
+Note that the center coordinates are defined in the complete frame,
+i.e. with both detector halves (pixels; 0-based). The default value
+is (477, 521, 1503, 511).</li>
+<li><strong>param_centering</strong> (<em>length-3-tuple with parameters for centering by fitting</em>) – <p>a 2D Gaussian or using cross-correlation:
+crop_radius: half the length of the sides of the square cropped</p>
+<blockquote>
+<div>sub-images used to fit the 2D Gaussian to and used for
+cross-correlating the images (pixels). Must be integer. The
+sub-image is centered on the coordinates as provided by
+center_coordinates. If None, the complete frame is used for the
+fitting and center_coordinates is ignored. The value of
+crop_radius is also used to create the sub-images when
+show_images_center_coordinates = True.</div></blockquote>
+<dl class="docutils">
+<dt>sigfactor: all sub-image pixels with values smaller than</dt>
+<dd>sigfactor*standard deviation are replaced by random Gaussian noise
+to mask them for fitting the 2D Gaussian. If None, no pixels are
+replaced by Gaussian noise.</dd>
+<dt>saturation_level: all pixels within the smallest circle encompassing</dt>
+<dd>the pixels with a value equal to or higher than saturation_level
+are ignored when fitting the 2D Gaussian. We use a circle because
+strongly saturated pixels in the peak of the PSF often have values
+lower than saturation_level. If None, no pixels are ignored.</dd>
+</dl>
+<p>The default value of param_centering is (60, None, 30000). param_centering
+is only used when centering_method is ‘gaussian’ or ‘cross-correlation’.</p>
+</li>
+<li><strong>collapse_ndit</strong> (<em>If True</em><em>, </em><em>compute the mean over the</em><em> (</em><em>NDIT</em><em>) </em><em>frames of a</em>) – file before subtracting the background, flat-fielding, bad pixel
+removal and centering. If False, perform the above steps for each
+frame and after that compute the mean over the frames
+(default = False).</li>
+<li><strong>show_images_center_coordinates</strong> (<em>If True</em><em>, </em><em>plot the sub-images showing the</em>) – center coordinates for each frame. The plots allow for checking
+whether the centering is correct and to scan the data for frames
+with bad quality (default = True).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>cube_single_sum</strong> (<em>cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^- intensity images</em>)</li>
+<li><strong>cube_single_difference</strong> (<em>cube of single-difference Q^+, Q^-, U^+ and U^- images</em>)</li>
+<li><strong>header</strong> (<em>list of FITS-headers of raw science frames</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein; based on function by Christian Ginski
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.process_sky_frames">
+<code class="descclassname">irdap.irdap.</code><code class="descname">process_sky_frames</code><span class="sig-paren">(</span><em>path_sky_files</em>, <em>indices_to_remove_sky</em>, <em>frame_master_bpm</em>, <em>sigma_filtering=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.process_sky_frames" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a master sky-frame from the SKY-files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path_sky_files</strong> (<em>string</em><em> or </em><em>list of strings specifying paths of SKY-files</em>) – </li>
+<li><strong>indices_to_remove_sky</strong> (<em>list of arrays with indices of frames to remove for each SKY-file</em>) – </li>
+<li><strong>frame_master_bpm</strong> (<em>frame indicating location of bad pixels with 0's and good</em>) – pixels with 1’s</li>
+<li><strong>sigma_filtering</strong> (<em>if True remove bad pixels remaining after applying</em>) – master bad pixel map using sigma-filtering (default = True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>frame_master_sky</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">master sky frame</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein; based on a function by Christian Ginski
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.read_config_file">
+<code class="descclassname">irdap.irdap.</code><code class="descname">read_config_file</code><span class="sig-paren">(</span><em>path_config_file</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.read_config_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the configuration file with input parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path_config_file</strong> (<em>string specifying path of configuration file</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">all input parameters from the configuration file</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.read_fits_files">
+<code class="descclassname">irdap.irdap.</code><code class="descname">read_fits_files</code><span class="sig-paren">(</span><em>path</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.read_fits_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read FITS-files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<em>string</em><em> or </em><em>list of strings specifying paths to read FITS-files</em>) – and its headers from</li>
+<li><strong>silent</strong> (<em>if True do not output message stating which file is read</em>) – (default = False)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>data</strong> (<em>image data cube (when 1 path specified) or list of image data</em>) – cubes (when more than 1 path specified) read from FITS-files</li>
+<li><strong>header</strong> (<em>headers (when 1 path specified) or list of headers</em>) – (when more than 1 path specified) read from FITS-files</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If the data read is a single frame, an additional dimension is added to
+make it a 3D image data cube (third dimension of length 1).</p>
+</div>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.remove_bad_pixels">
+<code class="descclassname">irdap.irdap.</code><code class="descname">remove_bad_pixels</code><span class="sig-paren">(</span><em>cube</em>, <em>frame_master_bpm</em>, <em>sigma_filtering=True</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.remove_bad_pixels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove bad pixels from an image cube or frame using the bad pixel map
+followed by optional repeated sigma-filtering</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube</strong> (<em>image data cube</em><em> or </em><em>frame to filtered for bad pixels</em>) – </li>
+<li><strong>frame_master_bpm</strong> (<em>frame indicating location of bad pixels with 0's and good</em>) – pixels with 1’s</li>
+<li><strong>sigma_filtering</strong> (<em>if True remove bad pixels remaining after applying</em>) – master bad pixel map using repeated sigma-filtering (default = True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>cube_filtered</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">image data cube with bad pixels removed</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.remove_detector_artefact">
+<code class="descclassname">irdap.irdap.</code><code class="descname">remove_detector_artefact</code><span class="sig-paren">(</span><em>cube</em>, <em>number_pixels</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.remove_detector_artefact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove vertical band detector artefact seen in Stokes Q- and U-images</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube</strong> (<em>image cube</em><em> or </em><em>frame to be corrected</em>) – </li>
+<li><strong>number_pixels</strong> (<em>number of pixels on the top and bottom of each pixel column</em>) – used to compute the median to be subtracted</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>cube_artefact_removed</strong></p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">image cube or frame with the artefact corrected</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.run_demo">
+<code class="descclassname">irdap.irdap.</code><code class="descname">run_demo</code><span class="sig-paren">(</span><em>path_main_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.run_demo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run example reduction with data from T Cha as published in Pohl et al.
+(2017) and  and used in van Holstein et al. (2019)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path_main_dir</strong> (<em>string specifying path to main directory</em>) – </td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.run_pipeline">
+<code class="descclassname">irdap.irdap.</code><code class="descname">run_pipeline</code><span class="sig-paren">(</span><em>path_main_dir</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.run_pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the pipeline</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path_main_dir</strong> (<em>string specifying path of main directory containing the</em>) – configuration file ‘config.conf’ and the directory ‘raw’ with the
+raw data</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.subtract_background">
+<code class="descclassname">irdap.irdap.</code><code class="descname">subtract_background</code><span class="sig-paren">(</span><em>cube</em>, <em>annulus_background</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.subtract_background" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subtract background from cube or frame</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cube</strong> (<em>image cube</em><em> or </em><em>frame to subtract background from</em>) – </li>
+<li><strong>annulus_background</strong> (<em>(</em><em>list of</em><em>) </em><em>length-6-tuple</em><em>(</em><em>s</em><em>) </em><em>with parameters to generate annulus to measure and subtract background:</em>) – coord_center_x: x-coordinate of center (pixels; 0-based)
+coord_center_y: y-coordinate of center (pixels; 0-based)
+inner_radius: inner radius (pixels)
+width: width (pixels)
+start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>cube_background_subtracted</strong> (<em>image cube or frame with background subtracted</em>)</li>
+<li><strong>background</strong> (<em>float or array of background values for each image</em>)</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.wrapstr">
+<code class="descclassname">irdap.irdap.</code><code class="descname">wrapstr</code><span class="sig-paren">(</span><em>string</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.wrapstr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrap a string to a maximum of 80 characters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>string</strong> (<em>string to be wrapped</em>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">wrapped string</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">string</td>
+</tr>
+</tbody>
+</table>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="irdap.irdap.write_fits_files">
+<code class="descclassname">irdap.irdap.</code><code class="descname">write_fits_files</code><span class="sig-paren">(</span><em>data</em>, <em>path</em>, <em>header=False</em>, <em>silent=False</em><span class="sig-paren">)</span><a class="headerlink" href="#irdap.irdap.write_fits_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write FITS-files</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> (<em>image data cube</em><em> or </em><em>list of image data cubes to write to FITS-files</em>) – </li>
+<li><strong>path</strong> (<em>string</em><em> or </em><em>list of strings specifying paths to write FITS-files to</em>) – </li>
+<li><strong>header</strong> (<em>headers</em><em> or </em><em>list of headers to write to FITS-files; if set to False</em>) – no header will be written (default=False)</li>
+<li><strong>silent</strong> (<em>if True do not output message stating which file is written</em>) – (default = False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If data, header and path are lists of unequal length, the redundant
+list elements are ignored, meaning that files may not be written or
+that headers may not be used.</p>
+</div>
+<p>File written by Rob van Holstein
+Function status: verified</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-irdap">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-irdap" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="changelog.html" class="btn btn-neutral float-right" title="Changelog" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral" title="irdap" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, R.G. van Holstein
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

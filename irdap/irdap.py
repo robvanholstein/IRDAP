@@ -4366,7 +4366,7 @@ def run_demo(path_main_dir):
     data_exists = all([os.path.exists(os.path.join(path_raw_dir, file)) for file in name_example_files])
     if not data_exists:
         # Ask if user wants to download the data
-        proceed_download = input_wrap('\nTo run the demo, 48.5 MB of data needs to be downloaded. Proceed? (y/n) ')
+        proceed_download = input_wrap('\nTo run the demo, 56.6 MB of data needs to be downloaded. Proceed? (y/n) ')
 
         if proceed_download == 'y':
             # Define URL of example data

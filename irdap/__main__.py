@@ -68,7 +68,8 @@ def main(args=None):
                                                  'data reduction.\n\n' +
                                                  'If this is the first time you use IRDAP, it is recommended to run the demo\n' + 
                                                  'first by using the terminal to navigate to a directory of your choice and\n' +
-                                                 'typing irdap --demo.\n\n' + 
+                                                 'typing irdap --demo. Note that an internet connection is required as a small\n' +
+                                                 'amount of raw data needs to be downloaded.\n\n' + 
                                                  'When publishing data reduced with IRDAP, please cite van Holstein et al.\n' +
                                                  '(2019): <ADS link>.\n' +
                                                  'For data in pupil-tracking mode please additionally cite van Holstein et al.\n' +

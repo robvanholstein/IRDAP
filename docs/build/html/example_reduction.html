@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Example Reduction &mdash; IRDAP 2019.5.12 documentation</title>
+  <title>Example reduction &mdash; IRDAP 2019.5.12 documentation</title>
   
 
   
@@ -85,11 +85,11 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Example Reduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example reduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="running.html">Usage instructions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledge.html">Acknowledging fcmaker</a></li>
-<li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub link</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
 </ul>
 
             
@@ -135,7 +135,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Example Reduction</li>
+      <li>Example reduction</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -155,33 +155,38 @@
            <div itemprop="articleBody">
             
   <div class="section" id="example-reduction">
-<h1>Example Reduction<a class="headerlink" href="#example-reduction" title="Permalink to this headline">¶</a></h1>
-<p>As an introduction to the user, but also to test if IRDAP really works, a quick
-example reduction can be performed. This demo uses (a limited amount of )raw data of
-the circumstellar disk of T Cha from program <a class="reference external" href="link">PROGRAM ID</a> as published in
-<a class="reference external" href="http://adsabs.harvard.edu/abs/2017A%26A...605A..34P">Pohl et al. (2017)</a> and
-as used in <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a> to exemplify the correction
-method.</p>
-<p>To run the demo, navigate to a directory of your choice in the terminal and enter:</p>
+<h1>Example reduction<a class="headerlink" href="#example-reduction" title="Permalink to this headline">¶</a></h1>
+<p>As an introduction to the user, but also to check if IRDAP is installed correctly, a quick
+end-to-end example reduction can be performed. This demo uses a small portion of the H-band
+polarimetric data of the circumstellar disk of T Cha from ESO Program 096.C-0248(C). This
+data set was the first to be reduced with IRDAP’s correction method and is published in
+<a class="reference external" href="http://adsabs.harvard.edu/abs/2017A%26A...605A..34P">Pohl et al. (2017)</a>. It is also
+used in <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a> to exemplify the correction method.</p>
+<p>To run the demo, use the terminal to navigate to a directory of your choice and type:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">demo</span>
 </pre></div>
 </div>
-<p>IRDAP will then download 48.5 MB of raw data from its <a href="#id1"><span class="problematic" id="id2">`GitHub repository &lt;&gt;`_</span></a> and perform
-a complete data reduction. The resulting files will be written to the working
-directory of the terminal.</p>
-<p>If you open the subdirectory reduced_star_pol_subs Qphi, Uphi, (linear scale, -300 to 150, cool)
-you will see the following images. These images look a lot like those of Figure 14 (left column)
-of van Holstein et al. (2017), but with a lower signal-to-noise.</p>
-<a class="reference internal image-reference" href="_images/t_cha_quphi_combined.svg"><div align="center" class="align-center"><img alt="_images/t_cha_quphi_combined.svg" src="_images/t_cha_quphi_combined.svg" width="750px" /></div>
-</a>
-<p>Congratulations, you have reduced your first data set with IRDAP!</p>
-<p>To reduce your own data set, please continue to the <span class="xref std std-ref">User Instructions</span>.</p>
-<ul class="simple">
-<li>Make image of Qphi and Uphi</li>
-<li>Example include flux too</li>
-<li>In text mention that center, sky, flux used</li>
-<li>Finish text</li>
-</ul>
+<p>IRDAP will then perform a complete data reduction and will write the resulting files
+to the terminal’s current directory. The produced files are explained in
+<a class="reference internal" href="running.html#usage-instructions"><span class="std std-ref">Usage instructions</span></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">An internet connection is required to run the demo, because 56.6 MB of raw data will
+be downloaded from the
+<a class="reference external" href="https://github.com/robvanholstein/IRDAP/tree/master/irdap/example_data">IRDAP GitHub repository</a>.</p>
+</div>
+<p>After running the demo, you can navigate to the <code class="file docutils literal notranslate"><span class="pre">reduced</span></code> directory and open the
+files <code class="file docutils literal notranslate"><span class="pre">T_Cha_2016-02-20_Q_phi.fits</span></code> and <code class="file docutils literal notranslate"><span class="pre">T_Cha_2016-02-20_U_phi.fits</span></code> that
+show the final <span class="math notranslate nohighlight">\(Q_\phi\)</span>- and <span class="math notranslate nohighlight">\(U_\phi\)</span>-images.
+Opening these files with <a class="reference external" href="http://ds9.si.edu/">DS9</a>, setting color to cool, scale to linear
+and the limits to -500 to 1500 and -300 to 150, respectively, you will see the following:</p>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="_images/t_cha_quphi_combined.svg"><img alt="_images/t_cha_quphi_combined.svg" src="_images/t_cha_quphi_combined.svg" width="750px" /></a>
+</div>
+<p>These images correspond to Figure 14 (left column) of <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a>,
+but with lower signal-to-noise because for the demo the data of only 1 instead of 30 HWP cycles
+was used.</p>
+<p>To start reducing your own data with IRDAP, please continue to the <a class="reference internal" href="running.html#usage-instructions"><span class="std std-ref">Usage instructions</span></a>.</p>
 </div>
 
 

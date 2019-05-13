@@ -31,4 +31,4 @@ In a terminal, try to access the basic help and the version of IRDAP:
 
 If that works, IRDAP is most likely installed correctly. 
 
-As a next step, it is recommended to run the :ref:`Example Reduction`. 
+As a next step, it is recommended to run the :ref:`Example reduction`. 
