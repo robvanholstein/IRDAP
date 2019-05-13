@@ -50,6 +50,7 @@ from scipy import interpolate
 from scipy import optimize
 from scipy import ndimage
 from scipy.stats import trim_mean
+from scipy.stats import sigmaclip
 from astropy.modeling import models, fitting
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
@@ -1129,6 +1130,201 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
                 ' raw SKY-file(s) comprising a total of ' + str(cube_sky_raw.shape[0]) + ' frame(s).')
     
     return frame_master_sky
+
+###############################################################################
+# create masterflat, masterdark and bad pixel mask from raw calibration data
+###############################################################################
+
+def average_cubes_different_time_array(path):
+
+    darks = []
+    file_list = []
+
+    for f in sorted(os.listdir(path)):
+
+        f = os.path.join(path,f)
+
+        if os.path.isdir(f):
+            continue 
+        froot, ext = os.path.splitext(f) 
+
+        if ext.lower() != '.fits':
+            continue                
+        dir_root, fname = os.path.split(froot) 
+
+        raw_file = pyfits.open(f)
+        header = raw_file[0].header    
+        exptime = header["EXPTIME"]
+        file_list.append((f,exptime))
+    
+    sorted_by_second = sorted(file_list, key=lambda tup: tup[1])
+    
+    expt = sorted_by_second[0][1]    
+    
+    tmp = []    
+    final_array = []    
+    
+    for r in range(0,len(sorted_by_second)):
+        
+        raw_file = pyfits.open(sorted_by_second[r][0])
+        scidata = raw_file[0].data 
+        
+        if len(np.shape(scidata)) > 2:
+            if np.shape(scidata)[0] > 1:
+                scidata = np.median(scidata,axis=0)
+            else:
+                scidata = np.squeeze(scidata,axis=0)
+        
+        if (sorted_by_second[r][1] == expt):                
+            tmp.append(scidata) 
+        else:
+            combined_dark = np.median(np.array(tmp),axis=0)
+            tmp = []
+            tmp.append(scidata)
+            final_array.append((combined_dark,expt))
+            expt = sorted_by_second[r][1]
+            
+        if (r == (len(sorted_by_second)-1)):
+            combined_dark = np.median(np.array(tmp),axis=0)
+            final_array.append((combined_dark,expt))
+            expt = sorted_by_second[r][1]
+    
+    return final_array
+
+def create_badpix_from_flat_sequence_array(flat_array):
+    
+    #flat_array is a list of tuples with flat_array[x][0] containing the data and flat_array[x][1] the exposure time   
+    #gives all non-linear responding pixels
+    
+    comparison = flat_array[-1][0] / flat_array[0][0]
+
+    factor = flat_array[-1][1] / flat_array[0][1]
+    comparison[np.isneginf(comparison)]=1
+    comparison[np.isinf(comparison)]=1
+    comparison[np.isnan(comparison)]=1      
+    
+    left, low, high = sigmaclip(comparison[15:1024,36:933],5,5)    
+    right, low, high = sigmaclip(comparison[5:1018,1062:1958],5,5)        
+    
+    stddev_left = np.nanstd(left)
+    stddev_right = np.nanstd(right) 
+    
+    index_array_left = np.abs(comparison[15:1024,36:933] - factor)
+    index_array_right = np.abs(comparison[5:1018,1062:1958] - factor)    
+    
+    mask_left = index_array_left > 5 * stddev_left        
+    mask_right = index_array_right > 5 * stddev_right    
+
+    badpix_left = index_array_left / index_array_left
+    badpix_left[mask_left] = 0
+
+    badpix_right = index_array_right / index_array_right
+    badpix_right[mask_right] = 0
+    
+    comparison = comparison / comparison
+    comparison[15:1024,36:933]=badpix_left
+    comparison[5:1018,1062:1958]=badpix_right
+
+    comparison = np.nan_to_num(comparison)
+
+    return comparison
+
+
+def create_badpix_from_single_dark_array(scidata):
+    
+    clean_flat_scidata, low, high = sigmaclip(scidata,5,5)
+    stddev = np.nanstd(clean_flat_scidata)
+    clean_mean = np.nanmedian(clean_flat_scidata)
+
+    scidata = np.abs(scidata - clean_mean)    
+    
+    badpix = np.nan_to_num(scidata / scidata)
+    
+    badpix[scidata > 5*stddev]=0    
+    
+    return badpix
+
+
+def create_badpix_from_multiple_dark_array(dark_array):
+    
+    # input array for convenience here is the array that contains tupels of data and exposure time    
+    
+    badpix_array = []    
+    
+    for k in range(0,len(dark_array)):
+        badpix_tmp = create_badpix_from_single_dark_array(dark_array[k][0])
+        badpix_array.append(badpix_tmp)
+    
+    return badpix_array
+
+
+def combine_badpix_array(badpix_array):
+    
+    badpix = badpix_array[0] * badpix_array[1]    
+    
+    for r in range(0,len(badpix_array)):
+        badpix = badpix * badpix_array[r]   
+
+    return badpix
+
+def reduce_IRDIS_flat_dark_sequence(dark_path,flat_path):
+    '''
+    Reduce an IRDIS flat sequece. The sequence should consist of 5 flat images
+    taken with different exposure times. Typically 1,2,3,4,5s or
+    2,4,6,8,10s. 
+    The function additionally creates a master bad pixel mask.
+    The bad pixel mask contains flags for all pixels that have a strong bias offset or that respond non-linearly.
+    
+    Input:
+        dark_path: path containing darks with exposure times matching th flat images
+        flat_path: path containing flat files (dark_path != flat_path)
+        
+    Output:
+        No return value. Instead a masterflat file and a master bad pixel mask are written to the flat_path
+    
+    File written by Christian Ginski
+    Function status: verified externally ;)
+    '''
+    darks = average_cubes_different_time_array(dark_path)
+    flats = average_cubes_different_time_array(flat_path)
+
+    subtracted_flat = []
+    subtracted_norm_flat = []
+
+    for r in range(0,len(flats)):
+        for k in range(0,len(darks)):
+            if darks[k][1] == flats[r][1]:
+                subtracted_flat.append((flats[r][0]-darks[k][0],flats[r][1]))
+                subtracted_norm_flat.append((flats[r][0]-darks[k][0])/flats[r][1])
+
+    flat = np.median(np.array(subtracted_norm_flat),axis=0)
+    
+    flat_left = flat[15:1024,36:933] 
+    flat_right = flat[5:1018,1062:1958]
+    
+    flat = np.nan_to_num(flat / flat)
+    flat[flat==0] = 1
+    
+    flat_norm_left = flat_left / np.median(flat_left)
+    flat_norm_right = flat_right / np.median(flat_right)
+
+    flat[15:1024,36:933] = flat_norm_left 
+    flat[5:1018,1062:1958] = flat_norm_right    
+    
+    pyfits.writeto(os.path.join(flat_path,"masterflat.fits"), flat)
+
+    #-------Badpix Mask--------------------------------------------
+    
+    badpix_flat = create_badpix_from_flat_sequence_array(subtracted_flat)
+    badpix_array_dark = create_badpix_from_multiple_dark_array(darks)
+
+    badpix_array_dark.append(badpix_flat)
+
+    master_badpix = combine_badpix_array(badpix_array_dark)
+
+    pyfits.writeto(os.path.join(flat_path,"masterbadpix.fits"), master_badpix)
+
+    return
 
 ###############################################################################
 # compute_fwhm_separation
