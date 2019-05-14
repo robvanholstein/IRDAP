@@ -395,12 +395,14 @@ def check_sort_data_create_directories(frames_to_remove=[],
     function as they are required for the sorting of the data or preparing the
     pre-processing, not to actually perform centering for example.
     
-    Note that path_raw_dir, path_sky_dir, path_center_dir, path_flux_dir, 
-    path_sky_flux_dir, path_preprocessed_dir, path_reduced_dir,  
-    path_reduced_star_pol_subtr_dir and path_overview are global variables to 
-    the function.
+    Note that path_raw_dir, path_flat_dir, path_bpm_dir, path_sky_dir, 
+    path_center_dir, path_flux_dir, path_sky_flux_dir, path_preprocessed_dir, 
+    path_reduced_dir, path_reduced_star_pol_subtr_dir and path_overview are 
+    global variables to the function.
     
     Output:
+        path_dark_files: list of paths to raw DARK(,BACKGROUND)-files
+        path_flat_files: list of paths to raw FLAT-files
         path_object_files: list of paths to raw OBJECT-files
         path_sky_files: list of paths to raw SKY-files for OBJECT
         path_center_files: list of paths to raw CENTER-files
@@ -450,7 +452,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
     
     # Extract headers
     header = [pyfits.getheader(x) for x in path_raw_files]
-    
+ 
     # Sort raw files and headers based on observation date in headers
     date_obs = [x['DATE-OBS'] for x in header]
     sort_index = list(np.argsort(date_obs))
@@ -495,36 +497,49 @@ def check_sort_data_create_directories(frames_to_remove=[],
     # Perform checks on header values that apply to all data
     printandlog('\nChecking the headers of all files.')
 
-    if len(set([x['ESO OBS TARG NAME'] for x in header])) != 1:
-        different_targets = input_wrap('\nThe data provided have different targets. Continue anyway? (y/n) ')
+    if not all([x['INSTRUME'] == 'SPHERE' for x in header]):
+        raise IOError('\n\nOne or more files are not taken with SPHERE.')
+
+    if not all([x['ESO DET NAME'] == 'IRDIS' for x in header]):
+        raise IOError('\n\nOne or more files are not taken with IRDIS.')
+
+    if not all([x['ESO DPR TYPE'] in ['OBJECT', 'SKY', 'OBJECT,CENTER', 'OBJECT,FLUX', \
+                                      'DARK', 'DARK,BACKGROUND', 'FLAT,LAMP'] for x in header]):
+        raise IOError('\n\nOne or more files are not of type OBJECT, SKY, OBJECT,CENTER, OBJECT,FLUX, DARK(,BACKGROUND) or FLAT,LAMP.')
+
+    # Perform checks on header values that apply to all data except for DARK(,BACKGROUND)- and FLAT-files 
+    header_on_sky = [x for x in header if x['ESO DPR TYPE'] in ['OBJECT', 'SKY', 'OBJECT,CENTER', 'OBJECT,FLUX']]
+    
+    if not any(header_on_sky):
+        raise IOError('\n\nThere is no on-sky data.')
+    
+    if len(set([x['ESO OBS TARG NAME'] for x in header_on_sky])) != 1:
+        different_targets = input_wrap('\nThe on-sky data provided have different targets. Continue anyway? (y/n) ')
         if different_targets == 'y':
-            printandlog('\nWARNING, continuing reduction although the data provided have different targets.')
+            printandlog('\nWARNING, continuing reduction although the on-sky data provided have different targets.')
         elif different_targets == 'n':
-            raise IOError('\n\nThe data provided have different targets.')
+            raise IOError('\n\nThe on-sky data provided have different targets.')
         else:
             raise IOError('\n\nThe provided input \'' + str(different_targets) + '\' is not valid.')
+        
+    if len(set([x['ESO INS4 COMB ROT'] for x in header_on_sky])) != 1:
+        raise IOError('\n\nThe on-sky data provided use different tracking modes.')
+
+    if not header_on_sky[0]['ESO INS4 COMB ROT'] in ['FIELD', 'PUPIL']:
+        raise IOError('\n\nThe tracking mode of the on-sky data is not field-tracking or pupil-tracking.')
+        
+    if not all([x['ESO INS4 OPTI8 NAME'] == 'H_NIR' for x in header_on_sky]):
+        raise IOError('\n\nOne or more files of the on-sky data do not have the NIR half-wave plate inserted.')
+    
+    if len(set([x['ESO INS1 FILT ID'] for x in header_on_sky])) != 1:
+        raise IOError('\n\nThe on-sky data provided have different filters.')
+
+    if not header_on_sky[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
+        raise IOError('\n\nThe filter used for the on-sky data is not broadband Y, J, H or Ks. Narrowband filters will be supported in the near future.')
+    
+    if not all([x['ESO INS1 OPTI2 NAME'] == 'P0-90' for x in header_on_sky]):
+        raise IOError('\n\nOne or more files of the on-sky data do not have the P0-90 polarizer set inserted.')
    
-    if not all([x['ESO DPR TYPE'] in ['OBJECT', 'SKY', 'OBJECT,CENTER', 'OBJECT,FLUX'] for x in header]):
-        raise IOError('\n\nOne or more files are not of type OBJECT, SKY, OBJECT,CENTER or OBJECT,FLUX.')
-        
-    if len(set([x['ESO INS4 COMB ROT'] for x in header])) != 1:
-        raise IOError('\n\nThe data provided use different tracking modes.')
-
-    if not header[0]['ESO INS4 COMB ROT'] in ['FIELD', 'PUPIL']:
-        raise IOError('\n\nThe tracking mode used is not field-tracking or pupil-tracking.')
-        
-    if not all([x['ESO INS4 OPTI8 NAME'] == 'H_NIR' for x in header]):
-        raise IOError('\n\nOne or more files do not have the NIR half-wave plate inserted.')
-    
-    if len(set([x['ESO INS1 FILT ID'] for x in header])) != 1:
-        raise IOError('\n\nThe data provided use different filters.')
-
-    if not header[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
-        raise IOError('\n\nThe filter used is not broadband Y, J, H or Ks. Narrowband filters will be supported in the near future.')
-    
-    if not all([x['ESO INS1 OPTI2 NAME'] == 'P0-90' for x in header]):
-        raise IOError('\n\nOne or more files do not have the P0-90 polarizer set inserted.')
-    
     # Perform checks on header values that apply only to OBJECT files
     header_object = [x for x in header if x['ESO DPR TYPE'] == 'OBJECT']
         
@@ -544,6 +559,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
         raise IOError('\n\nThe OBJECT-files use different coronagraph settings.')
     
     # Determine exposure time and NIR neutral density filter for OBJECT files  
+    object_filter = header_object[0]['ESO INS1 FILT ID']
     object_exposure_time = header_object[0]['EXPTIME']
     object_nd_filter = header_object[0]['ESO INS4 FILT2 NAME']
     
@@ -584,8 +600,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
                 raise IOError('\n\nOne or more SKY-files use a NIR neutral density filter different from that of the OBJECT-files.')
     
     if not any([x['ESO DPR TYPE'] == 'SKY' and x['EXPTIME'] == object_exposure_time and x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header]):
-        # TODO: Change statement here when background subtraction with dark,background is implemented
-        printandlog('\nWARNING, there are no SKY-files to subtract from the OBJECT-files. Although the background will be subtracted from the final images after determining it using the annulus as defined by the input variable \'annulus_background\', the result will be less accurate than when subtracting a SKY-image.')    
+        printandlog('\nWARNING, there are no SKY-files to subtract from the OBJECT-files. While this is generally no problem for the final polarization images, the final total intensity images can show some artifacts.')    
     
     if any(header_flux):    
         if not any([x['ESO DPR TYPE'] == 'SKY' and x['EXPTIME'] == flux_exposure_time and x['ESO INS4 FILT2 NAME'] == flux_nd_filter for x in header]):
@@ -601,9 +616,46 @@ def check_sort_data_create_directories(frames_to_remove=[],
         if not all([x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header_center]):
             raise IOError('\n\nOne or more CENTER-files use a NIR neutral density filter different from that of the OBJECT-files.')
          
+    # Perform checks on header values that apply only to DARK(,BACKGROUND)- and FLAT-files
+    header_dark_all = [x for x in header if x['ESO DPR TYPE'] in ['DARK', 'DARK,BACKGROUND']]
+    header_dark_background = [x for x in header_dark_all if x['ESO DPR TYPE'] == 'DARK,BACKGROUND']
+    header_flat = [x for x in header if x['ESO DPR TYPE'] == 'FLAT,LAMP']
+               
+    if any(header_dark_all) and any(header_flat):    
+        
+        if len(header_dark_all) != len(header_flat):
+            raise IOError('\n\nThe number of DARK(,BACKGROUND)- and FLAT-files is unequal.')
+
+        if any([x['ESO INS1 FILT ID'] != object_filter for x in header_dark_background]):
+            raise IOError('\n\nOne or more DARK,BACKGROUND-files have a different filter than the OBJECT-files.')
+        
+        if any([x['ESO INS1 FILT ID'] != object_filter for x in header_flat]):
+            raise IOError('\n\nOne or more FLAT-files have a different filter than the OBJECT-files.')
+            
+        if any([x['ESO INS1 OPTI2 NAME'] in ['P0-90', 'P45-135'] for x in header_flat]):
+            raise IOError('\n\nOne or more FLAT-files have the P0-90 or P45-135 polarizer set inserted. Using FLAT-files taken with a polarizer set will result in overcorrection of the instrumental polarization during post processing.')
+
+        if set([x['EXPTIME'] for x in header_dark_all]) != set([x['EXPTIME'] for x in header_flat]):
+            raise IOError('\n\nThe exposure time of one or more FLAT-files cannot be matched to the exposure time of a DARK(,BACKGROUND)-file or vice versa.')
+
+        if any(np.sort([x['EXPTIME'] for x in header_dark_all]) != np.sort([x['EXPTIME'] for x in header_flat])):
+            raise IOError('\n\nFor one or more exposure times, the number of DARK(,BACKGROUND)- and FLAT-files are different.')
+            
+        mjd_dark_background = [x['MJD-OBS'] for x in header_dark_background]
+        mjd_flat = [x['MJD-OBS'] for x in header_flat] 
+        
+        if max(mjd_flat) - min(mjd_dark_background) > 1/24 or max(mjd_dark_background) - min(mjd_flat) > 1/24:
+            printandlog('\nWARNING, (some of) the DARK,BACKGROUND- and FLAT-files are taken more than 1 hour apart. The background in the DARK,BACKGROUND-files is known to generally be strongly time-varying.')
+
+    if any(header_dark_all) and not any(header_flat):
+        raise IOError('\n\nThere are DARK(,BACKGROUND)-files but no FLAT-files.')
+        
+    if any(header_flat) and not any(header_dark_all):
+        raise IOError('\n\nThere are FLAT-files but no DARK(,BACKGROUND)-files.')
+        
     # Print that headers have been checked and passed all checks
     printandlog('\nThe FITS-headers of the raw data have passed all checks.')
-
+        
     ###############################################################################
     # Define list of indices to remove frames
     ###############################################################################
@@ -659,12 +711,16 @@ def check_sort_data_create_directories(frames_to_remove=[],
     ###############################################################################
 
     # Create empty lists
+    path_dark_files = []
+    path_flat_files = []
     path_object_files = []
     path_sky_files = []
     path_center_files = []
     path_flux_files = []
     path_sky_flux_files = [] 
     path_imcompatible_files = []
+    indices_to_remove_dark = []
+    indices_to_remove_flat = []    
     indices_to_remove_object = []
     indices_to_remove_sky = []    
     indices_to_remove_center = []
@@ -679,7 +735,15 @@ def check_sort_data_create_directories(frames_to_remove=[],
     # Sort file paths and indices of frames to be removed according to file type 
     for file_sel, header_sel, file_index_sel, NDIT_sel, indices_sel in zip(path_raw_files, header, file_index, NDIT, indices_to_remove):
     
-        if header_sel['ESO DPR TYPE'] == 'OBJECT':
+        if header_sel['ESO DPR TYPE'] in ['DARK', 'DARK,BACKGROUND']:
+            path_dark_files.append(file_sel)
+            indices_to_remove_dark.append(indices_sel)
+
+        elif header_sel['ESO DPR TYPE'] == 'FLAT,LAMP':
+            path_flat_files.append(file_sel)
+            indices_to_remove_flat.append(indices_sel)
+            
+        elif header_sel['ESO DPR TYPE'] == 'OBJECT':
             path_object_files.append(file_sel)
             indices_to_remove_object.append(indices_sel)
             file_index_object.append(file_index_sel)           
@@ -722,6 +786,15 @@ def check_sort_data_create_directories(frames_to_remove=[],
             
         else:
             path_imcompatible_files.append(file_sel)
+   
+    # Sort DARK(,BACKGROUND)- and FLAT-files based on exposure time in headers
+    exposure_time_dark = [pyfits.getheader(x)['EXPTIME'] for x in path_dark_files]
+    sort_index = list(np.argsort(exposure_time_dark))
+    path_dark_files = [path_dark_files[i] for i in sort_index]
+    
+    exposure_time_flat = [pyfits.getheader(x)['EXPTIME'] for x in path_flat_files]
+    sort_index = list(np.argsort(exposure_time_flat))    
+    path_flat_files = [path_flat_files[i] for i in sort_index]
     
     # Find object-files that are closest in time to center-files
     path_object_center_files = []
@@ -795,6 +868,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     # Print number of files for each file type
     printandlog('\nNumber of files for each file type:')
+    printandlog('DARK(,BACKGROUND):    ' + str(len(path_dark_files)))    
+    printandlog('FLAT,LAMP:            ' + str(len(path_flat_files)))
     printandlog('OBJECT (O):           ' + str(len(path_object_files)))
     printandlog('SKY (S) for OBJECT:   ' + str(len(path_sky_files)))
     printandlog('CENTER (C):           ' + str(len(path_center_files)))
@@ -827,7 +902,19 @@ def check_sort_data_create_directories(frames_to_remove=[],
     # Create directories to write processed data to
     directories_created = []
     directories_already_existing = []
-    
+
+    if any(path_flat_files):
+        if not os.path.exists(path_flat_dir):
+            os.makedirs(path_flat_dir)
+            directories_created.append(path_flat_dir)
+        else:
+            directories_already_existing.append(path_flat_dir)
+        if not os.path.exists(path_bpm_dir):
+            os.makedirs(path_bpm_dir)
+            directories_created.append(path_bpm_dir)
+        else:
+            directories_already_existing.append(path_bpm_dir)
+       
     if any(path_sky_files):
         if not os.path.exists(path_sky_dir):
             os.makedirs(path_sky_dir)
@@ -887,11 +974,12 @@ def check_sort_data_create_directories(frames_to_remove=[],
         for directory_sel in directories_already_existing:
             printandlog('{0:s}'.format(directory_sel), wrap=False)
     
-    return path_object_files, path_sky_files, path_center_files, path_object_center_files, \
-           path_flux_files, path_sky_flux_files, indices_to_remove_object, indices_to_remove_sky, \
-           indices_to_remove_center, indices_to_remove_object_center, indices_to_remove_flux, \
-           indices_to_remove_sky_flux, file_index_object, file_index_flux, \
-           object_centering_method, combination_method_polarization
+    return path_dark_files, path_flat_files, path_object_files, path_sky_files, path_center_files, \
+           path_object_center_files, path_flux_files, path_sky_flux_files, \
+           indices_to_remove_dark, indices_to_remove_flat, indices_to_remove_object, \
+           indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, \
+           indices_to_remove_flux, indices_to_remove_sky_flux, file_index_object, \
+           file_index_flux, object_centering_method, combination_method_polarization
 
 ###############################################################################
 # read_fits_files
@@ -1685,6 +1773,34 @@ def find_center_coordinates(list_frame_center_processed,
         printandlog('\nFinal center coordinates (pixels):')
         printandlog('x_left    y_left    x_right    y_right')
         printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center[0] + 1, y_center[0] + 1, x_center[1] + 1, y_center[1] + 1))    
+
+    #TODO: plot fitted center coordinates vs time
+    #TODO: perhaps best to rename the function
+    # Define function to plot determined center coordinates
+    def plot_center_coordinates(data, x_y, left_right):
+        font_size = 10
+        width_figure = 4.7 / 20 * len(data)
+        if width_figure < 4.7:
+            width_figure = 4.7   
+        elif width_figure > 30:
+            width_figure = 40                  
+        plot_name = name_file_root + 'center_coordinates_' + x_y + '_' + left_right + '.png'            
+        path_plot = os.path.join(path_center_dir, plot_name)
+        printandlog(path_plot, wrap=False)
+        image_number = np.arange(1, len(data)+1)
+        plt.figure(figsize = (width_figure, 3.0))
+        plt.plot(image_number, data, '-ok')
+        ax = plt.gca()
+        ax.set_xlabel(r'Image', fontsize=font_size)
+        ax.tick_params(axis = 'x', labelsize=font_size)
+        ax.set_xlim([0, max(image_number) + 1])
+        ax.xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
+        ax.set_ylabel(x_y + ' ' + left_right + ' (pixels)', fontsize=font_size)
+        ax.tick_params(axis='y', labelsize=font_size)  
+        ax.ticklabel_format(useOffset=False, axis='y')
+        ax.grid()
+        plt.tight_layout()
+        plt.savefig(path_plot, dpi=300, bbox_inches='tight')
 
     # Assemble output
     center_coordinates = (x_center[0], y_center[0], x_center[1], y_center[1])
@@ -2623,10 +2739,13 @@ def perform_preprocessing(frames_to_remove=[],
     printandlog('# Checking and sorting data and creating directories')
     printandlog('###############################################################################') 
 
-    # Check and sort data, and create directories
-    path_object_files, path_sky_files, path_center_files, path_object_center_files, path_flux_files, path_sky_flux_files, \
-    indices_to_remove_object, indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, indices_to_remove_flux, \
-    indices_to_remove_sky_flux, file_index_object, file_index_flux, object_centering_method, combination_method_polarization \
+    # Check and sort data, and create directories   
+    path_dark_files, path_flat_files, path_object_files, path_sky_files, path_center_files, \
+    path_object_center_files, path_flux_files, path_sky_flux_files, \
+    indices_to_remove_dark, indices_to_remove_flat, indices_to_remove_object, \
+    indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, \
+    indices_to_remove_flux, indices_to_remove_sky_flux, file_index_object, \
+    file_index_flux, object_centering_method, combination_method_polarization \
     = check_sort_data_create_directories(frames_to_remove=frames_to_remove, 
                                          combination_method_polarization=combination_method_polarization, 
                                          object_centering_method=object_centering_method, 
@@ -2634,36 +2753,42 @@ def perform_preprocessing(frames_to_remove=[],
                                          show_images_center_coordinates=show_images_center_coordinates)
 
     ###############################################################################
-    # Read static master flat and bad pixel map
+    # Computing master flat and bad pixel map or reading static ones
     ###############################################################################
     
-    #TODO: Make master flats for Y and Ks. 
-    # Determine filter used
-    filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
-
-    # Read static master flat    
-    if filter_used == 'FILT_BBF_Y':
-        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Y.fits')
-    elif filter_used == 'FILT_BBF_J':
-        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_J.fits')
-    elif filter_used == 'FILT_BBF_H':
-        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_H.fits')
-    elif filter_used == 'FILT_BBF_Ks':
-        path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Ks.fits')
+    if any(path_flat_files):
+        #TODO: Create master flats and master dark,backgrounds yourself  
+        # Process the dark and flat files to create a master flat and bad pixel map
+        frame_master_flat, frame_master_bpm = process_dark_flat_frames(path_dark_files=path_dark_files, 
+                                                                       path_flat_files=path_flat_files,
+                                                                       indices_to_remove_dark=indices_to_remove_dark, 
+                                                                       indices_to_remove_flat=indices_to_remove_flat, 
+                                                                       sigma_filtering=sigma_filtering)
     
-    frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
+    else:
+        # Determine filter used
+        filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
     
-    #TODO: Perform the the 2 lines below on the master flats and save them again so that these lines can be removed from the code
-    # Filter master flat for zeros and NaN's
-    frame_master_flat = np.nan_to_num(frame_master_flat)
-    frame_master_flat[frame_master_flat == 0] = 1
-
-    # Read static bad pixel map
-    frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_calib_dir, 'master_badpix.fits'), silent=True)[0])
-
-    #TODO: Here read static master dark,background frames (in all filters) in case there are no sky frames
+        # Read static master flat    
+        #TODO: Make master flats for Y and Ks. 
+        if filter_used == 'FILT_BBF_Y':
+            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Y.fits')
+        elif filter_used == 'FILT_BBF_J':
+            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_J.fits')
+        elif filter_used == 'FILT_BBF_H':
+            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_H.fits')
+        elif filter_used == 'FILT_BBF_Ks':
+            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Ks.fits')
+        
+        frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
     
-    #TODO: Somewhere we should add the possibility to create master flats and master dark,backgrounds yourself
+        #TODO: Perform the the 2 lines below on the master flats and save them again so that these lines can be removed from the code
+        # Filter master flat for zeros and NaN's
+        frame_master_flat = np.nan_to_num(frame_master_flat)
+        frame_master_flat[frame_master_flat == 0] = 1
+    
+        # Read static bad pixel map
+        frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_calib_dir, 'master_badpix.fits'), silent=True)[0])
     
     ###############################################################################
     # Computing master sky for object images
@@ -2828,6 +2953,11 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
 #TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star? 
+#        I_Q = np.mean(compute_annulus_values(cube=cube_I_Q, param=annulus_star)[0], axis=mean_median_axis) - \
+#              np.median(compute_annulus_values(cube=cube_I_Q, param=annulus_background)[0], axis=mean_median_axis)       
+
+    # headers use pyfits.getheader(path_flux_files[]) and also for object
+        
         
     return cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization
 
@@ -4505,6 +4635,8 @@ def run_pipeline(path_main_dir):
     global msd
     global path_raw_dir
     global path_calib_dir
+    global path_flat_dir
+    global path_bpm_dir
     global path_sky_dir
     global path_center_dir
     global path_flux_dir
@@ -4529,6 +4661,8 @@ def run_pipeline(path_main_dir):
     # Define paths of directories
     path_raw_dir = os.path.join(path_main_dir, 'raw')
     path_calib_dir = os.path.join(path_main_dir, 'calibration')
+    path_flat_dir = os.path.join(path_calib_dir, 'flat')
+    path_bpm_dir = os.path.join(path_calib_dir, 'bpm')
     path_sky_dir = os.path.join(path_calib_dir, 'sky')
     path_center_dir = os.path.join(path_calib_dir, 'center')
     path_flux_dir = os.path.join(path_calib_dir, 'flux')
@@ -4550,9 +4684,12 @@ def run_pipeline(path_main_dir):
         raise IOError('\n\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
 
     # Define the base of the name of each file to be generated
-    header_first_file = pyfits.getheader(path_raw_files[0])
-    target_name = header_first_file['ESO OBS TARG NAME']
-    date_obs = header_first_file['DATE-OBS']
+    header_target_name = [pyfits.getheader(x) for x in path_raw_files if 'ESO OBS TARG NAME' in pyfits.getheader(x)]
+    if len(header_target_name) == 0:
+        raise IOError('\n\nThe target name has not been found in the headers. There is likely no on-sky data in the raw directory {0:s}.'.format(path_raw_dir))
+    else:
+        target_name = header_target_name[0]['ESO OBS TARG NAME']
+        date_obs = header_target_name[0]['DATE-OBS']
     
     name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
