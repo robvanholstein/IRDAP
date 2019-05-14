@@ -16,18 +16,27 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
-from irdap.irdap import __version__
-
-# -- Project information -----------------------------------------------------
+#from irdap.irdap import __version__
+#
+## -- Project information -----------------------------------------------------
+#
+#project = 'IRDAP'
+#copyright = '2019, R.G. van Holstein'
+#author = 'R.G. van Holstein'
+#
+## The short X.Y version
+#version = __version__
+## The full version, including alpha/beta/rc tags
+#release = __version__
 
 project = 'IRDAP'
 copyright = '2019, R.G. van Holstein'
 author = 'R.G. van Holstein'
 
 # The short X.Y version
-version = __version__
+version = '2019.5.12'
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = '2019.5.12'
 
 
 # -- General configuration ---------------------------------------------------
