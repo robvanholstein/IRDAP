@@ -55,6 +55,10 @@ def main(args=None):
     if args is None:
         # Obtain arguments that user put in
         args = sys.argv[1:]
+
+    # Check if at least one argument is given
+    if len(args) == 0:
+        print('\nNo arguments were provided. Please check the help message by typing "irdap --help".')
         
     # Define the arser including the description and epilog
     parser = argparse.ArgumentParser(description='IRDAP (IRDIS Data-reduction for Accurate Polarimetry) is a pipeline for\n' +
@@ -80,26 +84,27 @@ def main(args=None):
                                             formatter_class=RawTextHelpFormatter)
     
     # Add parser arguments
-    parser.add_argument('-v', '--version', action='version', version=('IRDAP %s' % __version__))
+    parser.add_argument('-v', '--version', action='store_true', 
+                        help='show program\'s version number and exit')
     parser.add_argument('-d', '--demo', action='store_true',
                         help='run pipeline in current working directory with example\ndata of the circumstellar disk of T Cha (1 HWP cycle)')
     parser.add_argument('-o', '--headers', action='store_true',
                         help='create overview of relevant headers of FITS-files in raw\nsubdirectory')
     parser.add_argument('-c', '--makeconfig', action='store_true',
                         help='create default configuration file in current working\ndirectory')                    
-    parser.add_argument('-r', '--run', action='store_true',
-                        help='run pipeline using configuration file in current working\ndirectory')                    
+    parser.add_argument('-r', '--run', nargs='?', const=True,
+                        help='run pipeline using configuration file in current working\ndirectory. Alternatively specify the path of a configura-\ntion file relative to the current working directory.')                    
 
-#TODO:
-#    parser.add_argument('-r', '--run', nargs='?', const=True,
-#                        help='run pipeline using configuration file in current working\ndirectory')                    
-   
     # Use current working directory (of terminal) as path of main directory of reduction    
     path_main_dir = os.getcwd()
-
+    
     # Evaluate and act upon user arguments
-    args = parser.parse_args()
-
+    args = parser.parse_args()   
+    
+    if args.version:
+        # Print the current version 
+        print('\nIRDAP %s' % __version__)
+        
     if args.demo:
         # Run example reduction
         run_demo(path_main_dir)
@@ -113,15 +118,27 @@ def main(args=None):
         make_config(path_main_dir)
         
     elif args.run:
- 
-#TODO:
-#        if args.run != True:
-#            # Check if it is a path or raise error
-#            
-#            # Then parse path into run_pipeline as optional argument
-                       
-        # Run the pipeline 
-        run_pipeline(path_main_dir)
+        if args.run != True:
+            # Retrieve relative path of configuration file
+            path_config_file_rel = args.run
+            
+            # Check if file provided has extension .conf
+            if os.path.splitext(path_config_file_rel)[1] != '.conf':
+                print('\nThe extension of the provided configuration file is not .conf.')
+                sys.exit()
+                
+            # Construct absolute pat of configuration file and check if it exists
+            path_config_file = os.path.join(path_main_dir, path_config_file_rel)
+            if not os.path.exists(path_config_file):
+                print('\nThere is no configuration file ' + path_config_file + '. Check the file name or relative path provided, or run \'irdap --makeconfig\' first.')
+                sys.exit()
+                
+            # Run the pipeline with the specified configuration file
+            run_pipeline(path_main_dir, path_config_file=path_config_file)       
+
+        else:
+            # Run the pipeline with the standard configuration file
+            run_pipeline(path_main_dir, path_config_file=None)            
 
 ###############################################################################
 # Run the function main

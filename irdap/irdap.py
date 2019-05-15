@@ -989,8 +989,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
            indices_to_remove_dark, indices_to_remove_flat, indices_to_remove_object, \
            indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, \
            indices_to_remove_flux, indices_to_remove_sky_flux, file_index_object, \
-           file_index_flux, object_centering_method, combination_method_polarization
-
+           file_index_flux, object_centering_method, combination_method_polarization   
+    
 ###############################################################################
 # read_fits_files
 ###############################################################################
@@ -2964,9 +2964,9 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
 #TODO:  # Compute flux of star and conversion factor to mJansky/arcsec^2
-        star_flux, = determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y)
+#        star_flux, = determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y)
 
-        return cube_left_frames, cube_right_frames, header, file_index_object, combination_method_polarization
+    return cube_left_frames, cube_right_frames, header, file_index_object, combination_method_polarization
 
 
 
@@ -2978,51 +2978,51 @@ def perform_preprocessing(frames_to_remove=[],
 #TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star? 
 
 # TODO: function to be placed somewhere above the perform_preprocessing function:
-###############################################################################
-# determine_star_flux
-###############################################################################
-
-def determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y):   
-    '''
-    Determine flux of star in master flux frame using aperture photometry ......
-     
-    Input:
-        frame_master_flux: master flux frame 
-        path_flux_files: list of paths to raw FLUX-files
-        path_object_files: list of paths to raw OBJECT-files
-        annulus_X: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
-            coord_center_x: x-coordinate of center (pixels; 0-based)
-            coord_center_y: y-coordinate of center (pixels; 0-based)
-            inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-        annulus_Y: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
-            coord_center_x: x-coordinate of center (pixels; 0-based)
-            coord_center_y: y-coordinate of center (pixels; 0-based)
-            inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-              
-    Output:
-        flux_star: ?
-        
-    File written by Julien Milli
-    Function status: 
-    '''
-
-#TODO: To compute the flux in an aperture minus the background around it, use 2 lines below For annulus star can use (511.5, 511.5, 0, 11, 0, 360), which gives a star centered aperture of radius 11.
-# Do you want a fixed value for the aperture? Note that annulus_X in the code itself is 0-based for the x and y coordinates (511.5) while in the config file it is 1-based.
-# For the background can use something like (511.5, 511.5, 11, 10, 0, 360). Do these annuli need to be in the config file? I can image the case of a close binary where the user
-# wants full control.
-#        I_Q = np.mean(compute_annulus_values(cube=frame, param=annulus_star)[0]) - \
-#              np.median(compute_annulus_values(cube=frame, param=annulus_background)[0])       
-
-    # To get the headers for the DIT, NDIT etc. read the headers from path_flux_files with pyfits.getheader(path_flux_files[]). For object from path_object_files
-
-        
-    return flux_star, 
+################################################################################
+## determine_star_flux
+################################################################################
+#
+#def determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y):   
+#    '''
+#    Determine flux of star in master flux frame using aperture photometry ......
+#     
+#    Input:
+#        frame_master_flux: master flux frame 
+#        path_flux_files: list of paths to raw FLUX-files
+#        path_object_files: list of paths to raw OBJECT-files
+#        annulus_X: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
+#            coord_center_x: x-coordinate of center (pixels; 0-based)
+#            coord_center_y: y-coordinate of center (pixels; 0-based)
+#            inner_radius: inner radius (pixels)
+#            width: width (pixels)
+#            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+#            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+#        annulus_Y: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
+#            coord_center_x: x-coordinate of center (pixels; 0-based)
+#            coord_center_y: y-coordinate of center (pixels; 0-based)
+#            inner_radius: inner radius (pixels)
+#            width: width (pixels)
+#            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+#            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+#              
+#    Output:
+#        flux_star: ?
+#        
+#    File written by Julien Milli
+#    Function status: 
+#    '''
+#
+##TODO: To compute the flux in an aperture minus the background around it, use 2 lines below For annulus star can use (511.5, 511.5, 0, 11, 0, 360), which gives a star centered aperture of radius 11.
+## Do you want a fixed value for the aperture? Note that annulus_X in the code itself is 0-based for the x and y coordinates (511.5) while in the config file it is 1-based.
+## For the background can use something like (511.5, 511.5, 11, 10, 0, 360). Do these annuli need to be in the config file? I can image the case of a close binary where the user
+## wants full control.
+##        I_Q = np.mean(compute_annulus_values(cube=frame, param=annulus_star)[0]) - \
+##              np.median(compute_annulus_values(cube=frame, param=annulus_background)[0])       
+#
+#    # To get the headers for the DIT, NDIT etc. read the headers from path_flux_files with pyfits.getheader(path_flux_files[]). For object from path_object_files
+#
+#        
+#    return flux_star, 
         
 
     
@@ -4479,18 +4479,18 @@ def perform_postprocessing(cube_left_frames,
     frame_annulus_star = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_star)[1]
     frame_annulus_background = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_background)[1]
 
-#TODO: Convert images to mJansky/". Perhaps it is best to give this as extra output and retain the original ones in counts too. What do you think?
-# If so, just give the new images new clear names and add them to the section # Write .fits-files just below here. Note that you need to convert
-# the images with and without star polarization.
-    
-    ###############################################################################
-    # Optionally convert final Q-, U-, Qphi-, Uphi- and Ipol-images to mJansky/"
-    ###############################################################################
-
-    if bla == True:  
-        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
-        dummy = 5
-        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
+##TODO: Convert images to mJansky/". Perhaps it is best to give this as extra output and retain the original ones in counts too. What do you think?
+## If so, just give the new images new clear names and add them to the section # Write .fits-files just below here. Note that you need to convert
+## the images with and without star polarization.
+#    
+#    ###############################################################################
+#    # Optionally convert final Q-, U-, Qphi-, Uphi- and Ipol-images to mJansky/"
+#    ###############################################################################
+#
+#    if bla == True:  
+#        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
+#        dummy = 5
+#        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
         
     ###############################################################################
     # Print image orientation of final images
@@ -4567,19 +4567,19 @@ def perform_postprocessing(cube_left_frames,
 
 
 
-# TODO: I suggest you write the main function to perform ADI here (with sub functions above), and that gets
-# the input cube_left_frames, cube_right_frames all the way at the bottom of the script, below the call
-# of perform_postprocessing. That way the ADI part shares the pre-processed data, but is totally 
-# separate from the polarimetry part. Should make the implementation much easier.
-
-###############################################################################
-# perform_adi
-###############################################################################
-
-def perform_adi(cube_left_frames, cube_right_frames):
-    '''
-    ...
-    '''
+## TODO: I suggest you write the main function to perform ADI here (with sub functions above), and that gets
+## the input cube_left_frames, cube_right_frames all the way at the bottom of the script, below the call
+## of perform_postprocessing. That way the ADI part shares the pre-processed data, but is totally 
+## separate from the polarimetry part. Should make the implementation much easier.
+#
+################################################################################
+## perform_adi
+################################################################################
+#
+#def perform_adi(cube_left_frames, cube_right_frames):
+#    '''
+#    ...
+#    '''
                            
                            
                            
@@ -4672,7 +4672,7 @@ def run_demo(path_main_dir):
         make_config(path_main_dir)
         
         # Run the pipeline
-        run_pipeline(path_main_dir)
+        run_pipeline(path_main_dir, path_config_file=None)
             
 ###############################################################################
 # make_config
@@ -4756,14 +4756,17 @@ def create_overview_headers_main(path_main_dir):
 # run_pipeline
 ###############################################################################
 
-def run_pipeline(path_main_dir):
+def run_pipeline(path_main_dir, path_config_file=None):
     '''  
     Run the pipeline
     
     Input:
         path_main_dir: string specifying path of main directory containing the 
-            configuration file 'config.conf' and the directory 'raw' with the
-            raw data
+            the subdirectory 'raw' with the raw data, and optionally the 
+            configuration file 'config.conf'
+        path_config_file: string specifying path of configuration file with
+            extension .conf'. If None, the configuration file 'config.conf' in
+            the main directory is used.
        
     File written by Rob van Holstein
     Function status: verified
@@ -4813,7 +4816,7 @@ def run_pipeline(path_main_dir):
     
     # Define paths of directories
     path_raw_dir = os.path.join(path_main_dir, 'raw')
-    path_log_config_dir = os.path.join(path_main_dir, 'log_config')
+    path_log_config_dir = os.path.join(path_main_dir, 'logs')
     path_calib_dir = os.path.join(path_main_dir, 'calibration')
     path_flat_dir = os.path.join(path_calib_dir, 'flat')
     path_bpm_dir = os.path.join(path_calib_dir, 'bpm')
@@ -4857,8 +4860,9 @@ def run_pipeline(path_main_dir):
     # Check if configuration and log file exist
     ###############################################################################   
     
-    # Define the path of the configuration file and check if it exists
-    path_config_file = os.path.join(path_main_dir, 'config.conf')
+    # Define the path of the configuration file if None and check if it exists
+    if path_config_file is None:
+        path_config_file = os.path.join(path_main_dir, 'config.conf')
     if not os.path.exists(path_config_file):
         raise IOError('\n\nThere is no configuration file ' + path_config_file + '. Run \'irdap --makeconfig\' first.')
    
