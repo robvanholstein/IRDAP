@@ -1714,6 +1714,7 @@ def find_center_coordinates(list_frame_center_processed,
         plt.figtext(left_center[0], 0.81, 'Left frame half', va='center', ha='center', size=12)
         plt.figtext(right_center[0], 0.81, 'Right frame half', va='center', ha='center', size=12)
         plt.savefig(path_plot_sub_images, dpi = 300, bbox_inches = 'tight')
+        plt.close(fig)
                
         # Write REG-file with fitted lines and circles indicating centers to use with FITS-files of processed center frames
         path_reg_file = os.path.splitext(path_sel)[0] + '.reg'
@@ -1799,6 +1800,7 @@ def find_center_coordinates(list_frame_center_processed,
         ax.grid()
         plt.tight_layout()
         plt.savefig(path_plot, dpi=300, bbox_inches='tight')
+        plt.close()
 
     # Assemble output
     center_coordinates = (x_center[0], y_center[0], x_center[1], y_center[1])
@@ -2160,6 +2162,7 @@ def process_object_frames(path_object_files,
                 ax.grid()
                 plt.tight_layout()
                 plt.savefig(path_plot, dpi=300, bbox_inches='tight')
+                plt.close()
 
             # Plot center coordinates in x- and y-direction of left and right frame halves
             printandlog('\nCreating plots showing the fitted center coordinates of each image:')
@@ -2239,7 +2242,8 @@ def process_object_frames(path_object_files,
                     axs[k].imshow(list_sub_image[k][0], cmap=cmap, origin='lower',interpolation='nearest')
                     axs[k].plot(list_x_fit_sub_image[k][0], list_y_fit_sub_image[k][0], 'rx', markersize=60/crop_radius)
             plt.savefig(path_plot, dpi=300, bbox_inches='tight')
-    
+            plt.close(fig)
+
     return cube_single_sum, cube_single_difference, header
 
 ###############################################################################
@@ -3589,7 +3593,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.tight_layout()
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
-    
+    plt.close()
+
     ###############################################################################
     # Compute model coefficient matrix, IP and cross-talk elements
     ###############################################################################
@@ -3767,6 +3772,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.tight_layout()
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
+    plt.close()
 
     # Plot elements Q->Q and U->Q from model as a function of HWP cycle number
     plot_name = name_file_root + 'model_crosstalk_transmission.png'
@@ -3791,6 +3797,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.tight_layout()
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
+    plt.close()
       
     ###############################################################################
     # Compute incident Q- and U-images by correcting for instrumental polarization effects
@@ -4326,6 +4333,7 @@ def perform_postprocessing(cube_single_sum,
         plt.tight_layout()
         plt.savefig(os.path.join(path_reduced_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
         plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
+        plt.close()
         
         # Plot AoLP from annulus as function of HWP cycle number
         plot_name_star_AoLP = name_file_root + 'star_pol_AoLP.png'
@@ -4346,6 +4354,7 @@ def perform_postprocessing(cube_single_sum,
         plt.tight_layout()
         plt.savefig(os.path.join(path_reduced_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
         plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
+        plt.close()   
         
         printandlog('\nHorizontal trends in the data points of the plots ' + plot_name_star_quDoLP + ' and ' + plot_name_star_AoLP + ' indicate that the instrumental polarization effects have been removed successfully. However, this is only true provided that:')
         printandlog('\n1) the observations are taken with a sufficiently large range of parallactic and altitude angles,')
