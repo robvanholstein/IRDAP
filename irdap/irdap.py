@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ###############################################################################
 
 import os
+import sys
 import glob
 import time
 import datetime
@@ -350,6 +351,55 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
         printandlog('\nWrote file ' + path_overview + ' showing an overview of relevant headers for each file in the raw directory.')
 
 #TODO: save same file but then in .csv
+
+###############################################################################
+# check_own_programs
+###############################################################################
+
+def check_own_programs(header):
+    '''
+    Check if data is from one of my own programs to print message
+    
+    Input:
+        header: header or list of FITS-headers of raw files
+    
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+    
+    own_programs = ['098.C-0790(A)',
+                    '0101.C-0502(A)', 
+                    '0101.C-0502(B)',
+                    '0102.C-0871(A)',
+                    '0102.C-0916(A)', 
+                    '0102.C-0916(B)', 
+                    '0102.C-0916(C)', 
+                    '2102.C-5016(B)']
+    
+    program_id = [x['ESO OBS PROG ID'] for x in header]
+    
+    if any([x in own_programs for x in program_id]):
+        printandlog('\nTerminating reduction.')
+        for i in range(20):
+            printandlog('\n')
+        printandlog('\n###############################################################################')
+        printandlog('Please note')                                
+        printandlog('###############################################################################')
+        printandlog('\nDear colleague,')      
+        printandlog('\nThe data you are trying to reduce comes from one of my observing programs. ' + 
+                    'In case you are interested in this data, please contact me at \'vanholstein@strw.leidenuniv.nl\'. ' +
+                    'I am always more than happy to collaborate on projects!')
+        printandlog('\nPlease note that the calibration of the IRDIS ' +
+                    'polarimetric mode (which is the core of IRDAP) and the development of IRDAP itself have taken 4 years ' +
+                    '(started early 2015). I would therefore very much appreciate if you could take this into ' +
+                    'consideration. Thank you for your understanding.')
+        printandlog('\nKind regards,')
+        printandlog('\nRob van Holstein')
+        printandlog('\n###############################################################################')
+        for i in range(20):
+            printandlog('\n')           
+                    
+        sys.exit()
         
 ###############################################################################
 # check_sort_data_create_directories
@@ -459,7 +509,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
     
     # Extract headers
     header = [pyfits.getheader(x) for x in path_raw_files]
- 
+#    check_own_programs(header)
+    
     # Sort raw files and headers based on observation date in headers
     date_obs = [x['DATE-OBS'] for x in header]
     sort_index = list(np.argsort(date_obs))
@@ -891,6 +942,10 @@ def check_sort_data_create_directories(frames_to_remove=[],
         printandlog('\nWARNING, one or more files do not fall under any of the file type categories listed above and will be ignored:')
         for file_sel in path_imcompatible_files:
             printandlog('{0:s}'.format(file_sel))
+    
+    # Raise error if there are no OBJECT-files to reduce
+    if not any(path_object_files):
+        raise IOError('\n\nThere are no OBJECT-files to reduce.')
     
     # If object_centering_method is 'automatic', set to 'center frames' if there are CENTER-files and otherwise to 'gaussian'
     if object_centering_method == 'automatic':
