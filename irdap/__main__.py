@@ -31,7 +31,7 @@ import sys
 import os
 import argparse
 from argparse import RawTextHelpFormatter
-from .irdap import __version__
+from .version import __version__
 from .irdap import run_demo
 from .irdap import create_overview_headers_main
 from .irdap import make_config

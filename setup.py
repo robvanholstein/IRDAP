@@ -27,12 +27,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from setuptools import setup
 
+version = {}
+with open('irdap/version.py') as fp:
+    exec(fp.read(), version)
+    
 with open("README.rst", "r") as fh:
     long_description = fh.read()
     
 setup(
    name='irdap',
-   version='2019.5.12',
+   version=version['__version__'],
    author='R.G. van Holstein',
    author_email='vanholstein@strw.leidenuniv.nl',
    packages=['irdap'],
