@@ -348,7 +348,9 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
     np.savetxt(path_overview, print_array, fmt = '%s', newline= '\r\n')
     if log:
         printandlog('\nWrote file ' + path_overview + ' showing an overview of relevant headers for each file in the raw directory.')
-    
+
+#TODO: save same file but then in .csv
+        
 ###############################################################################
 # check_sort_data_create_directories
 ###############################################################################
@@ -1784,7 +1786,7 @@ def find_center_coordinates(list_frame_center_processed,
         printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center[0] + 1, y_center[0] + 1, x_center[1] + 1, y_center[1] + 1))    
 
     #TODO: plot fitted center coordinates vs time
-    #TODO: perhaps best to rename the function
+    #TODO: please rename the function
     # Define function to plot determined center coordinates
     def plot_center_coordinates(data, x_y, left_right):
         font_size = 10
@@ -1928,8 +1930,8 @@ def process_object_frames(path_object_files,
             with bad quality (default = True). 
         
     Output:
-        cube_single_sum: cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^- intensity images
-        cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
+        cube_left_frames: cube of pre-processed left frames 
+        cube_right_frames: ccube of pre-processed right frames 
         header: list of FITS-headers of raw science frames   
                 
     File written by Rob van Holstein; based on function by Christian Ginski
@@ -1965,8 +1967,8 @@ def process_object_frames(path_object_files,
     list_file_index = []
     list_shift_x = [[], []]
     list_shift_y = [[], []]
-    list_single_sum = []
-    list_single_difference = []
+    list_left_frames = []
+    list_right_frames = []
     header = []
 
     if centering_method in ['gaussian', 'cross-correlation']:
@@ -2111,21 +2113,17 @@ def process_object_frames(path_object_files,
         frame_left_centered = np.mean(cube_left_centered, axis=0)
         frame_right_centered = np.mean(cube_right_centered, axis=0)
 
-        # Create single difference and sum image
-        frame_single_sum = frame_left_centered + frame_right_centered
-        frame_single_difference = frame_left_centered - frame_right_centered
-        
         # Append single sum and difference images and header
-        list_single_sum.append(frame_single_sum)
-        list_single_difference.append(frame_single_difference)
+        list_left_frames.append(frame_left_centered)
+        list_right_frames.append(frame_right_centered)
         header.append(header_sel)
         
         # Print which file has been processed
         printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(os.path.basename(path_sel)))
 
     # Convert lists of single sum and difference images to image cubes
-    cube_single_sum = np.stack(list_single_sum)
-    cube_single_difference = np.stack(list_single_difference)    
+    cube_left_frames = np.stack(list_left_frames)
+    cube_right_frames = np.stack(list_right_frames)    
         
     # Determine type of observations and assign directory to save plots in
     observation_type = header_sel['ESO DPR TYPE']
@@ -2254,7 +2252,7 @@ def process_object_frames(path_object_files,
             plt.savefig(path_plot, dpi=300, bbox_inches='tight')
             plt.close(fig)
 
-    return cube_single_sum, cube_single_difference, header
+    return cube_left_frames, cube_right_frames, header
 
 ###############################################################################
 # compute_annulus_values
@@ -2461,20 +2459,21 @@ def process_flux_frames(path_flux_files,
     '''
 
     # Perform dark-subtraction, flat-fielding, bad pixel removal and centering
-    cube_single_sum = process_object_frames(path_object_files=path_flux_files, 
-                                            file_index_object=file_index_flux, 
-                                            indices_to_remove_object=indices_to_remove_flux, 
-                                            frame_master_flat=frame_master_flat, 
-                                            frame_master_bpm=frame_master_bpm, 
-                                            frame_master_sky=frame_master_sky_flux, 
-                                            sigma_filtering=sigma_filtering, 
-                                            centering_method=centering_method, 
-                                            center_coordinates=center_coordinates, 
-                                            param_centering=param_centering, 
-                                            collapse_ndit=collapse_ndit, 
-                                            show_images_center_coordinates=show_images_center_coordinates)[0]
+    cube_left_frames, cube_right_frames = process_object_frames(path_object_files=path_flux_files, 
+                                                                file_index_object=file_index_flux, 
+                                                                indices_to_remove_object=indices_to_remove_flux, 
+                                                                frame_master_flat=frame_master_flat, 
+                                                                frame_master_bpm=frame_master_bpm, 
+                                                                frame_master_sky=frame_master_sky_flux, 
+                                                                sigma_filtering=sigma_filtering, 
+                                                                centering_method=centering_method, 
+                                                                center_coordinates=center_coordinates, 
+                                                                param_centering=param_centering, 
+                                                                collapse_ndit=collapse_ndit, 
+                                                                show_images_center_coordinates=show_images_center_coordinates)[:2]
 
     # Compute flux frame as mean of single sum cube
+    cube_single_sum = cube_left_frames + cube_right_frames
     frame_flux = np.mean(cube_single_sum, axis=0)
 
     # Determine background and subtract it
@@ -2731,8 +2730,8 @@ def perform_preprocessing(frames_to_remove=[],
             (default = 'least squares')
         
     Output:
-        cube_single_sum: cube of single-sum I_Q^+, I_Q^-, I_U^+ and I_U^-intensity images
-        cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^-images
+        cube_left_frames: cube of pre-processed left frames 
+        cube_right_frames: cube of pre-processed right frames 
         header: list of FITS-headers of raw science frames 
         file_index_object: list of file indices of OBJECT-files (0-based)
         combination_method_polarization: method to be used to produce the 
@@ -2867,25 +2866,25 @@ def perform_preprocessing(frames_to_remove=[],
     printandlog('# Processing OBJECT-files')
     printandlog('###############################################################################') 
       
-    cube_single_sum, cube_single_difference, header = process_object_frames(path_object_files=path_object_files, 
-                                                                            file_index_object=file_index_object, 
-                                                                            indices_to_remove_object=indices_to_remove_object, 
-                                                                            frame_master_flat=frame_master_flat, 
-                                                                            frame_master_bpm=frame_master_bpm, 
-                                                                            frame_master_sky=frame_master_sky, 
-                                                                            sigma_filtering=sigma_filtering, 
-                                                                            centering_method=object_centering_method, 
-                                                                            center_coordinates=object_center_coordinates, 
-                                                                            param_centering=object_param_centering, 
-                                                                            collapse_ndit=object_collapse_ndit, 
-                                                                            show_images_center_coordinates=show_images_center_coordinates)
+    cube_left_frames, cube_right_frames, header = process_object_frames(path_object_files=path_object_files, 
+                                                                        file_index_object=file_index_object, 
+                                                                        indices_to_remove_object=indices_to_remove_object, 
+                                                                        frame_master_flat=frame_master_flat, 
+                                                                        frame_master_bpm=frame_master_bpm, 
+                                                                        frame_master_sky=frame_master_sky, 
+                                                                        sigma_filtering=sigma_filtering, 
+                                                                        centering_method=object_centering_method, 
+                                                                        center_coordinates=object_center_coordinates, 
+                                                                        param_centering=object_param_centering, 
+                                                                        collapse_ndit=object_collapse_ndit, 
+                                                                        show_images_center_coordinates=show_images_center_coordinates)
     
     if save_preprocessed_data == True:
         # Write preprocessed cubes of single-sum and single-difference images 
         printandlog('\nSaving pre-processed data so that pre-processing can be skipped the next time.')
         printandlog('')
-        write_fits_files(data=cube_single_sum, path=os.path.join(path_preprocessed_dir, 'cube_single_sum.fits'), header=False, silent=False)
-        write_fits_files(data=cube_single_difference, path=os.path.join(path_preprocessed_dir, 'cube_single_difference.fits'), header=False, silent=False)
+        write_fits_files(data=cube_left_frames, path=os.path.join(path_preprocessed_dir, 'cube_left_frames.fits'), header=False, silent=False)
+        write_fits_files(data=cube_right_frames, path=os.path.join(path_preprocessed_dir, 'cube_right_frames.fits'), header=False, silent=False)
 
         # Write path of object files to a .txt-file to be able to read headers
         with open(os.path.join(path_preprocessed_dir, 'path_object_files.txt'), 'w') as fh:
@@ -2964,14 +2963,85 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=frame_master_flux, path=os.path.join(path_flux_dir, name_file_root + 'master_flux.fits'), header=False, silent=False)
         write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
-#TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star? 
-#        I_Q = np.mean(compute_annulus_values(cube=cube_I_Q, param=annulus_star)[0], axis=mean_median_axis) - \
-#              np.median(compute_annulus_values(cube=cube_I_Q, param=annulus_background)[0], axis=mean_median_axis)       
+#TODO:  # Compute flux of star and conversion factor to mJansky/arcsec^2
+        star_flux, = determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y)
 
-    # headers use pyfits.getheader(path_flux_files[]) and also for object
+        return cube_left_frames, cube_right_frames, header, file_index_object, combination_method_polarization
+
+
+
+
+
+#TODO: Any values of this function should be returned by the function perform_preprocessing and be input to the function perform_postprocessing. Then within that function
+# the conversion should take place (there are more TODO:'s there)
+
+#TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star? 
+
+# TODO: function to be placed somewhere above the perform_preprocessing function:
+###############################################################################
+# determine_star_flux
+###############################################################################
+
+def determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y):   
+    '''
+    Determine flux of star in master flux frame using aperture photometry ......
+     
+    Input:
+        frame_master_flux: master flux frame 
+        path_flux_files: list of paths to raw FLUX-files
+        path_object_files: list of paths to raw OBJECT-files
+        annulus_X: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            width: width (pixels)
+            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+        annulus_Y: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            width: width (pixels)
+            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+              
+    Output:
+        flux_star: ?
         
+    File written by Julien Milli
+    Function status: 
+    '''
+
+#TODO: To compute the flux in an aperture minus the background around it, use 2 lines below For annulus star can use (511.5, 511.5, 0, 11, 0, 360), which gives a star centered aperture of radius 11.
+# Do you want a fixed value for the aperture? Note that annulus_X in the code itself is 0-based for the x and y coordinates (511.5) while in the config file it is 1-based.
+# For the background can use something like (511.5, 511.5, 11, 10, 0, 360). Do these annuli need to be in the config file? I can image the case of a close binary where the user
+# wants full control.
+#        I_Q = np.mean(compute_annulus_values(cube=frame, param=annulus_star)[0]) - \
+#              np.median(compute_annulus_values(cube=frame, param=annulus_background)[0])       
+
+    # To get the headers for the DIT, NDIT etc. read the headers from path_flux_files with pyfits.getheader(path_flux_files[]). For object from path_object_files
+
         
-    return cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization
+    return flux_star, 
+        
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###############################################################################
 # compute_double_sum_double_difference
@@ -4035,8 +4105,8 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
 # perform_postprocessing
 ###############################################################################
 
-def perform_postprocessing(cube_single_sum, 
-                           cube_single_difference, 
+def perform_postprocessing(cube_left_frames, 
+                           cube_right_frames, 
                            header, 
                            file_index_object, 
                            annulus_star='automatic', 
@@ -4054,8 +4124,8 @@ def perform_postprocessing(cube_single_sum,
     for the instrumental polarization effects, and save final images to FITS-files
     
     Input:
-        cube_single_sum: cube of pre-processed single-sum images
-        cube_single_difference: cube of pre-processed single-difference images
+        cube_left_frames: cube of pre-processed left frames 
+        cube_right_frames: cube of pre-processed right frames 
         header: list of FITS-headers of OBJECT-files 
         file_index_object: list of file indices of OBJECT-files (0-based)
         annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
@@ -4173,7 +4243,12 @@ def perform_postprocessing(cube_single_sum,
     printandlog('\n###############################################################################')
     printandlog('# Computing the double sum and double difference')
     printandlog('###############################################################################') 
-                
+          
+    # Compute single sum and single difference cubes   
+    cube_single_sum = cube_left_frames + cube_right_frames
+    cube_single_difference = cube_left_frames - cube_right_frames 
+    
+    # Compute double sum and double difference cubes       
     cube_I_Q_double_sum, cube_I_U_double_sum, cube_Q_double_difference, cube_U_double_difference \
     = compute_double_sum_double_difference(cube_single_sum, cube_single_difference, header, double_difference_type=double_difference_type)
     
@@ -4404,6 +4479,19 @@ def perform_postprocessing(cube_single_sum,
     frame_annulus_star = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_star)[1]
     frame_annulus_background = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_background)[1]
 
+#TODO: Convert images to mJansky/". Perhaps it is best to give this as extra output and retain the original ones in counts too. What do you think?
+# If so, just give the new images new clear names and add them to the section # Write .fits-files just below here. Note that you need to convert
+# the images with and without star polarization.
+    
+    ###############################################################################
+    # Optionally convert final Q-, U-, Qphi-, Uphi- and Ipol-images to mJansky/"
+    ###############################################################################
+
+    if bla == True:  
+        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
+        dummy = 5
+        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
+        
     ###############################################################################
     # Print image orientation of final images
     ###############################################################################
@@ -4470,6 +4558,54 @@ def perform_postprocessing(cube_single_sum,
     # Write frames that show annuli used to retrieve star and background signals in reduced_star_pol_subtr directory
     write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)    
+
+
+
+
+
+
+
+
+
+# TODO: I suggest you write the main function to perform ADI here (with sub functions above), and that gets
+# the input cube_left_frames, cube_right_frames all the way at the bottom of the script, below the call
+# of perform_postprocessing. That way the ADI part shares the pre-processed data, but is totally 
+# separate from the polarimetry part. Should make the implementation much easier.
+
+###############################################################################
+# perform_adi
+###############################################################################
+
+def perform_adi(cube_left_frames, cube_right_frames):
+    '''
+    ...
+    '''
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+                           
+
 
 ###############################################################################
 # run_demo
@@ -4728,7 +4864,7 @@ def run_pipeline(path_main_dir):
    
     # Find path of log file from previous reduction
     path_log_file_old = glob.glob(os.path.join(path_main_dir,'*_log_*'))
-    print(path_log_file_old)    
+
     if len(path_log_file_old) > 1:
         raise IOError('\n\nThere should only be one log file in the directory ' + path_main_dir + '. Please remove the latest one.')    
     
@@ -5164,7 +5300,7 @@ def run_pipeline(path_main_dir):
         printandlog('###############################################################################')
         printandlog('\nStarting pre-processing of raw data.')
         
-        cube_single_sum, cube_single_difference, header, file_index_object, combination_method_polarization \
+        cube_left_frames, cube_right_frames, header, file_index_object, combination_method_polarization \
         = perform_preprocessing(frames_to_remove=frames_to_remove, 
                                 sigma_filtering=sigma_filtering, 
                                 object_collapse_ndit=object_collapse_ndit, 
@@ -5193,12 +5329,12 @@ def run_pipeline(path_main_dir):
             print(line, file=open(path_log_file, 'a'))
         
         # Define paths to read pre-processed data and headers from
-        path_cube_single_sum = os.path.join(path_preprocessed_dir, 'cube_single_sum.fits')
-        path_cube_single_difference = os.path.join(path_preprocessed_dir, 'cube_single_difference.fits')
+        path_cube_left_frames = os.path.join(path_preprocessed_dir, 'cube_left_frames.fits')
+        path_cube_right_frames = os.path.join(path_preprocessed_dir, 'cube_right_frames.fits')
         path_object_files_text = os.path.join(path_preprocessed_dir, 'path_object_files.txt')
         path_file_index_object = os.path.join(path_preprocessed_dir, 'file_index_object.txt')
         
-        if os.path.exists(path_cube_single_sum) and os.path.exists(path_cube_single_difference) and os.path.exists(path_object_files_text) and os.path.exists(path_file_index_object):
+        if os.path.exists(path_cube_left_frames) and os.path.exists(path_cube_right_frames) and os.path.exists(path_object_files_text) and os.path.exists(path_file_index_object):
             # Print that post-processing starts
             printandlog('\n###############################################################################')
             printandlog('# Starting post-processing')
@@ -5207,8 +5343,8 @@ def run_pipeline(path_main_dir):
             printandlog('')
             
             # Read pre-processed single-sum and difference- images        
-            cube_single_sum = read_fits_files(path=path_cube_single_sum, silent=False)[0]
-            cube_single_difference = read_fits_files(path=path_cube_single_difference, silent=False)[0] 
+            cube_left_frames = read_fits_files(path=path_cube_left_frames, silent=False)[0]
+            cube_right_frames = read_fits_files(path=path_cube_right_frames, silent=False)[0] 
     
             # Read headers
             header = [pyfits.getheader(x.rstrip('\n')) for x in open(path_object_files_text, 'r')]
@@ -5221,11 +5357,11 @@ def run_pipeline(path_main_dir):
             printandlog('\nRetained part of previous log file pertaining to pre-processing.')
                         
         else:
-            raise IOError('\n\nThe files ' + path_cube_single_sum + ', ' + path_cube_single_difference + ', ' + path_object_files_text + ' and/or ' + path_file_index_object + ' do not exist. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+            raise IOError('\n\nThe files ' + path_cube_left_frames + ', ' + path_cube_right_frames + ', ' + path_object_files_text + ' and/or ' + path_file_index_object + ' do not exist. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
     
     # Perform post-processing of data           
-    perform_postprocessing(cube_single_sum=cube_single_sum, 
-                           cube_single_difference=cube_single_difference, 
+    perform_postprocessing(cube_left_frames=cube_left_frames, 
+                           cube_right_frames=cube_right_frames, 
                            header=header, 
                            file_index_object=file_index_object, 
                            annulus_star=annulus_star, 
@@ -5238,6 +5374,9 @@ def run_pipeline(path_main_dir):
                            trimmed_mean_prop_to_cut_intens=trimmed_mean_prop_to_cut_intens,
                            single_posang_north_up=single_posang_north_up, 
                            normalized_polarization_images=normalized_polarization_images)
+
+#TODO: Add main ADI function
+#    perform_adi()
     
     # Print time elapsed
     time_end = time.time()

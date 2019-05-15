@@ -89,13 +89,17 @@ def main(args=None):
                         help='create default configuration file in current working\ndirectory')                    
     parser.add_argument('-r', '--run', action='store_true',
                         help='run pipeline using configuration file in current working\ndirectory')                    
-    
+
+#TODO:
+#    parser.add_argument('-r', '--run', nargs='?', const=True,
+#                        help='run pipeline using configuration file in current working\ndirectory')                    
+   
     # Use current working directory (of terminal) as path of main directory of reduction    
     path_main_dir = os.getcwd()
 
     # Evaluate and act upon user arguments
     args = parser.parse_args()
- 
+
     if args.demo:
         # Run example reduction
         run_demo(path_main_dir)
@@ -109,6 +113,13 @@ def main(args=None):
         make_config(path_main_dir)
         
     elif args.run:
+ 
+#TODO:
+#        if args.run != True:
+#            # Check if it is a path or raise error
+#            
+#            # Then parse path into run_pipeline as optional argument
+                       
         # Run the pipeline 
         run_pipeline(path_main_dir)
 
