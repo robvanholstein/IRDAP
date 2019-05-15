@@ -71,6 +71,18 @@ def read_config_file(path_config_file):
     Function status: verified       
     '''
     
+    def config_true_false(x):
+        if x in ['True', 'False']:
+            return literal_eval(x)
+        else:
+            return x
+
+    def config_param_annulus(x):
+        if '(' in x or '[' in x:
+            return literal_eval(x)
+        else:
+            return x
+
     # Create a configparser object
     config = configparser.ConfigParser()
     
@@ -82,40 +94,34 @@ def read_config_file(path_config_file):
         raise IOError('\n\nThere is no valid configuration file ' + path_config_file + '.')
           
     # Get parameters from [Basic pre-processing options] section
-    sigma_filtering         = config.getboolean('Basic pre-processing options', 'sigma_filtering')
-    object_collapse_ndit    = config.getboolean('Basic pre-processing options', 'object_collapse_ndit')
+    sigma_filtering         = config_true_false(config.get('Basic pre-processing options', 'sigma_filtering'))    
+    object_collapse_ndit    = config_true_false(config.get('Basic pre-processing options', 'object_collapse_ndit'))
     object_centering_method = config.get('Basic pre-processing options', 'object_centering_method')
-    skip_preprocessing      = config.getboolean('Basic pre-processing options', 'skip_preprocessing')
+    skip_preprocessing      = config_true_false(config.get('Basic pre-processing options', 'skip_preprocessing'))
     frames_to_remove        = literal_eval(config.get('Basic pre-processing options', 'frames_to_remove'))
       
     # Get parameters from [Basic post-processing options] section
-    annulus_star                    = config.get('Basic post-processing options', 'annulus_star')
-    if '(' in annulus_star or '[' in annulus_star:
-        annulus_star = literal_eval(annulus_star)
-    annulus_background              = config.get('Basic post-processing options', 'annulus_background')
-    if '(' in annulus_background or '[' in annulus_background:
-        annulus_background = literal_eval(annulus_background)
+    annulus_star                    = config_param_annulus(config.get('Basic post-processing options', 'annulus_star'))
+    annulus_background              = config_param_annulus(config.get('Basic post-processing options', 'annulus_background'))
     combination_method_polarization = config.get('Basic post-processing options', 'combination_method_polarization')
     combination_method_intensity    = config.get('Basic post-processing options', 'combination_method_intensity')
-    normalized_polarization_images  = config.getboolean('Basic post-processing options', 'normalized_polarization_images')
-    
+    normalized_polarization_images  = config_true_false(config.get('Basic post-processing options', 'normalized_polarization_images'))
+
     # Get parameters from [Advanced pre-processing options] section
-    center_subtract_object    = config.getboolean('Advanced pre-processing options', 'center_subtract_object')
+    center_subtract_object    = config_true_false(config.get('Advanced pre-processing options', 'center_subtract_object'))
     center_param_centering    = literal_eval(config.get('Advanced pre-processing options', 'center_param_centering'))
     object_center_coordinates = literal_eval(config.get('Advanced pre-processing options', 'object_center_coordinates'))
     object_param_centering    = literal_eval(config.get('Advanced pre-processing options', 'object_param_centering'))
     flux_centering_method     = config.get('Advanced pre-processing options', 'flux_centering_method')
     flux_center_coordinates   = literal_eval(config.get('Advanced pre-processing options', 'flux_center_coordinates'))
     flux_param_centering      = literal_eval(config.get('Advanced pre-processing options', 'flux_param_centering'))
-    flux_annulus_background   = config.get('Advanced pre-processing options', 'flux_annulus_background')
-    if '(' in flux_annulus_background or '[' in flux_annulus_background:
-        flux_annulus_background = literal_eval(flux_annulus_background)
+    flux_annulus_background   = config_param_annulus(config.get('Advanced pre-processing options', 'flux_annulus_background'))
     
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
     trimmed_mean_prop_to_cut_polar  = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_polar')
     trimmed_mean_prop_to_cut_intens = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_intens')
-    single_posang_north_up          = config.getboolean('Advanced post-processing options', 'single_posang_north_up')
+    single_posang_north_up          = config_true_false(config.get('Advanced post-processing options', 'single_posang_north_up'))
 
     return sigma_filtering, \
            object_collapse_ndit, \
@@ -4671,6 +4677,7 @@ def run_pipeline(path_main_dir):
     
     # Define paths of directories
     path_raw_dir = os.path.join(path_main_dir, 'raw')
+    path_log_config_dir = os.path.join(path_main_dir, 'log_config')
     path_calib_dir = os.path.join(path_main_dir, 'calibration')
     path_flat_dir = os.path.join(path_calib_dir, 'flat')
     path_bpm_dir = os.path.join(path_calib_dir, 'bpm')
@@ -4705,34 +4712,63 @@ def run_pipeline(path_main_dir):
     name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
     # Define paths of log file, header overview and directory containing static calibrations
-    path_log_file = os.path.join(path_main_dir, name_file_root + 'LOG.txt')
+    time_now = datetime.datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
+    path_log_file = os.path.join(path_main_dir, name_file_root + 'log_' + time_now + '.txt')
     path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
     path_static_calib_dir = os.path.join(os.path.dirname(__file__), 'static_calibs')
+     
+    ###############################################################################
+    # Check if configuration and log file exist
+    ###############################################################################   
     
-    ###############################################################################
-    # Check if there is a configuration file and start writing log file
-    ###############################################################################
-      
     # Define the path of the configuration file and check if it exists
     path_config_file = os.path.join(path_main_dir, 'config.conf')
     if not os.path.exists(path_config_file):
-        raise IOError('\n\nThere is no configuration file ' + path_config_file + '.')
+        raise IOError('\n\nThere is no configuration file ' + path_config_file + '. Run \'irdap --makeconfig\' first.')
+   
+    # Find path of log file from previous reduction
+    path_log_file_old = glob.glob(os.path.join(path_main_dir,'*_log_*'))
+    print(path_log_file_old)    
+    if len(path_log_file_old) > 1:
+        raise IOError('\n\nThere should only be one log file in the directory ' + path_main_dir + '. Please remove the latest one.')    
     
+    # Find path to copy of configuration file from previous reduction
+    path_config_file_copy_old = glob.glob(os.path.join(path_main_dir,'*_config_*'))    
+    
+    if len(path_config_file_copy_old) > 1:
+        raise IOError('\n\nThere should only be one copy of the configuration file in the directory ' + path_main_dir + '. Please remove the latest one.') 
+
+    # Raise error if there is a log file of the previous reduction but no copy of the configuration file or vice versa
+    if len(path_log_file_old) != 0 and len(path_config_file_copy_old) == 0:
+        raise IOError('\n\nThere is a log file of the previous reduction, but no copy of the configuration file. Please remove the log file.')
+    
+    if len(path_log_file_old) == 0 and len(path_config_file_copy_old) != 0:
+        raise IOError('\n\nThere is a copy of the configuration file of the previous reduction, but no log file. Please remove the copy of the configuration file.')
+
+    if len(path_log_file_old) != 0:
+        # Extract path of log file from its list
+        path_log_file_old = path_log_file_old[0]
+        
+    if len(path_config_file_copy_old) != 0:
+        # Extract path of old copy of configuration file from its list
+        path_config_file_copy_old = path_config_file_copy_old[0]
+        
+    ###############################################################################
+    # Check if there is a configuration file and start writing log file
+    ###############################################################################
+            
     # Create boolean saying whether log file already existed
-    log_file_existed = os.path.exists(path_log_file)
+    log_file_existed = len(path_log_file_old) != 0
     
-    if log_file_existed == True:
+    if log_file_existed == True:       
         # Save relevant lines from pre-processing
-        log_file_lines = [x.rstrip('\n') for x in open(path_log_file, 'r')]
+        log_file_lines = [x.rstrip('\n') for x in open(path_log_file_old, 'r')]
         if '# Starting post-processing' in log_file_lines:
             log_file_lines = log_file_lines[log_file_lines.index('# Starting pre-processing') - 2: \
                                             log_file_lines.index('# Starting post-processing') - 2]
         else:
             log_file_lines = None
-        
-        # Empty existing log file
-        open(path_log_file, 'w').close()
-        
+               
     # Start writing log file
     printandlog('\n###############################################################################')
     printandlog('# Important notice')
@@ -4747,10 +4783,7 @@ def run_pipeline(path_main_dir):
     printandlog('\n###############################################################################')
     printandlog('# Preparing data reduction')
     printandlog('###############################################################################') 
-    if log_file_existed == False:
-        printandlog('\nCreated log file ' + path_log_file + '.')
-    elif log_file_existed == True:
-        printandlog('\nWARNING, the log file ' + path_log_file + ' has been overwritten.')
+    printandlog('\nCreated log file ' + path_log_file + '.')
 
     ###############################################################################
     # Retrieve and define input parameters
@@ -4788,6 +4821,17 @@ def run_pipeline(path_main_dir):
     show_images_center_coordinates = True
     remove_vertical_band_detector_artefact = True
 
+    # Check validity of input of skip_preprocessing
+    if skip_preprocessing not in [True, False]:
+        raise ValueError('\n\n\'skip_preprocessing\' should be either True or False. Before starting another reduction, please delete the log file ' + path_log_file + '.')   
+
+    if skip_preprocessing == True:
+        # Raise errors if there is no log file from the previous reduction or pre-processing was not finished
+        if log_file_existed is False:
+            raise IOError('\n\nThere is no log file from a previous reduction. Remove the log file that has been created for the current reduction attempt and then run IRDAP with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+        elif log_file_lines is None:
+            raise IOError('\n\nThe pre-processing part of the reduction is not complete in the previous log file. Remove the log file that has been created last and then run IRDAP with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+        
     ###############################################################################
     # Make a copy of configuration file
     ###############################################################################
@@ -4795,15 +4839,17 @@ def run_pipeline(path_main_dir):
     # Read lines of configuration file
     config_file_lines = [x for x in open(path_config_file, 'r')]
     
-    # Define path of copy of configuration file
-    path_config_file_copy = os.path.join(path_main_dir, name_file_root + os.path.basename(path_config_file))
+    # Define path of new copy of configuration file
+    path_config_file_copy_new = os.path.join(path_main_dir, name_file_root + \
+                                             os.path.splitext(os.path.basename(path_config_file))[0] + \
+                                             '_' + time_now + os.path.splitext(path_config_file)[1])
 
     if skip_preprocessing == True:
-        if not os.path.exists(path_config_file_copy):
+        if len(path_config_file_copy_old) == 0:
             raise IOError('\n\nThere was no copy of the configuration file from a previous reduction. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
 
         # Read lines of existing copy of configuration file
-        config_file_lines_old = [x for x in open(path_config_file_copy, 'r')]
+        config_file_lines_old = [x for x in open(path_config_file_copy_old, 'r')]
         
         # Define indices of lines pertaining to pre-processing input parameters
         n0 = config_file_lines.index('[Basic pre-processing options]\n') + 2
@@ -4816,13 +4862,32 @@ def run_pipeline(path_main_dir):
         config_file_lines[n2:n3] = config_file_lines_old[n2:n3]
 
     # Write lines in copy of configuration file and save to main directory
-    with open(path_config_file_copy, 'w') as f:
+    with open(path_config_file_copy_new, 'w') as f:
         for x in config_file_lines:
             f.write(x)
-    printandlog('\nCreated a copy of the used configuration file ' + path_config_file_copy + '.')
+    printandlog('\nCreated a copy of the used configuration file ' + path_config_file_copy_new + '.')
     if skip_preprocessing == True:
-        printandlog('Because the pre-processing is skipped, the pre-processing input parameters from the previous reduction have been used for this copy.')
+        printandlog('\nBecause the pre-processing is skipped, the pre-processing input parameters from the previous reduction have been used for this copy.')
 
+    ###############################################################################
+    # Copy previous log and configuration files to separate directory
+    ###############################################################################
+   
+    if log_file_existed and len(path_config_file_copy_old) != 0:
+        log_config_dir_existed = os.path.exists(path_log_config_dir)
+        if not log_config_dir_existed:
+            # Create directory to save log file and copy of configuration file of previous reduction to
+            os.makedirs(path_log_config_dir)
+    
+        # Move log file and copy of configuration file to directory
+        shutil.move(path_log_file_old, os.path.join(path_log_config_dir, os.path.basename(path_log_file_old)))
+        shutil.move(path_config_file_copy_old, os.path.join(path_log_config_dir, os.path.basename(path_config_file_copy_old)))
+    
+        if not log_config_dir_existed:
+            printandlog('\nCreated directory ' + path_log_config_dir + ' and moved log file and copy of configuration file of previous reduction there.')
+        else:
+            printandlog('\nMoved log file and copy of configuration file of previous reduction to directory ' + path_log_config_dir + '.')
+        
     ###############################################################################
     # Check whether input values are valid (note that checks do not account for all possibilities)
     ###############################################################################
@@ -4946,6 +5011,9 @@ def run_pipeline(path_main_dir):
         raise ValueError('\n\nThe third element of \'flux_param_centering\'(\'saturation_level\') should be a positive integer, positive float or None.')
     
     # flux_annulus_background
+    if flux_annulus_background == [] or flux_annulus_background == ():
+        raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
     if type(flux_annulus_background) not in [str, tuple, list]:
         raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
@@ -4969,10 +5037,6 @@ def run_pipeline(path_main_dir):
     # save_preprocessed_data
     if save_preprocessed_data not in [True, False]:
         raise ValueError('\n\n\'save_preprocessed_data\' should be either True or False.')   
-      
-    # skip_preprocessing
-    if skip_preprocessing not in [True, False]:
-        raise ValueError('\n\n\'skip_preprocessing\' should be either True or False.')   
     
     # double_difference_type
     if double_difference_type not in ['standard', 'normalized']:
@@ -4982,10 +5046,13 @@ def run_pipeline(path_main_dir):
     if remove_vertical_band_detector_artefact not in [True, False]:
         raise ValueError('\n\n\'remove_vertical_band_detector_artefact\' should be either True or False.')   
     
-    # annulus_star
+    # annulus_star   
     if type(annulus_star) not in [str, tuple, list]:
         raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    
+
+    if annulus_star == [] or annulus_star == ():
+        raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
     if type(annulus_star) is str and annulus_star not in ['automatic', 'ao residuals', 'star aperture']:
         raise ValueError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
@@ -4995,7 +5062,7 @@ def run_pipeline(path_main_dir):
     if type(annulus_star) is tuple and any([type(x) not in [int, float] for x in annulus_star]):
         raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
         
-    if type(annulus_star) is list:
+    if type(annulus_star) is list:        
         if any([type(x) is not tuple for x in annulus_star]):
             raise TypeError('\n\n\'annulus_star\' should be \'automatic\', \'ao residuals\', \'star aperture\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
         elif any([len(x) != 6 for x in annulus_star]):
@@ -5006,7 +5073,10 @@ def run_pipeline(path_main_dir):
     # annulus_background
     if type(annulus_background) not in [str, tuple, list]:
         raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-    
+
+    if annulus_background == [] or annulus_background == ():
+        raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        
     if type(annulus_background) is str and annulus_background != 'large annulus':
         raise ValueError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
@@ -5082,7 +5152,7 @@ def run_pipeline(path_main_dir):
 
     # annulus_background
     annulus_background = annulus_1_to_0_based(annulus_background)
-
+    
     ###############################################################################
     # Run pre-processing and post-processing functions
     ###############################################################################
@@ -5117,12 +5187,7 @@ def run_pipeline(path_main_dir):
         printandlog('###############################################################################') 
         printandlog('\nContinuing with the pre-processed data.')
                     
-    elif skip_preprocessing == True:
-        if log_file_existed is False:
-            raise IOError('\n\nThere was no log file from a previous reduction. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
-        elif log_file_lines is None:
-            raise IOError('\n\nThe pre-processing part of the reduction is not complete in the log file. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
-        
+    elif skip_preprocessing == True:       
         # Write lines from pre-processing of previous log file
         for line in log_file_lines:                         
             print(line, file=open(path_log_file, 'a'))
