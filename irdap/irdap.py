@@ -77,7 +77,7 @@ def read_config_file(path_config_file):
         else:
             return x
 
-    def config_param_annulus(x):
+    def config_list_tuple(x):
         if '(' in x or '[' in x:
             return literal_eval(x)
         else:
@@ -101,8 +101,8 @@ def read_config_file(path_config_file):
     frames_to_remove        = literal_eval(config.get('Basic pre-processing options', 'frames_to_remove'))
       
     # Get parameters from [Basic post-processing options] section
-    annulus_star                    = config_param_annulus(config.get('Basic post-processing options', 'annulus_star'))
-    annulus_background              = config_param_annulus(config.get('Basic post-processing options', 'annulus_background'))
+    annulus_star                    = config_list_tuple(config.get('Basic post-processing options', 'annulus_star'))
+    annulus_background              = config_list_tuple(config.get('Basic post-processing options', 'annulus_background'))
     combination_method_polarization = config.get('Basic post-processing options', 'combination_method_polarization')
     combination_method_intensity    = config.get('Basic post-processing options', 'combination_method_intensity')
     normalized_polarization_images  = config_true_false(config.get('Basic post-processing options', 'normalized_polarization_images'))
@@ -110,12 +110,12 @@ def read_config_file(path_config_file):
     # Get parameters from [Advanced pre-processing options] section
     center_subtract_object    = config_true_false(config.get('Advanced pre-processing options', 'center_subtract_object'))
     center_param_centering    = literal_eval(config.get('Advanced pre-processing options', 'center_param_centering'))
-    object_center_coordinates = literal_eval(config.get('Advanced pre-processing options', 'object_center_coordinates'))
+    object_center_coordinates = config_list_tuple(config.get('Advanced pre-processing options', 'object_center_coordinates'))
     object_param_centering    = literal_eval(config.get('Advanced pre-processing options', 'object_param_centering'))
     flux_centering_method     = config.get('Advanced pre-processing options', 'flux_centering_method')
     flux_center_coordinates   = literal_eval(config.get('Advanced pre-processing options', 'flux_center_coordinates'))
     flux_param_centering      = literal_eval(config.get('Advanced pre-processing options', 'flux_param_centering'))
-    flux_annulus_background   = config_param_annulus(config.get('Advanced pre-processing options', 'flux_annulus_background'))
+    flux_annulus_background   = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_background'))
     
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
@@ -2573,7 +2573,7 @@ def perform_preprocessing(frames_to_remove=[],
                           show_images_center_coordinates=True, 
                           object_centering_method='automatic', 
                           center_subtract_object=True, 
-                          object_center_coordinates=(477, 521, 1503, 511), 
+                          object_center_coordinates='automatic', 
                           center_param_centering=(12, None, 30000),
                           object_param_centering=(60, None, 30000), 
                           flux_centering_method='gaussian', 
@@ -2634,8 +2634,10 @@ def perform_preprocessing(frames_to_remove=[],
             x_right: x-coordinate of center of right frame half
             y_right: y-coordinate of center of right frame half
             Note that the center coordinates are defined in the complete frame, 
-            i.e. with both detector halves (pixels; 0-based). The default value 
-            is (477, 521, 1503, 511). 
+            i.e. with both detector halves (pixels; 0-based). If string 
+            'automatic', parameter is set to (477, 534, 1503, 523) when the 
+            coronagraph used is N_ALC_Ks and otherwise to (477, 521, 1503, 511)
+            (default = 'automatic').
         center_param_centering: length-3-tuple with parameters for 
             2D Gaussian fitting the centers of the satellite spots in the CENTER-frames:
             crop_radius: half the length of side of square cropped sub-images used 
@@ -2833,6 +2835,17 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('\n###############################################################################')
         printandlog('# Processing CENTER-files')
         printandlog('###############################################################################')       
+
+        if object_center_coordinates == 'automatic':
+            # Determine coronagraph used and set center coordinates
+            coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
+    
+            if coronagraph_used == 'N_ALC_Ks':
+                object_center_coordinates = (477, 534, 1503, 523)
+                printandlog('\nobject_center_coordinates is \'automatic\': setting it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is N_ALC_Ks.')
+            else:
+                object_center_coordinates = (477, 521, 1503, 511)
+                printandlog('\nobject_center_coordinates is \'automatic\': setting it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is not N_ALC_Ks.')
                     
         # Process the center files            
         list_frame_center_processed, header_center = process_center_frames(path_center_files=path_center_files, 
@@ -2865,7 +2878,18 @@ def perform_preprocessing(frames_to_remove=[],
     printandlog('\n###############################################################################')
     printandlog('# Processing OBJECT-files')
     printandlog('###############################################################################') 
-      
+
+    if object_center_coordinates == 'automatic':
+        # Determine coronagraph used and set center coordinates
+        coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
+
+        if coronagraph_used == 'N_ALC_Ks':
+            object_center_coordinates = (477, 534, 1503, 523)
+            printandlog('\nobject_center_coordinates is \'automatic\': setting it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is N_ALC_Ks.')
+        else:
+            object_center_coordinates = (477, 521, 1503, 511)
+            printandlog('\nobject_center_coordinates is \'automatic\': setting it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is not N_ALC_Ks.')
+        
     cube_left_frames, cube_right_frames, header = process_object_frames(path_object_files=path_object_files, 
                                                                         file_index_object=file_index_object, 
                                                                         indices_to_remove_object=indices_to_remove_object, 
@@ -5061,14 +5085,23 @@ def run_pipeline(path_main_dir):
     # center_subtract_object
     if center_subtract_object not in [True, False]:
         raise ValueError('\n\n\'center_subtract_object\' should be either True or False.')   
-    
+       
     # object_center_coordinates
-    if type(object_center_coordinates) is not tuple or len(object_center_coordinates) != 4:
-        raise TypeError('\n\n\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
+    if type(object_center_coordinates) not in [str, tuple]:
+        raise TypeError('\n\n\'object_center_coordinates\' should be \'automatic\' or a tuple of length 4 containing floats or integers.')
+        
+    if object_center_coordinates == ():
+        raise TypeError('\n\n\'object_center_coordinates\' should be \'automatic\' or a tuple of length 4 containing floats or integers.')
+        
+    if type(object_center_coordinates) is str and object_center_coordinates != 'automatic':
+        raise ValueError('\n\n\'object_center_coordinates\' should be \'automatic\' or a tuple of length 4 containing floats or integers.')
+        
+    if type(object_center_coordinates) is tuple and len(object_center_coordinates) != 4:
+        raise TypeError('\n\n\'object_center_coordinates\' should be \'automatic\' or a tuple of length 4 containing floats or integers.')
     
-    if any([type(x) not in [int, float] for x in object_center_coordinates]):
-        raise TypeError('\n\n\'object_center_coordinates\' should be a tuple of length 4 containing floats or integers.')
-    
+    if type(object_center_coordinates) is tuple and any([type(x) not in [int, float] for x in object_center_coordinates]):
+        raise TypeError('\n\n\'object_center_coordinates\' should be \'automatic\' or a tuple of length 4 containing floats or integers.')
+
     # center_param_centering
     if type(center_param_centering) is not tuple or len(center_param_centering) != 3:
         raise TypeError('\n\n\'center_param_centering\' should be a tuple of length 3 containing floats, integers or None.')
@@ -5267,8 +5300,9 @@ def run_pipeline(path_main_dir):
     ###############################################################################
     
     # object_center_coordinates
-    object_center_coordinates = tuple(x - 1 for x in object_center_coordinates)
-    
+    if type(object_center_coordinates) is tuple:
+        object_center_coordinates = tuple(x - 1 for x in object_center_coordinates)
+
     # flux_center_coordinates
     flux_center_coordinates = tuple(x - 1 for x in flux_center_coordinates)
     
