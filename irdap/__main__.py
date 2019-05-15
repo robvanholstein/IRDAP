@@ -58,7 +58,7 @@ def main(args=None):
 
     # Check if at least one argument is given
     if len(args) == 0:
-        print('\nNo arguments were provided. Please check the help message by typing "irdap --help".')
+        print('\nNo arguments were provided. Please check the help message by typing\n"irdap --help".')
         
     # Define the arser including the description and epilog
     parser = argparse.ArgumentParser(description='IRDAP (IRDIS Data-reduction for Accurate Polarimetry) is a pipeline for\n' +
@@ -92,9 +92,9 @@ def main(args=None):
                         help='create overview of relevant headers of FITS-files in raw\nsubdirectory')
     parser.add_argument('-c', '--makeconfig', action='store_true',
                         help='create default configuration file in current working\ndirectory')                    
-    parser.add_argument('-r', '--run', nargs='?', const=True,
-                        help='run pipeline using configuration file in current working\ndirectory. Alternatively specify the path of a configura-\ntion file relative to the current working directory.')                    
-
+    parser.add_argument('-r', '--run', action='store_true',
+                        help='run pipeline using configuration file in current working\ndirectory') 
+    
     # Use current working directory (of terminal) as path of main directory of reduction    
     path_main_dir = os.getcwd()
     
@@ -118,27 +118,8 @@ def main(args=None):
         make_config(path_main_dir)
         
     elif args.run:
-        if args.run != True:
-            # Retrieve relative path of configuration file
-            path_config_file_rel = args.run
-            
-            # Check if file provided has extension .conf
-            if os.path.splitext(path_config_file_rel)[1] != '.conf':
-                print('\nThe extension of the provided configuration file is not .conf.')
-                sys.exit()
-                
-            # Construct absolute pat of configuration file and check if it exists
-            path_config_file = os.path.join(path_main_dir, path_config_file_rel)
-            if not os.path.exists(path_config_file):
-                print('\nThere is no configuration file ' + path_config_file + '. Check the file name or relative path provided, or run \'irdap --makeconfig\' first.')
-                sys.exit()
-                
-            # Run the pipeline with the specified configuration file
-            run_pipeline(path_main_dir, path_config_file=path_config_file)       
-
-        else:
-            # Run the pipeline with the standard configuration file
-            run_pipeline(path_main_dir, path_config_file=None)            
+        # Run the pipeline 
+        run_pipeline(path_main_dir)       
 
 ###############################################################################
 # Run the function main

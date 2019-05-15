@@ -4672,7 +4672,7 @@ def run_demo(path_main_dir):
         make_config(path_main_dir)
         
         # Run the pipeline
-        run_pipeline(path_main_dir, path_config_file=None)
+        run_pipeline(path_main_dir)
             
 ###############################################################################
 # make_config
@@ -4756,17 +4756,14 @@ def create_overview_headers_main(path_main_dir):
 # run_pipeline
 ###############################################################################
 
-def run_pipeline(path_main_dir, path_config_file=None):
+def run_pipeline(path_main_dir):
     '''  
     Run the pipeline
     
     Input:
         path_main_dir: string specifying path of main directory containing the 
-            the subdirectory 'raw' with the raw data, and optionally the 
-            configuration file 'config.conf'
-        path_config_file: string specifying path of configuration file with
-            extension .conf'. If None, the configuration file 'config.conf' in
-            the main directory is used.
+            configuration file 'config.conf' and the directory 'raw' with the
+            raw data
        
     File written by Rob van Holstein
     Function status: verified
@@ -4860,9 +4857,8 @@ def run_pipeline(path_main_dir, path_config_file=None):
     # Check if configuration and log file exist
     ###############################################################################   
     
-    # Define the path of the configuration file if None and check if it exists
-    if path_config_file is None:
-        path_config_file = os.path.join(path_main_dir, 'config.conf')
+    # Define the path of the configuration file and check if it exists
+    path_config_file = os.path.join(path_main_dir, 'config.conf')
     if not os.path.exists(path_config_file):
         raise IOError('\n\nThere is no configuration file ' + path_config_file + '. Run \'irdap --makeconfig\' first.')
    
