@@ -267,6 +267,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
     
     # Define headers to be included in overview
     header_names = ['ESO OBS TARG NAME', 
+                    'ESO DPR CATG', 
                     'ESO DPR TYPE', 
                     'ESO OCS DPI H2RT STOKES', 
                     'EXPTIME', 
@@ -500,6 +501,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     if not all([x['ESO DET NAME'] == 'IRDIS' for x in header]):
         raise IOError('\n\nOne or more files are not taken with IRDIS.')
+
+    if not all([x['ESO DPR CATG'] in ['SCIENCE', 'CALIB'] for x in header]):
+        raise IOError('\n\nOne or more files are not of category SCIENCE or CALIB.')
 
     if not all([x['ESO DPR TYPE'] in ['OBJECT', 'SKY', 'OBJECT,CENTER', 'OBJECT,FLUX', \
                                       'DARK', 'DARK,BACKGROUND', 'FLAT,LAMP'] for x in header]):
