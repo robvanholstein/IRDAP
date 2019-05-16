@@ -49,6 +49,7 @@ from scipy import interpolate
 from scipy import optimize
 from scipy import ndimage
 from scipy.stats import trim_mean
+from scipy.stats import sigmaclip
 from astropy.modeling import models, fitting
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
@@ -1282,6 +1283,260 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
                 ' raw SKY-file(s) comprising a total of ' + str(cube_sky_raw.shape[0]) + ' frame(s).')
     
     return frame_master_sky
+
+###############################################################################
+# create masterflat and bad pixel mask from raw calibration data
+###############################################################################
+
+def create_badpix_from_flat_sequence(flat_array):
+    
+    '''
+    This function finds bad pixels in darks based on bias offsets and sigma filtering
+    
+    Input:
+        flat_array: A list of tuples with flat_array[x][0] containing the data and flat_array[x][1] the exposure time
+        
+    Output:
+        flat_badpix: A numpy array containing a bad pixel mask of all non-linear responding pixels
+    '''
+    
+    # divide the flats with the longest and shortest expoure time
+    comparison = flat_array[-1][0] / flat_array[0][0]
+
+    # compute the factor by which exposure time and thus pixel counts should have increased
+    factor = flat_array[-1][1] / flat_array[0][1]
+    
+    # set all pixels that were undefined to 1
+    comparison[np.isneginf(comparison)]=1
+    comparison[np.isinf(comparison)]=1
+    comparison[np.isnan(comparison)]=1      
+    
+    # create an array for the left and right detector side that does not contain strong outliers
+    left, low, high = sigmaclip(comparison[15:1024,36:933],5,5)    
+    right, low, high = sigmaclip(comparison[5:1018,1062:1958],5,5)        
+    
+    # determine the standard deviation in the sigma filtered array
+    stddev_left = np.nanstd(left)
+    stddev_right = np.nanstd(right) 
+    
+    # subtracting the factor from the comparison array
+    # the resulting array should contain 0 for all well responding pixels
+    index_array_left = np.abs(comparison[15:1024,36:933] - factor)
+    index_array_right = np.abs(comparison[5:1018,1062:1958] - factor)    
+    
+    # identifying pixels that deviate by more than 5 sigma from linear response
+    mask_left = index_array_left > 5 * stddev_left        
+    mask_right = index_array_right > 5 * stddev_right    
+
+    # all non-linear responding pixels are set to 0
+    badpix_left = index_array_left / index_array_left
+    badpix_left[mask_left] = 0
+
+    badpix_right = index_array_right / index_array_right
+    badpix_right[mask_right] = 0
+    
+    # final left and right side combined bad pixel mask is created
+    flat_badpix = comparison / comparison
+    flat_badpix[15:1024,36:933]=badpix_left
+    flat_badpix[5:1018,1062:1958]=badpix_right
+
+    # it is ensured that there are no nan values in the final bad pixel mask
+    flat_badpix = np.nan_to_num(flat_badpix)
+
+    return flat_badpix
+
+
+def create_badpix_from_single_dark(dark_frame):
+    
+    '''
+    This function finds bad pixels in darks based on bias offsets and sigma filtering
+    
+    Input:
+        dark_frame: single dark frame as numpy array
+        
+    Output:
+        A bad pixel frame as numpy array
+    '''
+    
+    clean_dark_frame, low, high = sigmaclip(dark_frame,5,5)
+    stddev = np.nanstd(clean_dark_frame)
+    dark_frame_median = np.nanmedian(dark_frame)
+
+    dark_frame = np.abs(dark_frame - dark_frame_median)    
+    
+    # Initialize a bad pixel array with 1 as default pixel value
+    
+    badpix = np.nan_to_num(dark_frame / dark_frame)
+    
+    # Set pixel that deviate by more than 5 sigma from the frame median value 
+    # to 0 to flag them as bad pixels
+    
+    badpix[dark_frame > 5*stddev]=0    
+    
+    return badpix
+
+
+def create_badpix_from_multiple_dark(dark_array):
+    
+    '''
+    This is a simple wrapper function that takes a dark input array from reduced_IRDIS_flat_dark_sequence
+    The underlying function finds bad pixels in darks based on bias offsets and sigma filtering
+    
+    Input:
+        dark_array: a list of tuples, each tuple contains a dark frame as numpy array and the exposure time
+        Note that the exposure time is not strictly needed but the data format is kept as convenience from 
+        reduced_IRDIS_flat_dark_sequence
+    
+    Output:
+        A list of bad pixel frames based on each individual dark frame
+    '''
+    badpix_array = []    
+    
+    for k in range(0,len(dark_array)):
+        badpix_tmp = create_badpix_from_single_dark(dark_array[k][0])
+        badpix_array.append(badpix_tmp)
+    
+    return badpix_array
+
+
+def combine_badpix(badpix_array):
+    
+    '''
+    Creates a combined bad pixel mask from multipel individual bad pixel masks
+    
+    Input:
+        badpix_array: A list of numpy arrays each containing a bad pixel mask 
+            
+    Output:
+        badpix: A single numpy array containing the combined bad pixel mask
+    '''
+    
+    badpix = badpix_array[0] * badpix_array[1]    
+    
+    for r in range(0,len(badpix_array)):
+        badpix = badpix * badpix_array[r]   
+
+    return badpix
+
+def reduce_IRDIS_flat_dark_sequence(path_dark_files, path_flat_files, indices_to_remove_dark, indices_to_remove_flat):
+    '''
+    Reduce an IRDIS flat sequece. The sequence should consist of 5 flat images
+    taken with different exposure times. Typically 1,2,3,4,5s or
+    2,4,6,8,10s. 
+    The function additionally creates a master bad pixel mask.
+    The bad pixel mask contains flags for all pixels that have a strong bias offset or that respond non-linearly.
+    
+    Input:
+        dark_path: path containing darks with exposure times matching th flat images
+        flat_path: path containing flat files (dark_path != flat_path)
+        
+    Output:
+        No return value. Instead a masterflat file and a master bad pixel mask are written to the flat_path
+    
+    File written by Christian Ginski
+    Function status: verified externally ;)
+    '''
+    
+    list_cube_flat_raw_exp = []
+    list_cube_dark_raw_exp = []    
+    
+    # Reading in darks
+    
+    for path_sel, indices_sel in zip(path_dark_files, indices_to_remove_dark):
+        # Read data and header from file
+        dark_cube_sel, dark_cube_header = read_fits_files(path=path_sel, silent=True)
+
+        # Remove frames based on list of indices provided by the user
+        cube_sel = np.delete(cube_sel, indices_sel, axis=0)
+
+        # get exposure time for each dark cube
+        exptime = dark_cube_header["EXPTIME"]
+        
+        # Append cube to list, list is list of tuples with data and exposure time
+        list_cube_dark_raw_exp.append((cube_sel,exptime))
+    
+    # sort list by exposure time in case files were not sorted
+    list_cube_dark_raw_exp_sorted = sorted(file_list, key=lambda tup: tup[1])
+    
+    # Reading in flats
+    
+    for path_sel, indices_sel in zip(path_flat_files, indices_to_remove_flat):
+        # Read data and header from file
+        flat_cube_sel, flat_cube_header = read_fits_files(path=path_sel, silent=True)
+
+        # Remove frames based on list of indices provided by the user
+        cube_sel = np.delete(cube_sel, indices_sel, axis=0)
+
+        # get exposure time for each dark cube
+        exptime = flat_cube_header["EXPTIME"]
+        
+        # Append cube to list, list is list of tuples with data and exposure time
+        list_cube_flat_raw_exp.append((cube_sel,exptime))
+    
+    # sort list by exposure time in case files were not sorted
+    list_cube_flat_raw_exp_sorted = sorted(file_list, key=lambda tup: tup[1])
+    
+    # a simple change in variable names, it makes the code easier to read:
+    
+    darks = list_cube_dark_raw_exp_sorted
+    flats = list_cube_flat_raw_exp_sorted
+
+    subtracted_flat = []
+    subtracted_norm_flat = []
+
+    # flats and darks are matched based on their exposure time
+    # subtracted and normalized (by the exposure time) flats are created
+
+    for r in range(0,len(flats)):
+        for k in range(0,len(darks)):
+            if darks[k][1] == flats[r][1]:
+                subtracted_flat.append((flats[r][0]-darks[k][0],flats[r][1]))
+                subtracted_norm_flat.append((flats[r][0]-darks[k][0])/flats[r][1])
+
+    # Median combination of all normalized flats
+
+    flat = np.median(np.array(subtracted_norm_flat),axis=0)
+    
+    # Selection of the left and right detectir area that actualy receives signal
+    
+    flat_left = flat[15:1024,36:933] 
+    flat_right = flat[5:1018,1062:1958]
+    
+    # Creation of a baseline flat image that encompases left and right detector side 
+    # All values are 1, i.e. if applied this baseline flat does not influence the reduction
+    # This is mainly to prevent later edge areas from containing blown up data values
+    
+    masterflat = np.nan_to_num(flat / flat)
+    masterflat[masterflat==0] = 1
+    
+    # Left and right side of the flat are normalized by the respective median values
+    
+    flat_norm_left = flat_left / np.median(flat_left)
+    flat_norm_right = flat_right / np.median(flat_right)
+
+    # The final full detector flat is constructed
+
+    masterflat[15:1024,36:933] = flat_norm_left 
+    masterflat[5:1018,1062:1958] = flat_norm_right    
+
+
+    #-------Badpix Mask--------------------------------------------
+    # Creating a bad pixel map based on dark and flat frames
+    # Theoretically all detector artefacts should be identified this way
+
+    # Flaging non-linear responding pixels as bad
+    badpix_flat = create_badpix_from_flat_sequence_array(subtracted_flat)
+    
+    # Flaging pixels that have a bias offset as bad
+    badpix_dark_array = create_badpix_from_multiple_dark(darks)
+
+    # Appending the flat bad pixel mask to the dark bad pixel array
+    badpix_array_dark.append(badpix_flat)
+
+    # creating a combined bad pixel mask
+    master_badpix = combine_badpix(badpix_array_dark)
+
+    return masterflat, master_badpix
 
 ###############################################################################
 # compute_fwhm_separation
