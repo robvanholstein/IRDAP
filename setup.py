@@ -51,7 +51,8 @@ setup(
       "matplotlib >= 3.0.1",
       "scipy >= 1.2.1",
       "astropy >= 3.1.1",
-      "scikit_image >= 0.14.2"
+      "scikit_image >= 0.14.2",
+      "pandas"
    ],
    classifiers=[
    # How mature is this project? Common values are
