@@ -688,6 +688,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
         if len(header_dark_all) != len(header_flat):
             raise IOError('\n\nThe number of DARK(,BACKGROUND)- and FLAT-files is unequal.')
 
+        if len(header_flat) == 1:
+            raise IOError('\n\nThere is only one pair of DARK(,BACKGROUND)- and FLAT-files. To make the bad pixel map we need at least two pairs with each a different exposure time.')
+
         if any([x['ESO INS1 FILT ID'] != object_filter for x in header_dark_background]):
             raise IOError('\n\nOne or more DARK,BACKGROUND-files have a different filter than the OBJECT-files.')
         
@@ -1240,7 +1243,7 @@ def remove_bad_pixels(cube, frame_master_bpm, sigma_filtering=True):
 
 def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, sigma_filtering=True):
     '''
-    Create a master sky-frame from the SKY-files
+    Create a master sky frame from the SKY-files
     
     Input:
         path_sky_files: string or list of strings specifying paths of SKY-files
@@ -1261,7 +1264,7 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
     list_cube_sky_raw = []
         
     for path_sel, indices_sel in zip(path_sky_files, indices_to_remove_sky):
-        # Read data and header from file
+        # Read data from file
         cube_sel = read_fits_files(path=path_sel, silent=True)[0]
 
         # Remove frames based on list of indices provided by the user
@@ -1279,264 +1282,221 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
     # Compute median of sky frames
     frame_master_sky = np.median(cube_sky_filtered, axis=0)
             
-    printandlog('\nThe master sky frame was created out of ' + str(len(path_sky_files)) + 
+    printandlog('\nCreated master sky frame out of ' + str(len(path_sky_files)) + 
                 ' raw SKY-file(s) comprising a total of ' + str(cube_sky_raw.shape[0]) + ' frame(s).')
     
     return frame_master_sky
 
 ###############################################################################
-# create masterflat and bad pixel mask from raw calibration data
+# create_bpm_darks
 ###############################################################################
 
-def create_badpix_from_flat_sequence(flat_array):
-    
+def create_bpm_darks(list_frame_dark):
     '''
-    This function finds bad pixels in darks based on bias offsets and sigma filtering
+    Create a bad pixel map from DARK(,BACKGROUND)-files based on bias offsets and
+    sigma filtering.
     
     Input:
-        flat_array: A list of tuples with flat_array[x][0] containing the data and flat_array[x][1] the exposure time
-        
+        list_frame_dark: list of (mean-combined) DARK(,BACKGROUND)-frames
+    
     Output:
-        flat_badpix: A numpy array containing a bad pixel mask of all non-linear responding pixels
+        frame_bpm_dark: bad pixel map created from darks
+        
+    Function written by Rob van Holstein; constructed from functions by Christian Ginski
+    Function status: verified
+    '''
+
+    # Create initial bad pixel map with only 1's
+    frame_bpm_dark = np.ones(list_frame_dark[0].shape)
+
+    for frame_dark in list_frame_dark:  
+        # Remove outliers from dark frame and compute median and standard deviation    
+        frame_dark_cleaned = sigmaclip(frame_dark, 5, 5)[0]
+        stddev = np.nanstd(frame_dark_cleaned)
+        median = np.nanmedian(frame_dark_cleaned)
+    
+        # Subtract median from dark frame and take absolute value
+        frame_dark = np.abs(frame_dark - median)    
+        
+        # Initialize a bad pixel array with 1 as default pixel value
+        frame_bpm = np.ones(frame_dark.shape)
+        
+        # Set pixels that deviate by more than 5 sigma from the frame median value 
+        # to 0 to flag them as bad pixels
+        frame_bpm[frame_dark > 5*stddev] = 0    
+        
+        # Add bad pixels found to master bad pixel map 
+        frame_bpm_dark *= frame_bpm
+        
+    return frame_bpm_dark
+        
+###############################################################################
+# create_bpm_flats
+###############################################################################
+
+def create_bpm_flats(list_frame_flat, list_exptime_flat):
+    '''
+    Create a bad pixel map from FLAT-files by finding all non-linear responding 
+    pixels
+    
+    Input:
+        list_frame_flat: list of (mean-combined) FLAT-frames
+        list_exptime_flat: list of corresponding exposure times of flat
+    
+    Output:
+        frame_bpm_flat: bad pixel map created from flats
+        
+    Function written by Christian Ginski; adapted by Rob van Holstein
+    Function status: verified
     '''
     
-    # divide the flats with the longest and shortest expoure time
-    comparison = flat_array[-1][0] / flat_array[0][0]
+    # Divide the flats with the longest and shortest exposure time
+    comparison = list_frame_flat[-1] / list_frame_flat[0]
 
-    # compute the factor by which exposure time and thus pixel counts should have increased
-    factor = flat_array[-1][1] / flat_array[0][1]
+    # Compute the factor by which exposure time and thus pixel counts should have increased
+    factor = list_exptime_flat[-1] / list_exptime_flat[0]
     
-    # set all pixels that were undefined to 1
-    comparison[np.isneginf(comparison)]=1
-    comparison[np.isinf(comparison)]=1
-    comparison[np.isnan(comparison)]=1      
+    # Set all pixels that were undefined to 1
+    comparison[np.isinf(comparison)] = 1
+    comparison[np.isnan(comparison)] = 1      
+   
+    # Create an array for the left and right detector side that does not contain strong outliers
+    left = sigmaclip(comparison[15:1024, 36:933], 5, 5)[0]
+    right = sigmaclip(comparison[5:1018, 1062:1958], 5, 5)[0]
     
-    # create an array for the left and right detector side that does not contain strong outliers
-    left, low, high = sigmaclip(comparison[15:1024,36:933],5,5)    
-    right, low, high = sigmaclip(comparison[5:1018,1062:1958],5,5)        
-    
-    # determine the standard deviation in the sigma filtered array
+    # Determine the standard deviation in the sigma filtered array
     stddev_left = np.nanstd(left)
     stddev_right = np.nanstd(right) 
     
-    # subtracting the factor from the comparison array
-    # the resulting array should contain 0 for all well responding pixels
-    index_array_left = np.abs(comparison[15:1024,36:933] - factor)
-    index_array_right = np.abs(comparison[5:1018,1062:1958] - factor)    
+    # Subtract the factor from the comparison array
+    # The resulting array should contain 0 for all well responding pixels
+    index_array_left = np.abs(comparison[15:1024, 36:933] - factor)
+    index_array_right = np.abs(comparison[5:1018, 1062:1958] - factor)    
     
-    # identifying pixels that deviate by more than 5 sigma from linear response
-    mask_left = index_array_left > 5 * stddev_left        
-    mask_right = index_array_right > 5 * stddev_right    
+    # Identify pixels that deviate by more than 5 sigma from linear response
+    mask_left = index_array_left > 5*stddev_left        
+    mask_right = index_array_right > 5*stddev_right    
 
-    # all non-linear responding pixels are set to 0
-    badpix_left = index_array_left / index_array_left
+    # All good pixels are set to 1 and all non-linear responding pixels are set to 0
+    badpix_left = np.ones(index_array_left.shape)
     badpix_left[mask_left] = 0
 
-    badpix_right = index_array_right / index_array_right
+    badpix_right = np.ones(index_array_right.shape)
     badpix_right[mask_right] = 0
     
-    # final left and right side combined bad pixel mask is created
-    flat_badpix = comparison / comparison
-    flat_badpix[15:1024,36:933]=badpix_left
-    flat_badpix[5:1018,1062:1958]=badpix_right
+    # Final left and right side combined bad pixel mask is created
+    frame_bpm_flat = np.ones(comparison.shape)
+    frame_bpm_flat[15:1024, 36:933] = badpix_left
+    frame_bpm_flat[5:1018, 1062:1958] = badpix_right
 
-    # it is ensured that there are no nan values in the final bad pixel mask
-    flat_badpix = np.nan_to_num(flat_badpix)
+    # It is ensured that there are no NaN values in the final bad pixel mask
+    frame_bpm_flat = np.nan_to_num(frame_bpm_flat)
 
-    return flat_badpix
+    return frame_bpm_flat
 
+###############################################################################
+# process_dark_flat_frames
+###############################################################################
 
-def create_badpix_from_single_dark(dark_frame):
-    
+def process_dark_flat_frames(path_dark_files, path_flat_files, indices_to_remove_dark, indices_to_remove_flat):
     '''
-    This function finds bad pixels in darks based on bias offsets and sigma filtering
+    Process DARK(,BACKGROUND)- and FLAT-files to create a master flat frame and 
+    a bad pix map. The number of dark and flat frames provided must be the same, 
+    and they must have matching exposure times. Generally a sequence of darks and 
+    flats with exposure times 1, 2, 3, 4, 5 s or 2, 4, 6, 8, 10 s is used. The bad 
+    pixel mask contains flags for all pixels that have a strong bias offset or that 
+    respond non-linearly.
     
     Input:
-        dark_frame: single dark frame as numpy array
+        path_dark_files: list of paths to raw DARK(,BACKGROUND)-files
+        path_flat_files: list of paths to raw FLAT-files
+        indices_to_remove_dark: list of 1-D arrays with indices of frames to 
+            be removed for each DARK(,BACKGROUND)-file. If no frames are to be 
+            removed the array is empty. 
+        indices_to_remove_flat: list of 1-D arrays with indices of frames to 
+            be removed for each FLAT-file. If no frames are to be removed the 
+            array is empty.         
         
     Output:
-        A bad pixel frame as numpy array
+        frame_master_flat: master flat frame
+        frame_master_bpm: master bad pixel map (1 indicates good pixel; 
+                                                0 indicates bad pixel)
+    
+    File written by Christian Ginski; adapted by Rob van Holstein
+    Function status: verified
     '''
-    
-    clean_dark_frame, low, high = sigmaclip(dark_frame,5,5)
-    stddev = np.nanstd(clean_dark_frame)
-    dark_frame_median = np.nanmedian(dark_frame)
+  
+    # Read dark and flat frames, compute mean and prepare flats
+    list_frame_dark = []       
+    list_frame_flat = []
+    list_frame_flat_norm = []
+    list_exptime_flat = []
 
-    dark_frame = np.abs(dark_frame - dark_frame_median)    
-    
-    # Initialize a bad pixel array with 1 as default pixel value
-    
-    badpix = np.nan_to_num(dark_frame / dark_frame)
-    
-    # Set pixel that deviate by more than 5 sigma from the frame median value 
-    # to 0 to flag them as bad pixels
-    
-    badpix[dark_frame > 5*stddev]=0    
-    
-    return badpix
-
-
-def create_badpix_from_multiple_dark(dark_array):
-    
-    '''
-    This is a simple wrapper function that takes a dark input array from reduced_IRDIS_flat_dark_sequence
-    The underlying function finds bad pixels in darks based on bias offsets and sigma filtering
-    
-    Input:
-        dark_array: a list of tuples, each tuple contains a dark frame as numpy array and the exposure time
-        Note that the exposure time is not strictly needed but the data format is kept as convenience from 
-        reduced_IRDIS_flat_dark_sequence
-    
-    Output:
-        A list of bad pixel frames based on each individual dark frame
-    '''
-    badpix_array = []    
-    
-    for k in range(0,len(dark_array)):
-        badpix_tmp = create_badpix_from_single_dark(dark_array[k][0])
-        badpix_array.append(badpix_tmp)
-    
-    return badpix_array
-
-
-def combine_badpix(badpix_array):
-    
-    '''
-    Creates a combined bad pixel mask from multipel individual bad pixel masks
-    
-    Input:
-        badpix_array: A list of numpy arrays each containing a bad pixel mask 
-            
-    Output:
-        badpix: A single numpy array containing the combined bad pixel mask
-    '''
-    
-    badpix = badpix_array[0] * badpix_array[1]    
-    
-    for r in range(0,len(badpix_array)):
-        badpix = badpix * badpix_array[r]   
-
-    return badpix
-
-def reduce_IRDIS_flat_dark_sequence(path_dark_files, path_flat_files, indices_to_remove_dark, indices_to_remove_flat):
-    '''
-    Reduce an IRDIS flat sequece. The sequence should consist of 5 flat images
-    taken with different exposure times. Typically 1,2,3,4,5s or
-    2,4,6,8,10s. 
-    The function additionally creates a master bad pixel mask.
-    The bad pixel mask contains flags for all pixels that have a strong bias offset or that respond non-linearly.
-    
-    Input:
-        dark_path: path containing darks with exposure times matching th flat images
-        flat_path: path containing flat files (dark_path != flat_path)
-        
-    Output:
-        No return value. Instead a masterflat file and a master bad pixel mask are written to the flat_path
-    
-    File written by Christian Ginski
-    Function status: verified externally ;)
-    '''
-    
-    list_cube_flat_raw_exp = []
-    list_cube_dark_raw_exp = []    
-    
-    # Reading in darks
-    
-    for path_sel, indices_sel in zip(path_dark_files, indices_to_remove_dark):
-        # Read data and header from file
-        dark_cube_sel, dark_cube_header = read_fits_files(path=path_sel, silent=True)
+    for path_dark, path_flat, indices_dark, indices_flat in zip(path_dark_files, path_flat_files, indices_to_remove_dark, indices_to_remove_flat):
+        # Read data from files
+        cube_dark = read_fits_files(path=path_dark, silent=True)[0]
+        cube_flat, header_flat = read_fits_files(path=path_flat, silent=True)
 
         # Remove frames based on list of indices provided by the user
-        cube_sel = np.delete(cube_sel, indices_sel, axis=0)
+        cube_dark = np.delete(cube_dark, indices_dark, axis=0)
+        cube_flat = np.delete(cube_flat, indices_flat, axis=0)
 
-        # get exposure time for each dark cube
-        exptime = dark_cube_header["EXPTIME"]
+        # Compute mean of cubes
+        frame_dark = np.mean(cube_dark, axis=0)
+        frame_flat = np.mean(cube_flat, axis=0)
         
-        # Append cube to list, list is list of tuples with data and exposure time
-        list_cube_dark_raw_exp.append((cube_sel,exptime))
-    
-    # sort list by exposure time in case files were not sorted
-    list_cube_dark_raw_exp_sorted = sorted(file_list, key=lambda tup: tup[1])
-    
-    # Reading in flats
-    
-    for path_sel, indices_sel in zip(path_flat_files, indices_to_remove_flat):
-        # Read data and header from file
-        flat_cube_sel, flat_cube_header = read_fits_files(path=path_sel, silent=True)
+        # Dark-subtract flat frame
+        frame_flat_dark_subtracted = frame_flat - frame_dark
 
-        # Remove frames based on list of indices provided by the user
-        cube_sel = np.delete(cube_sel, indices_sel, axis=0)
-
-        # get exposure time for each dark cube
-        exptime = flat_cube_header["EXPTIME"]
+        # Filter dark-subtracted flat for zeros and NaN's
+        frame_flat_dark_subtracted = np.nan_to_num(frame_flat_dark_subtracted)
+        frame_flat_dark_subtracted[frame_flat_dark_subtracted == 0] = 1
         
-        # Append cube to list, list is list of tuples with data and exposure time
-        list_cube_flat_raw_exp.append((cube_sel,exptime))
-    
-    # sort list by exposure time in case files were not sorted
-    list_cube_flat_raw_exp_sorted = sorted(file_list, key=lambda tup: tup[1])
-    
-    # a simple change in variable names, it makes the code easier to read:
-    
-    darks = list_cube_dark_raw_exp_sorted
-    flats = list_cube_flat_raw_exp_sorted
+        # Determine exposure time of each flat file and normalize flat with it
+        exptime = header_flat['EXPTIME']
+        frame_flat_norm = frame_flat_dark_subtracted / exptime
 
-    subtracted_flat = []
-    subtracted_norm_flat = []
+        # Append frames and exposure time to lists
+        list_frame_dark.append(frame_dark)
+        list_frame_flat.append(frame_flat_dark_subtracted)      
+        list_frame_flat_norm.append(frame_flat_norm)
+        list_exptime_flat.append(exptime)
 
-    # flats and darks are matched based on their exposure time
-    # subtracted and normalized (by the exposure time) flats are created
-
-    for r in range(0,len(flats)):
-        for k in range(0,len(darks)):
-            if darks[k][1] == flats[r][1]:
-                subtracted_flat.append((flats[r][0]-darks[k][0],flats[r][1]))
-                subtracted_norm_flat.append((flats[r][0]-darks[k][0])/flats[r][1])
-
-    # Median combination of all normalized flats
-
-    flat = np.median(np.array(subtracted_norm_flat),axis=0)
+    # Median combine all normalized flats
+    frame_flat = np.median(np.array(list_frame_flat_norm), axis=0)
     
-    # Selection of the left and right detectir area that actualy receives signal
+    # Select the left and right detector area that actualy receives signal
+    frame_flat_left = frame_flat[15:1024, 36:933] 
+    frame_flat_right = frame_flat[5:1018, 1062:1958]
+
+    # Normalize left and right side of the flat with the respective median values
+    frame_flat_left_norm = frame_flat_left / np.median(frame_flat_left)
+    frame_flat_right_norm = frame_flat_right / np.median(frame_flat_right)
     
-    flat_left = flat[15:1024,36:933] 
-    flat_right = flat[5:1018,1062:1958]
-    
-    # Creation of a baseline flat image that encompases left and right detector side 
+    # Create a baseline flat image that encompases left and right detector side
     # All values are 1, i.e. if applied this baseline flat does not influence the reduction
-    # This is mainly to prevent later edge areas from containing blown up data values
+    # This is mainly to prevent later edge areas from containing blown-up data values
+    frame_master_flat = np.ones(frame_flat.shape)
     
-    masterflat = np.nan_to_num(flat / flat)
-    masterflat[masterflat==0] = 1
-    
-    # Left and right side of the flat are normalized by the respective median values
-    
-    flat_norm_left = flat_left / np.median(flat_left)
-    flat_norm_right = flat_right / np.median(flat_right)
+    # Construct the final full detector flat
+    frame_master_flat[15:1024, 36:933] = frame_flat_left_norm 
+    frame_master_flat[5:1018, 1062:1958] = frame_flat_right_norm    
 
-    # The final full detector flat is constructed
-
-    masterflat[15:1024,36:933] = flat_norm_left 
-    masterflat[5:1018,1062:1958] = flat_norm_right    
-
-
-    #-------Badpix Mask--------------------------------------------
-    # Creating a bad pixel map based on dark and flat frames
+    # Create a bad pixel map based on dark and flat frames 
     # Theoretically all detector artefacts should be identified this way
+    # Create a list of bad pixel maps with pixels with a bias offset flagged as bad
+    frame_bpm_dark = create_bpm_darks(list_frame_dark)
 
-    # Flaging non-linear responding pixels as bad
-    badpix_flat = create_badpix_from_flat_sequence_array(subtracted_flat)
-    
-    # Flaging pixels that have a bias offset as bad
-    badpix_dark_array = create_badpix_from_multiple_dark(darks)
+    # Createa a bad pixel map with non-linear responding pixels flagged as bad
+    frame_bpm_flat = create_bpm_flats(list_frame_flat, list_exptime_flat)
 
-    # Appending the flat bad pixel mask to the dark bad pixel array
-    badpix_array_dark.append(badpix_flat)
+    # Create the master bad pixel map by combing the one from the darks and flats    
+    frame_master_bpm = frame_bpm_dark * frame_bpm_flat
 
-    # creating a combined bad pixel mask
-    master_badpix = combine_badpix(badpix_array_dark)
+    printandlog('\nCreated master flat frame and bad pixel map out of ' + str(len(path_flat_files)) + 
+                ' pairs of raw FLAT- and DARK(,BACKGROUND)-file(s).')
 
-    return masterflat, master_badpix
+    return frame_master_flat, frame_master_bpm
 
 ###############################################################################
 # compute_fwhm_separation
@@ -2800,7 +2760,7 @@ def process_flux_frames(path_flux_files,
     number_frames_removed = sum([len(x) for x in indices_to_remove_flux])
     number_frames_used = number_frames_total - number_frames_removed
     
-    printandlog('\nThe master flux frame was created out of ' + str(len(path_flux_files)) + 
+    printandlog('\nCreated master flux frame out of ' + str(len(path_flux_files)) + 
             ' raw FLUX-file(s) comprising a total of ' + str(number_frames_used) + ' frame(s).')
 
     return frame_master_flux, frame_annulus_background
@@ -3080,39 +3040,42 @@ def perform_preprocessing(frames_to_remove=[],
     ###############################################################################
     
     if any(path_flat_files):
-        #TODO: Create master flats and master dark,backgrounds yourself  
         # Process the dark and flat files to create a master flat and bad pixel map
+        printandlog('\n###############################################################################')
+        printandlog('# Processing DARK(,BACKGROUND)- and FLAT-files')
+        printandlog('###############################################################################') 
         frame_master_flat, frame_master_bpm = process_dark_flat_frames(path_dark_files=path_dark_files, 
                                                                        path_flat_files=path_flat_files,
                                                                        indices_to_remove_dark=indices_to_remove_dark, 
-                                                                       indices_to_remove_flat=indices_to_remove_flat, 
-                                                                       sigma_filtering=sigma_filtering)
-    
+                                                                       indices_to_remove_flat=indices_to_remove_flat)
+
+        printandlog('')
+        write_fits_files(data=frame_master_flat, path=os.path.join(path_flat_dir, name_file_root + 'master_flat.fits'), header=False, silent=False)
+        write_fits_files(data=frame_master_bpm, path=os.path.join(path_bpm_dir, name_file_root + 'master_badpix.fits'), header=False, silent=False)
+        
     else:
         # Determine filter used
+        printandlog('\n###############################################################################')
+        printandlog('# Reading master flat and static bad pixel map')
+        printandlog('###############################################################################') 
         filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
     
         # Read static master flat    
-        #TODO: Make master flats for Y and Ks. 
         if filter_used == 'FILT_BBF_Y':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Y.fits')
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_Y.fits')
         elif filter_used == 'FILT_BBF_J':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_J.fits')
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_J.fits')
         elif filter_used == 'FILT_BBF_H':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_H.fits')
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_H.fits')
         elif filter_used == 'FILT_BBF_Ks':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Ks.fits')
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_Ks.fits')
         
         frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
-    
-        #TODO: Perform the the 2 lines below on the master flats and save them again so that these lines can be removed from the code
-        # Filter master flat for zeros and NaN's
-        frame_master_flat = np.nan_to_num(frame_master_flat)
-        frame_master_flat[frame_master_flat == 0] = 1
-    
+       
         # Read static bad pixel map
         frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_calib_dir, 'master_badpix.fits'), silent=True)[0])
-    
+        printandlog('\nRead static bad pixel map and static master flat in ' + filter_used + '.')
+        
     ###############################################################################
     # Computing master sky for object images
     ###############################################################################
