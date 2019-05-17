@@ -103,7 +103,7 @@ def main(args=None):
     
     if args.version:
         # Print the current version 
-        print('\nIRDAP %s' % __version__)
+        print('\nIRDAP version %s' % __version__)
         
     if args.demo:
         # Run example reduction

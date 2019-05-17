@@ -55,6 +55,7 @@ from astropy.modeling import models, fitting
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
+from .version import __version__
 
 ###############################################################################
 # read_config_file
@@ -5153,7 +5154,7 @@ def run_pipeline(path_main_dir):
     name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
     # Define paths of log file, header overview and directory containing static calibrations
-    time_now = datetime.datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
+    time_now = datetime.datetime.now().strftime('%Y-%m-%d %H_%M_%S')
     path_log_file = os.path.join(path_main_dir, name_file_root + 'log_' + time_now + '.txt')
     path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
     path_static_calib_dir = os.path.join(os.path.dirname(__file__), 'static_calibs')
@@ -5211,6 +5212,7 @@ def run_pipeline(path_main_dir):
             log_file_lines = None
                
     # Start writing log file
+    time_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     printandlog('\n###############################################################################')
     printandlog('# Important notice')
     printandlog('###############################################################################')
@@ -5221,6 +5223,12 @@ def run_pipeline(path_main_dir):
     printandlog('\nFull documentation: https://robvanholstein.github.io/IRDAP')
     printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl')
     printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein')
+    printandlog('\n###############################################################################')
+    printandlog('# Starting IRDAP')
+    printandlog('###############################################################################')
+    printandlog('\nRunning IRDAP version ' + __version__)
+    printandlog('\nDate: ' + time_now[:time_now.find(' ')])
+    printandlog('Time: ' + time_now[time_now.find(' ') + 1:])   
     printandlog('\n###############################################################################')
     printandlog('# Preparing data reduction')
     printandlog('###############################################################################') 
