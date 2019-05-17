@@ -5153,9 +5153,21 @@ def run_pipeline(path_main_dir):
     
     name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
+    # Find path of log file from previous reduction
+    path_log_file_old = glob.glob(os.path.join(path_main_dir,'*_log_*'))
+
+    if len(path_log_file_old) > 1:
+        raise IOError('\n\nThere should only be one log file in the directory ' + path_main_dir + '. Please remove the latest one.')        
+    elif len(path_log_file_old) == 1:
+        # Extract path of old log file and its number
+        path_log_file_old = path_log_file_old[0]
+        log_file_old_number = int(os.path.splitext(path_log_file_old)[0][-1])
+    else:
+        # Set file number to zero
+        log_file_old_number = 0
+
     # Define paths of log file, header overview and directory containing static calibrations
-    time_now = datetime.datetime.now().strftime('%Y-%m-%d %H_%M_%S')
-    path_log_file = os.path.join(path_main_dir, name_file_root + 'log_' + time_now + '.txt')
+    path_log_file = os.path.join(path_main_dir, name_file_root + 'log_' + str(log_file_old_number + 1) + '.txt')
     path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
     path_static_calib_dir = os.path.join(os.path.dirname(__file__), 'static_calibs')
      
@@ -5167,19 +5179,20 @@ def run_pipeline(path_main_dir):
     path_config_file = os.path.join(path_main_dir, 'config.conf')
     if not os.path.exists(path_config_file):
         raise IOError('\n\nThere is no configuration file ' + path_config_file + '. Run \'irdap --makeconfig\' first.')
-   
-    # Find path of log file from previous reduction
-    path_log_file_old = glob.glob(os.path.join(path_main_dir,'*_log_*'))
-
-    if len(path_log_file_old) > 1:
-        raise IOError('\n\nThere should only be one log file in the directory ' + path_main_dir + '. Please remove the latest one.')    
-    
+       
     # Find path to copy of configuration file from previous reduction
     path_config_file_copy_old = glob.glob(os.path.join(path_main_dir,'*_config_*'))    
     
     if len(path_config_file_copy_old) > 1:
         raise IOError('\n\nThere should only be one copy of the configuration file in the directory ' + path_main_dir + '. Please remove the latest one.') 
-
+    elif len(path_config_file_copy_old) == 1:
+        # Extract path of old copy of configuration file and its number
+        path_config_file_copy_old = path_config_file_copy_old[0]
+        config_file_copy_old_number = int(os.path.splitext(path_config_file_copy_old)[0][-1])
+    else:
+        # Set file number to zero
+        config_file_copy_old_number = 0
+        
     # Raise error if there is a log file of the previous reduction but no copy of the configuration file or vice versa
     if len(path_log_file_old) != 0 and len(path_config_file_copy_old) == 0:
         raise IOError('\n\nThere is a log file of the previous reduction, but no copy of the configuration file. Please remove the log file.')
@@ -5187,14 +5200,6 @@ def run_pipeline(path_main_dir):
     if len(path_log_file_old) == 0 and len(path_config_file_copy_old) != 0:
         raise IOError('\n\nThere is a copy of the configuration file of the previous reduction, but no log file. Please remove the copy of the configuration file.')
 
-    if len(path_log_file_old) != 0:
-        # Extract path of log file from its list
-        path_log_file_old = path_log_file_old[0]
-        
-    if len(path_config_file_copy_old) != 0:
-        # Extract path of old copy of configuration file from its list
-        path_config_file_copy_old = path_config_file_copy_old[0]
-        
     ###############################################################################
     # Check if there is a configuration file and start writing log file
     ###############################################################################
@@ -5291,7 +5296,7 @@ def run_pipeline(path_main_dir):
     # Define path of new copy of configuration file
     path_config_file_copy_new = os.path.join(path_main_dir, name_file_root + \
                                              os.path.splitext(os.path.basename(path_config_file))[0] + \
-                                             '_' + time_now + os.path.splitext(path_config_file)[1])
+                                             '_' + str(config_file_copy_old_number + 1) + os.path.splitext(path_config_file)[1])
 
     if skip_preprocessing == True:
         if len(path_config_file_copy_old) == 0:
