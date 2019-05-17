@@ -52,7 +52,7 @@ setup(
       "scipy >= 1.2.1",
       "astropy >= 3.1.1",
       "scikit_image >= 0.14.2",
-      "pandas"
+      "pandas >= 0.23.4"
    ],
    classifiers=[
    # How mature is this project? Common values are

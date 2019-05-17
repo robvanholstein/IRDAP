@@ -40,6 +40,7 @@ import configparser
 import textwrap
 import urllib
 import numpy as np
+import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
@@ -54,7 +55,6 @@ from astropy.modeling import models, fitting
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
-import pandas as pd
 
 ###############################################################################
 # read_config_file
@@ -351,12 +351,14 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
     np.savetxt(path_overview, print_array, fmt = '%s', newline= '\r\n')
 
     # Save the overview to a csv file
+#    df_array = pd.DataFrame(print_array[1:,1:],columns=print_array[0,1:],index=print_array[1:, 0])
     df_array = pd.DataFrame(print_array[1:,1:],columns=print_array[0,1:],index=print_array[1:, 0])
+    df_array.index.name = print_array[0, 0]
     df_array.to_csv(path_overview.replace('.txt','.csv'))
 
     if log:
-        printandlog('\nWrote file ' + path_overview + ' and ' + \
-                    path_overview.replace('.txt','.csv') + ' showing an overview of relevant headers for each file in the raw directory.')
+        printandlog('\nWrote files ' + path_overview + ' and ' + \
+                    path_overview.replace('.txt','.csv') + ' showing overviews of the relevant headers for each file in the raw directory.')
 
 ###############################################################################
 # check_own_programs
@@ -5052,8 +5054,8 @@ def create_overview_headers_main(path_main_dir):
           
             # Create overview of headers
             create_overview_headers(path_raw_dir, path_overview, log=False)
-            print_wrap('\nCreated an overview of the headers\n ' + path_overview + \
-                       '\n' + path_overview.replace('.txt','.csv') + '.')
+            print_wrap('\nCreated overview of the headers ' + path_overview + ' and ' + \
+                       path_overview.replace('.txt','.csv') + '.')
             
 ###############################################################################
 # run_pipeline
