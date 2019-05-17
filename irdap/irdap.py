@@ -3063,7 +3063,7 @@ def perform_preprocessing(frames_to_remove=[],
     else:
         # Determine filter used
         printandlog('\n###############################################################################')
-        printandlog('# Reading master flat and static bad pixel map')
+        printandlog('# Reading static master flat and bad pixel map')
         printandlog('###############################################################################') 
         filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
     
