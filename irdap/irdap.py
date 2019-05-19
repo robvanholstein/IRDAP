@@ -705,8 +705,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
         if any([x['ESO INS1 FILT ID'] != object_filter for x in header_flat]):
             raise IOError('\n\nOne or more FLAT-files have a different filter than the OBJECT-files.')
             
-        if any([x['ESO INS1 OPTI2 NAME'] in ['P0-90', 'P45-135'] for x in header_flat]):
-            raise IOError('\n\nOne or more FLAT-files have the P0-90 or P45-135 polarizer set inserted. Using FLAT-files taken with a polarizer set will result in overcorrection of the instrumental polarization during post processing.')
+        if any([x['ESO INS1 OPTI2 NAME'] != 'P0-90' for x in header_flat]):
+            raise IOError('\n\nOne or more FLAT-files do not have the P0-90 polarizer set inserted. The FLAT-files with and without P0-90 polarizer show significant differences.')
 
         if set([x['EXPTIME'] for x in header_dark_all]) != set([x['EXPTIME'] for x in header_flat]):
             raise IOError('\n\nThe exposure time of one or more FLAT-files cannot be matched to the exposure time of a DARK(,BACKGROUND)-file or vice versa.')
@@ -717,8 +717,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
         mjd_dark_background = [x['MJD-OBS'] for x in header_dark_background]
         mjd_flat = [x['MJD-OBS'] for x in header_flat] 
         
-        if max(mjd_flat) - min(mjd_dark_background) > 1/24 or max(mjd_dark_background) - min(mjd_flat) > 1/24:
-            printandlog('\nWARNING, (some of) the DARK,BACKGROUND- and FLAT-files are taken more than 1 hour apart. The background in the DARK,BACKGROUND-files is known to generally be strongly time-varying.')
+        if header_flat[0]['ESO INS1 FILT ID'] == 'FILT_BBF_Ks':
+            if max(mjd_flat) - min(mjd_dark_background) > 1/24 or max(mjd_dark_background) - min(mjd_flat) > 1/24:
+                printandlog('\nWARNING, (some of) the DARK,BACKGROUND- and FLAT-files use the Ks-band filter and are taken more than 1 hour apart. The background in the DARK,BACKGROUND-files in Ks-band is known to generally be strongly time-varying.')
 
     if any(header_dark_all) and not any(header_flat):
         raise IOError('\n\nThere are DARK(,BACKGROUND)-files but no FLAT-files.')
