@@ -107,8 +107,6 @@ def read_config_file(path_config_file):
     # Get parameters from [Basic post-processing options] section
     annulus_star                    = config_list_tuple(config.get('Basic post-processing options', 'annulus_star'))
     annulus_background              = config_list_tuple(config.get('Basic post-processing options', 'annulus_background'))
-    combination_method_polarization = config.get('Basic post-processing options', 'combination_method_polarization')
-    combination_method_intensity    = config.get('Basic post-processing options', 'combination_method_intensity')
     normalized_polarization_images  = config_true_false(config.get('Basic post-processing options', 'normalized_polarization_images'))
 
     # Get parameters from [Advanced pre-processing options] section
@@ -123,8 +121,6 @@ def read_config_file(path_config_file):
     
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
-    trimmed_mean_prop_to_cut_polar  = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_polar')
-    trimmed_mean_prop_to_cut_intens = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_intens')
     single_posang_north_up          = config_true_false(config.get('Advanced post-processing options', 'single_posang_north_up'))
 
     return sigma_filtering, \
@@ -134,8 +130,6 @@ def read_config_file(path_config_file):
            frames_to_remove, \
            annulus_star, \
            annulus_background, \
-           combination_method_polarization, \
-           combination_method_intensity, \
            normalized_polarization_images, \
            center_subtract_object, \
            center_param_centering, \
@@ -146,8 +140,6 @@ def read_config_file(path_config_file):
            flux_param_centering, \
            flux_annulus_background, \
            double_difference_type, \
-           trimmed_mean_prop_to_cut_polar, \
-           trimmed_mean_prop_to_cut_intens, \
            single_posang_north_up
 
 ###############################################################################
@@ -2623,9 +2615,9 @@ def subtract_background(cube, annulus_background):
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            
     Output:
         cube_background_subtracted: image cube or frame with background subtracted
         background: float or array of background values for each image
@@ -2680,9 +2672,9 @@ def process_flux_frames(path_flux_files,
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and
+            start_angle: start angle of annulus sector (deg; 0 deg is up and 
                 rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and 
+            end_angle: end angle of annulus sector (deg; 0 deg is up and 
                 rotating counterclockwise)
         sigma_filtering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
@@ -2788,9 +2780,9 @@ def annulus_1_to_0_based(annulus):
             coord_center_y: y-coordinate of center (pixels; 1-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            
     Output:
         annulus: same as for input, but with coord_center_x and coord_center_y
             0-based
@@ -2822,9 +2814,9 @@ def annulus_0_to_1_based(annulus):
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            
     Output:
         annulus: same as for input, but with coord_center_x and coord_center_y
             1-based
@@ -2868,7 +2860,7 @@ def perform_preprocessing(frames_to_remove=[],
 
     Input:
         frames_to_remove: list of integers and length-2-tuples of integers 
-            indicating which files and frames to remove (0-based). A complete
+            indicating which files and frames to remove (1-based). A complete
             file can be removed by specifying its integer index, while a frame
             of specific file can be removed by specifying a tuple
             (file_index, frame_index). If no files or frames should be removed, 
@@ -2887,15 +2879,16 @@ def perform_preprocessing(frames_to_remove=[],
             The plots allow for checking whether the centering is correct and 
             to scan the data for frames with bad quality (default = True).    
         object_centering_method: method to center the OBJECT-frames. If 
-            'center frames' or 'manual', use fixed coordinates as provided by 
-            object_center_coordinates. If 'gaussian', fit a 2D Gaussian to each frame. 
+            'center frames' determine the center coordinates from the 
+            CENTER-frames. If 'gaussian', fit a 2D Gaussian to each frame. 
             If 'cross-correlation', fit a 2D Gaussian to the first frame and then
             use cross-correlation to align (register) the other frames onto the 
             centered first  frame. For 'gaussian' and 'cross-correlation' 
             object_center_coordinates is used as initial guess of the center 
             coordinates and the determined center coordinates are plotted for
-            each image. If 'automatic', object_centering_method is set to
-            'center frames' if there are CENTER-files, and is set to 'gaussian' 
+            each image. If 'manual', use fixed coordinates as provided by 
+            object_center_coordinates. If 'automatic', object_centering_method is 
+            set to 'center frames' if there are CENTER-files, and is set to 'gaussian' 
             if there are no CENTER-files (default = 'automatic').
         center_subtract_object: if True subtract the OBJECT-file(s) taken
             closest in time from the CENTER-file(s) (default = True). This generally
@@ -2995,9 +2988,9 @@ def perform_preprocessing(frames_to_remove=[],
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and
+            start_angle: start angle of annulus sector (deg; 0 deg is up and 
                 rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and 
+            end_angle: end angle of annulus sector (deg; 0 deg is up and 
                 rotating counterclockwise)
             If string 'large annulus' the annulus will be star-centered and 
             located far away from the star with an inner radius of 320 pixels
@@ -3301,16 +3294,14 @@ def perform_preprocessing(frames_to_remove=[],
 #            coord_center_y: y-coordinate of center (pixels; 0-based)
 #            inner_radius: inner radius (pixels)
 #            width: width (pixels)
-#            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-#            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-#        annulus_Y: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
+#            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+#            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)#        annulus_Y: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
 #            coord_center_x: x-coordinate of center (pixels; 0-based)
 #            coord_center_y: y-coordinate of center (pixels; 0-based)
 #            inner_radius: inner radius (pixels)
 #            width: width (pixels)
-#            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-#            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-#              
+#            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+#            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)#              
 #    Output:
 #        flux_star: ?
 #        
@@ -3353,7 +3344,7 @@ def perform_preprocessing(frames_to_remove=[],
 # compute_double_sum_double_difference
 ###############################################################################
 
-def compute_double_sum_double_difference(cube_single_sum, cube_single_difference, header, double_difference_type='standard'):
+def compute_double_sum_double_difference(cube_single_sum, cube_single_difference, header, double_difference_type='conventional'):
     '''  
     Compute double-sum I_Q- and I_U-images and double-difference Q- and U-images
     
@@ -3362,7 +3353,7 @@ def compute_double_sum_double_difference(cube_single_sum, cube_single_difference
         cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
         header: list of FITS-headers of raw science frames    
         double_difference_type: type of double difference to be computed, either
-        'standard' or 'normalized' (see van Holstein et al. 2019; default = 'standard')
+        'conventional' or 'normalized' (see van Holstein et al. 2019; default = 'conventional')
                
     Output:
         cube_I_Q_double_sum: cube of double-sum I_Q-images
@@ -3391,7 +3382,7 @@ def compute_double_sum_double_difference(cube_single_sum, cube_single_difference
     cube_I_Q_double_sum = 0.5*(cube_single_sum[indices_Qplus, :, :] + cube_single_sum[indices_Qminus, :, :])
     cube_I_U_double_sum = 0.5*(cube_single_sum[indices_Uplus, :, :] + cube_single_sum[indices_Uminus, :, :])
        
-    if double_difference_type == 'standard':
+    if double_difference_type == 'conventional':
         # Compute Q- and U-cubes using standard double difference
         printandlog('\nUsing the standard double difference to compute the Q- and U-images.')
         cube_Q_double_difference = 0.5*(cube_single_difference[indices_Qplus, :, :] - cube_single_difference[indices_Qminus, :, :])
@@ -3467,15 +3458,15 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
         annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
               
     Output:
         q: normalized Stokes q measured in annulus
@@ -3833,15 +3824,15 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
         annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
         combination_method_polarization: method to be used to produce the incident Q- and U-images, 
             'least squares', 'trimmed mean' or 'median' (default = 'least squares')
         trimmed_mean_prop_to_cut_polar: fraction to cut off of both tails of the distribution if 
@@ -4417,7 +4408,7 @@ def perform_postprocessing(cube_left_frames,
                            file_index_object, 
                            annulus_star='automatic', 
                            annulus_background='large annulus', 
-                           double_difference_type='standard', 
+                           double_difference_type='conventional', 
                            remove_vertical_band_detector_artefact=True, 
                            combination_method_polarization='least squares', 
                            trimmed_mean_prop_to_cut_polar=0.1, 
@@ -4439,8 +4430,8 @@ def perform_postprocessing(cube_left_frames,
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
             If string 'ao residuals' the annulus will be automatically determined and 
             be star-centered and located over the AO residuals. The inner radius 
             and width of the annulus will depend on the filter used. If 
@@ -4453,13 +4444,13 @@ def perform_postprocessing(cube_left_frames,
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
             width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
             If string 'large annulus' the annulus will be star-centered and 
             located far away from the star with an inner radius of 360 pixels
             and a width of 60 pixels (default = 'large annulus').
         double_difference_type: type of double difference to be computed, either
-        'standard' or 'normalized' (see van Holstein et al. 2019; default = 'standard')
+        'conventional' or 'normalized' (see van Holstein et al. 2019; default = 'conventional')
         remove_vertical_band_detector_artefact: If True remove the vertical band detector artefact seen in 
             the double-difference Q- and U-images. If False don't remove it (default = True).
         combination_method_polarization: method to be used to produce the incident Q- and U-images, 
@@ -5254,8 +5245,6 @@ def run_pipeline(path_main_dir):
     frames_to_remove, \
     annulus_star, \
     annulus_background, \
-    combination_method_polarization, \
-    combination_method_intensity, \
     normalized_polarization_images, \
     center_subtract_object, \
     center_param_centering, \
@@ -5266,8 +5255,6 @@ def run_pipeline(path_main_dir):
     flux_param_centering, \
     flux_annulus_background, \
     double_difference_type, \
-    trimmed_mean_prop_to_cut_polar, \
-    trimmed_mean_prop_to_cut_intens, \
     single_posang_north_up \
     = read_config_file(path_config_file)
     
@@ -5275,7 +5262,11 @@ def run_pipeline(path_main_dir):
     save_preprocessed_data = True
     show_images_center_coordinates = True
     remove_vertical_band_detector_artefact = True
-
+    combination_method_polarization = 'least squares'
+    combination_method_intensity = 'mean'
+    trimmed_mean_prop_to_cut_polar = 0.1
+    trimmed_mean_prop_to_cut_intens = 0.1
+    
     # Check validity of input of skip_preprocessing
     if skip_preprocessing not in [True, False]:
         raise ValueError('\n\n\'skip_preprocessing\' should be either True or False. Before starting another reduction, please delete the log file ' + path_log_file + '.')   
@@ -5358,8 +5349,12 @@ def run_pipeline(path_main_dir):
             raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
         if any([len(x) != 2 for x in frames_to_remove if type(x) is tuple]):
             raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
-        elif any([type(y) is not int for x in frames_to_remove if type(x) is tuple for y in x]):
+        if any([type(y) is not int for x in frames_to_remove if type(x) is tuple for y in x]):
             raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+        if any([x < 1 for x in frames_to_remove if type(x) is int]):
+            raise ValueError('\n\nThe file indices in \'frames_to_remove\' are 1-based and therefore should be larger than zero.')    
+        if any([y < 1 for x in frames_to_remove if type(x) is tuple for y in x]):
+            raise ValueError('\n\nThe file indices in \'frames_to_remove\' are 1-based and therefore should be larger than zero.')    
     
     # sigma_filtering 
     if sigma_filtering not in [True, False]:
@@ -5503,8 +5498,8 @@ def run_pipeline(path_main_dir):
         raise ValueError('\n\n\'save_preprocessed_data\' should be either True or False.')   
     
     # double_difference_type
-    if double_difference_type not in ['standard', 'normalized']:
-        raise ValueError('\n\n\'double_difference_type\' should be either \'standard\' or \'normalized\'.')
+    if double_difference_type not in ['conventional', 'normalized']:
+        raise ValueError('\n\n\'double_difference_type\' should be either \'conventional\' or \'normalized\'.')
     
     # remove_vertical_band_detector_artefact    
     if remove_vertical_band_detector_artefact not in [True, False]:
