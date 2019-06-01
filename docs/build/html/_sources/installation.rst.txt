@@ -17,7 +17,7 @@ Because IRDAP is being actively developed, it is recommended to regularly check 
 and install the latest version.
 
 The most recent release of IRDAP is also available for download from its 
-`Github repository <https://github.com/robvanholstein/IRDAP/releases/latest/>`_. 
+`GithHub repository <https://github.com/robvanholstein/IRDAP/releases/latest/>`_. 
 
 Testing the installation
 ------------------------

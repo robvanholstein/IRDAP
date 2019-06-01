@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; IRDAP 0.1.0 documentation</title>
+  <title>Example reduction &mdash; IRDAP 0.1.0 documentation</title>
   
 
   
@@ -28,7 +28,8 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Contributing" href="contributing.html" /> 
+    <link rel="next" title="Usage instructions" href="instructions.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -84,12 +85,12 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="example.html">Example reduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example reduction</a></li>
 <li class="toctree-l1"><a class="reference internal" href="instructions.html">Usage instructions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
 <li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog  </a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
 </ul>
 
@@ -136,13 +137,13 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Changelog  </li>
+      <li>Example reduction</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/changelog.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/example.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -155,44 +156,39 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="changelog-last-commit-issues">
-<span id="changelog"></span><h1>Changelog <a class="reference external" href="https://github.com/robvanholstein/IRDAP/"><img alt="last-commit" src="https://img.shields.io/github/last-commit/robvanholstein/IRDAP.svg?colorB=e6c000" /></a> <a class="reference external" href="https://github.com/robvanholstein/IRDAP/issues"><img alt="issues" src="https://img.shields.io/github/issues/robvanholstein/IRDAP.svg?color=b4001e" /></a><a class="headerlink" href="#changelog-last-commit-issues" title="Permalink to this headline">¶</a></h1>
-<div class="admonition-todo admonition" id="index-0">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
-<li>(!) Combine data of different OB’s with automatic selection of correct center, sky and flux images</li>
-<li>(!) Add ADI (including PCA) of total intensity images for pupil-tracking observations</li>
-<li>(!) Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2</li>
-<li>(!) Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)</li>
-<li>(!) Add model correction for narrowband filters</li>
-<li>(!) Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)</li>
-<li>(?) Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)</li>
-<li>(?) Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)</li>
-<li>(?) Add option for ‘stupid ADI’ for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset</li>
-<li>(?) Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number</li>
-<li>(?) Add optional ADI (including PCA) for polarization images</li>
-<li>(?) Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)</li>
-<li>(?) When rotating images, make complete frame still visible to not cut out any parts of the data</li>
-<li>(?) Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images)</li>
-<li>(?) Test finding of satellite spots of center files when waffle pattern is ‘+’</li>
-<li>(?) Add weighted least-squares as option for model correction (depending on image quality or polarimetric efficiency)</li>
-<li>(?) Add multiprocessing for sigma filtering and centering of frames</li>
-<li>(?) Make IRDAP runable from a script by importing it and calling main function</li>
-<li>(?) Add option to scale the master sky frame to subtract from the object frames (especially for Ks; see also Gallicher et al. 2011)</li>
-<li>(?) Exclude saturated pixels in aperture to determine star polarization (same way as used in function fit_2d_gaussian)</li>
-<li>(?) Determine star polarization as a function of aperture radius</li>
-<li>(?) Add optional RDI for total intensity images</li>
-<li>(?) Make docstrings compliant with accepted conventions and create API doc on website</li>
-</ul>
+  <div class="section" id="example-reduction">
+<h1>Example reduction<a class="headerlink" href="#example-reduction" title="Permalink to this headline">¶</a></h1>
+<p>As an introduction to the user, but also to check if IRDAP is installed correctly, a quick
+end-to-end example reduction can be performed. This demo uses a small portion of the H-band
+polarimetric data of the circumstellar disk of T Cha from ESO Program 096.C-0248(C). This
+data set was the first to be reduced with IRDAP’s correction method and is published in
+<a class="reference external" href="http://adsabs.harvard.edu/abs/2017A%26A...605A..34P">Pohl et al. (2017)</a>. It is also
+used in <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a> to exemplify the correction method.</p>
+<p>To run the demo, use the terminal to navigate to a directory of your choice and type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">demo</span>
+</pre></div>
 </div>
-<dl class="docutils">
-<dt>v0.1.0 June 2019, R.G. van Holstein:</dt>
-<dd><ul class="first last simple">
-<li>Pre-release of IRDAP package</li>
-<li>Initial documentation put online</li>
-</ul>
-</dd>
-</dl>
+<p>IRDAP will then perform a complete data reduction and will write the resulting files
+to the terminal’s current directory. The produced files are explained in
+<a class="reference internal" href="instructions.html#usage-instructions"><span class="std std-ref">Usage instructions</span></a>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">An internet connection is required to run the demo, because 56.6 MB of raw data will
+be downloaded from the
+<a class="reference external" href="https://github.com/robvanholstein/IRDAP/tree/master/irdap/example_data">IRDAP GitHub repository</a>.</p>
+</div>
+<p>After running the demo, you can navigate to the <code class="file docutils literal notranslate"><span class="pre">reduced</span></code> directory and open the
+files <code class="file docutils literal notranslate"><span class="pre">T_Cha_2016-02-20_Q_phi.fits</span></code> and <code class="file docutils literal notranslate"><span class="pre">T_Cha_2016-02-20_U_phi.fits</span></code> that
+show the final <span class="math notranslate nohighlight">\(Q_\phi\)</span>- and <span class="math notranslate nohighlight">\(U_\phi\)</span>-images.
+Opening these files with <a class="reference external" href="http://ds9.si.edu/">DS9</a>, setting color to cool, scale to linear
+and the limits to -500 to 1500 and -300 to 150, respectively, you will see the following:</p>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="_images/t_cha_quphi_combined.svg"><img alt="_images/t_cha_quphi_combined.svg" src="_images/t_cha_quphi_combined.svg" width="750px" /></a>
+</div>
+<p>These images correspond to Figure 14 (left column) of <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a>,
+but with lower signal-to-noise because for the demo the data of only 1 instead of 30 HWP cycles
+was used.</p>
+<p>To start reducing your own data with IRDAP, please continue to the <a class="reference internal" href="instructions.html#usage-instructions"><span class="std std-ref">Usage instructions</span></a>.</p>
 </div>
 
 
@@ -203,8 +199,10 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="instructions.html" class="btn btn-neutral float-right" title="Usage instructions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-        <a href="contributing.html" class="btn btn-neutral" title="Contributing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+        <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -113,6 +113,7 @@ html_static_path = ['_static']
 html_sidebars = {'**':['globaltoc.html', 'relations.html','searchbox.html'],
 }
 
+
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.

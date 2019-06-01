@@ -43,10 +43,12 @@ Contents
    
    Home <self>
    installation
-   example_reduction
-   running
+   example
+   instructions
+   configfile
+   citing
+   contributing   
    changelog
-   acknowledge
    GitHub <https://github.com/robvanholstein/IRDAP>
 
 ----
