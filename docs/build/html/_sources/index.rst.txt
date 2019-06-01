@@ -3,6 +3,22 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. _keppler: https://ui.adsabs.harvard.edu/abs/2018A%26A...617A..44K/abstract
+
+.. |keppler| replace:: *(Keppler et al. 2018),*
+
+.. _ginski: https://ui.adsabs.harvard.edu/abs/2018A%26A...616A..79G/abstract
+
+.. |ginski| replace:: *(Ginski et al. 2018)*
+
+.. _pohl: https://ui.adsabs.harvard.edu/abs/2017A%26A...605A..34P/abstract
+
+.. |pohl| replace:: *(Pohl et al. 2017;*
+
+.. _vanholstein: ADS link
+
+.. |vanholstein| replace:: *van Holstein et al. 2019).*
+
 .. |stars| image:: https://img.shields.io/github/stars/robvanholstein/IRDAP.svg?style=social&label=Stars
    :target: https://github.com/robvanholstein/IRDAP/
    
@@ -36,6 +52,20 @@ IRDAP
 
 |pypi| |python| |github| |last-commit| |license| |ads|
   
+IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data. Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2019) <ADS link>`_. 
+
+Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within a few minutes, IRDAP performs the full reduction from raw data to the final data products.
+
+.. attention::
+   If you use IRDAP for your publication, please :ref:`cite our papers <Citing IRDAP>`.
+
+.. figure:: ./figs/home_3disks.png
+    :width: 750px
+
+    *Three examples of data sets reduced with IRDAP: the circumstellar disk of PDS 70 including its inner disk that polarizes the central star* |keppler|_ *the circumstellar disk and polarized companion of CS Cha* |ginski|_ *and the circumstellar disk of T Cha* |pohl|_ |vanholstein|_
+
+IRDAP yields a multitude of improvements for observations of circumstellar disks: it enables us to accurately study the morphology of disks, measure non-azimuthal polarization and determine scattering phase functions and particle properties. Because IRDAP discerns instrumental polarization (IP) from stellar polarization, it is a vital tool for accurate radiative transfer modeling of disks and enables the detection of unresolved (inner) disks and the measurement of the polarization of substellar companions. Finally, IRDAP enables accurate data-reduction for targets that cannot be reduced with the conventional IP-subtraction method, such as as solar system objects and galaxies.
+
 Contents
 ---------
 .. toctree::
@@ -47,8 +77,9 @@ Contents
    instructions
    configfile
    citing
-   contributing   
+   contributing    
    changelog
+   acknowledgements
    GitHub <https://github.com/robvanholstein/IRDAP>
 
 ----

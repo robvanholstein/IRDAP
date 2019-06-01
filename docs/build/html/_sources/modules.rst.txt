@@ -1,7 +1,0 @@
-irdap
-=====
-
-.. toctree::
-   :maxdepth: 4
-
-   irdap

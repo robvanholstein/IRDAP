@@ -2,8 +2,12 @@
 Installation
 ============
 
-IRDAP is written for Python 3.6 and 3.7 and is available on `PyPi <https://pypi.org/project/irdap/>`_.
-To install IRDAP simply type in a terminal:
+To use IRDAP, the user needs to have Python 3.6 or 3.7 installed. 
+
+Installing IRDAP
+----------------
+
+IRDAP is available on `PyPi <https://pypi.org/project/irdap/>`_ and can be installed by simply typing in a terminal:
 ::
 
    pip install irdap
@@ -16,7 +20,7 @@ Because IRDAP is being actively developed, it is recommended to regularly check 
    
 and install the latest version.
 
-The most recent release of IRDAP is also available for download from its 
+The most recent release of IRDAP is also available for download from the 
 `GithHub repository <https://github.com/robvanholstein/IRDAP/releases/latest/>`_. 
 
 Testing the installation
