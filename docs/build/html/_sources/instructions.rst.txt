@@ -2,52 +2,74 @@
 Usage instructions
 ==================
 
-Reducing data with IRDAP is very straightforward and only requires
-two commands to be entered in the terminal. First, create a directory 
-(e.g. :file:`/home/T_Cha_2016-02-20`) containing a subdirectory called 
-:file:`raw` in which you place the raw FITS-files. Then in the terminal 
-navigate to the directory (e.g. ``cd /home/T_Cha_2016-02-20``) and type:
+Running IRDAP
+-------------
+
+Reducing data with IRDAP is very straightforward and only requires two commands to be entered in the terminal. First, create a directory (e.g. :file:`/home/T_Cha_2016-02-20`) containing a subdirectory called :file:`raw` (i.e. :file:`/home/T_Cha_2016-02-20/raw`) in which you place the raw FITS-files. 
+
+.. attention::
+   The raw FITS-files should have `DPR TYPE` equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see :ref:`Pre-processing`) `DPR TYPE` can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.
+
+.. hint::
+   It is recommended to download the raw data from the `SPHERE data archive <http://archive.eso.org/wdb/wdb/eso/sphere/form>`_ and when doing so setting the search field `DPR TECH` to `any POLARIMETRY`. This way only data that is required for IRDAP will be downloaded.
+   
+In the terminal navigate to the main directory (e.g. ``cd /home/T_Cha_2016-02-20``) and type:
 ::
  
    irdap --makeconfig
 
 This creates a default configuration file :file:`config.conf` in the main directory. 
 You can then adjust the parameters in the configuration file with a text 
-editor (see :ref:`Configuration file` for an overview of what each parameter does). 
-However, at first often no changes to the configuration file are required.
-Finally in the terminal type:
+editor (see :ref:`Configuration file`). Finally in the terminal type:
 ::
 
    irdap --run
 
-to perform the data reduction.
+to perform the data reduction. 
+
+.. note::
+	In general a first reduction can be performed without making changes to the configuration file. After this first reduction, some of the input parameters can be adjusted and IRDAP can be run again (but this is often not necessary!).
  
-Output of IRDAP
----------------
+Data reduction in brief
+-----------------------
+
+.. warning::
+   The data-reduction steps are only described concisely here. The log file that IRDAP creates describes the steps in more detail and also briefly describes the output files created. It is therefore recommended to carefully read the log file the first time you run IRDAP.
+
+The data reduction is divided in a pre-processing and a post-processing part. 
+
+Pre-processing
+~~~~~~~~~~~~~~ 
  
- 
-	1. Usage instructions 1) only two commands, makeconfig  and run commands from current working directory, adapt config, but for majority will work with default config file, explain output directories. Explain other commands if they exist.
-	2. 
-Which raw file types, what pipeline does briefly [keep short!] (rest in log file) in bulleted list pre-processing (+ where output): read config file, create log on screen and as file, sort data, reads a static BPM and flat, but can make own, create a master flat frame, center frames, object frames, sky for flux, flux frames. Save files to enable skipping pre-processing. Post-processing: double difference, apply model based correction method to remove IP, derotate images and correct for cross-talk and rotation. Different for ft and PT. Subtract background and determine star polarization. With and without star polarization, output fits images.
+The pre-processing starts with reading the configuration file and creating the log file of the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the raw subdirectory, sorts the raw data and creates subdirectories to write the output files to.
 
+.. note::
+   When running IRDAP, a copy of the configuration file is made. When subsequently re-running IRDAP, this copy is moved together with the log file to the ``logs`` subdirectory as a record of the performed reductions. 
 
-After downloading the data from the `SPHERE data archive <http://archive.eso.org/wdb/wdb/eso/sphere/form>`_,
+.. hint::
+   The header overviews can also be created without running IRDAP by typing :code:`irdap --headers` in the terminal.
 
-sort data
-directories
-log
-which steps
-file output
- 
-What will it do (directories, steps, output)
+After these initial steps, IRDAP will pre-process the OBJECT-files. To this end, it loads the static bad pixel map and the static master flat of the right filter, and creates a master sky frame from the provided SKY-files. The OBJECT-files are then sky (or background) subtracted, flat fielded, bad-pixel filtered and centered with a method chosen by the user. The centering would generally be performed using the CENTER-files, which are then processed accordingly.
 
-
-**WORK: make hyperlink of header overview to frames_to_remove on configuration file section**
-
-It is also possible to create an overview of the relevant headers of the 
-FITS-files in the raw subdirectory without running the pipeline by typing:
-::  
-
-   irdap --headers
+.. note::
+   It is possible to create a new master flat and bad pixel map by including a sequence of FLAT,LAMP- and DARK,BACKGROUND- or DARK-files in the ``raw`` subdirectory (e.g. a sequence with exposure times 1, 2, 3, 4 and 5 s).    
    
-Refer to configuration file section
+A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, it will process these to subtract the sky background from the master flat frame. 
+
+The pre-processed OBJECT-data is written to the subdirectory ``preprocessed`` and the processed SKY-, CENTER- and FLUX-data to the subdirectory ``calibration``.
+
+Post-processing
+~~~~~~~~~~~~~~~
+
+For the post-processing part, IRDAP will first compute the double sum and double difference, and apply the model-based correction method to remove the instrumental polarization and cross-talk (see `van Holstein et al. 2019 <ADS link>_`). The correction method for pupil-tracking observations differs slightly from that of field-tracking observations (see `van Holstein et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_). Subsequently, the background in the images will subtracted and the polarization of the star will be determined. The FITS-files of the final images will then be written to two subdirectories: 
+
+- ``reduced``, containing the final images with the polarization of the star still present;
+- ``reduced_star_pol_subtr``, containing the final images with the polarization of the star removed.
+
+.. important::
+   The possibility to measure the polarization of the central star and the ability to create final images with and without this stellar polarization is a big advantage of IRDAP (see `van Holstein et al. 2019 <ADS link>`_. For images of a star or circumstellar disk for example, the stellar polarization can indicate the presence of an unresolved (inner) disk if it can be proven (or reasonably expected) that the polarization does not originate from interstellar dust. In that case one would use the images with the star polarization still present when making a comparison with radiative transfer models. Measuring the polarization of the star is also vital when measuring the polarization of substellar companions.
+   
+.. warning::
+   For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory ``reduced``, i.e. those without the polarization subtracted.
+
+To understand all the input parameters, continue to :ref:`Configuration file`. 

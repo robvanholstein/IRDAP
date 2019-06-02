@@ -4,13 +4,13 @@ This file contains all functions used by IRDAP.
 IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
-Full documentation: https://robvanholstein.github.io/IRDAP
+Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al. 
 (2019): <ADS link>. 
 For data in pupil-tracking mode please additionally cite van Holstein et al. 
-(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.
+(2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -351,7 +351,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
 
     if log:
         printandlog('\nWrote files ' + path_overview + ' and ' + \
-                    path_overview.replace('.txt','.csv') + ' showing overviews of the relevant headers for each file in the raw directory.')
+                    path_overview.replace('.txt','.csv') + ' showing overviews of the relevant header keywords for each file in the raw directory.')
 
 ###############################################################################
 # check_own_programs
@@ -2019,7 +2019,7 @@ def find_center_coordinates(list_frame_center_processed,
         f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 1] + 1, y_fit[1, 1] + 1))
         f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 3] + 1, y_fit[1, 3] + 1))        
         f.close()  
-        printandlog('\nWrote file ' + path_reg_file + ' which can be loaded as a region in DS9 and shows the fitted coordinates of the satellite spots and the center.')
+        printandlog('\nWrote file ' + path_reg_file + ' which can be loaded as a region in DS9 (in the top bar: Region --> Load Regions) and shows the fitted coordinates of the satellite spots and the center.')
 
     # Print center coordinates found
     max_path_length = max([len(os.path.basename(x)) for x in path_processed_center_files])

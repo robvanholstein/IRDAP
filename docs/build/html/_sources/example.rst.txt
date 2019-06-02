@@ -37,4 +37,4 @@ These images correspond to Figure 14 (left column) of `van Holstein et al. (2019
 but with lower signal-to-noise because for the demo the data of only 1 instead of 30 HWP cycles 
 was used.
 
-To start reducing your own data with IRDAP, please continue to the :ref:`Usage instructions`.
+To start reducing your own data with IRDAP, continue to the :ref:`Usage instructions`.

@@ -22,14 +22,14 @@ IRDAP
 
 |pypi| |python| |github| |last-commit| |license|
 
-**IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data**
+**IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce SPHERE-IRDIS polarimetric data that is written for Python 3.6 and 3.7.**
 
 Copyright (C) 2019 R.G. van Holstein
 
-Full documentation: https://robvanholstein.github.io/IRDAP
+Full documentation: https://irdap.readthedocs.io
 |br| Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al. (2019): <ADS link>. 
-|br| For data in pupil-tracking mode please additionally cite `van Holstein et al. (2017) <http://adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
-                                                 
+|br| For data in pupil-tracking mode please additionally cite `van Holstein et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
+                                                
 IRDAP is distributed under the GNU General Public License v3. See the `LICENSE file <https://github.com/robvanholstein/IRDAP/blob/master/LICENSE>`_ for the precise terms and conditions.
