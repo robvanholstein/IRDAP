@@ -49,7 +49,7 @@ The pre-processing starts with reading the configuration file and creating the l
 After these initial steps, IRDAP will pre-process the OBJECT-files. To this end, it loads the static bad pixel map and the static master flat of the right filter, and creates a master sky frame from the provided SKY-files. The OBJECT-files are then sky (or background) subtracted, flat fielded, bad-pixel filtered and centered with a method chosen by the user. The centering would generally be performed using the CENTER-files, which are then processed accordingly.
 
 .. note::
-   Rather than using the static bad pixel map and master flat, the user can also create a master flat and bad pixel map by including a sequence of FLAT,LAMP- and DARK,BACKGROUND-files (or DARK-files) in the ``raw`` subdirectory (e.g. a sequence with exposure times 1, 2, 3, 4 and 5 s). The FLAT,LAMP-files need to have the P0-90 polarizer set inserted.
+   Rather than using the static bad pixel map and master flat, the user can also create a master flat and bad pixel map by including a sequence of FLAT,LAMP- and DARK,BACKGROUND-files (or DARK-files) in the ``raw`` subdirectory (e.g. a sequence with exposure times 1, 2, 3, 4 and 5 s). The FLAT,LAMP-files preferably have the P0-90 polarizer set inserted, because it causes strong vignetting at the edges of the field of view which will otherwise not be corrected.
   
 A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flat frame. 
 

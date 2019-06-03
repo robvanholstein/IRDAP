@@ -29,8 +29,8 @@
 	
 .. IRDAP |stars| |watch|
 
-IRDAP
-=====
+IRDAP2
+======
 
 |pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
 

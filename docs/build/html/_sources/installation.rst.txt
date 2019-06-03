@@ -7,7 +7,7 @@ To run IRDAP the user needs to have Python 3.6 or 3.7 installed.
 Installing IRDAP
 ----------------
 
-IRDAP is available on `PyPi <https://pypi.org/project/irdap/>`_ and can be installed by simply typing in a terminal:
+IRDAP is available on `PyPI <https://pypi.org/project/irdap/>`_ and can be installed by simply typing in a terminal:
 ::
 
    pip install irdap

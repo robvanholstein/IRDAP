@@ -41,7 +41,7 @@
     :target: https://github.com/robvanholstein/IRDAP/blob/master/LICENSE
 
 .. |ads1| image:: https://img.shields.io/badge/ADS-%3CADS%20link%3E-blueviolet.svg
-	:target: <ADS link>
+	:target: <ADS link> ALSO CHANGE IN README!!!
 
 .. |ads2| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2017)-blueviolet.svg
 	:target: https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V

@@ -39,6 +39,6 @@ Changelog |last-commit| |issues|
    - (?) Add optional RDI for total intensity images	
    - (?) Make docstrings compliant with accepted conventions and create API doc on website
 
-v0.1.0 June 2019, R.G. van Holstein:
- - Pre-release of IRDAP package
- - Initial documentation put online
+v0.1.2 June 2019, R.G. van Holstein:
+ - Release of IRDAP package on PyPI and GitHub
+ - Documentation put online
