@@ -3,3 +3,4 @@ __pycache__/
 dist/
 irdap.egg-info/
 mailing_list.txt
+update_procedure.txt

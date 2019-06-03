@@ -11,9 +11,12 @@ Changelog |last-commit| |issues|
 
 .. todo:: 
 
+   - (!) Replace static flat in Ks by one with P0-90 inserted
    - (!) Combine data of different OB's with automatic selection of correct center, sky and flux images
    - (!) Add ADI (including PCA) of total intensity images for pupil-tracking observations
+   - (!) Change config file option skip_preprocessing to perform_preprocessing: True/False, perform_polarimetry: True/False and perform_adi: True/False
    - (!) Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2
+   - (!) Add plot of center coordinates of center frames vs time
    - (!) Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)
    - (!) Add model correction for narrowband filters
    - (!) Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)	

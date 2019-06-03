@@ -26,7 +26,7 @@ Basic pre-processing options
 
    ``True``, ``False`` (default = ``True``)
    
-   If ``True``, use sigma-filtering to remove bad pixels that are still in the OBJECT-, CENTER-, SKY- and FLUX-frames after applying the master bad pixel map. After the sigma-filtering the frames should have no bad pixels. If ``False``, only use the master bad pixel map to speed up the reduction. The latter is not recommended for a final reduction however, because a signficant number of bad pixels will remain in the frames.
+   If ``True``, use sigma-filtering to remove bad pixels that are still in the OBJECT-, CENTER- and FLUX-frames after applying the master bad pixel map. After the sigma-filtering the frames should have no bad pixels. If ``False``, only use the master bad pixel map to speed up the reduction. The latter is not recommended for a final reduction however, because a signficant number of bad pixels will remain in the frames.
 
 
 .. py:function:: object_collapse_ndit:

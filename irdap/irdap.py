@@ -1242,17 +1242,13 @@ def remove_bad_pixels(cube, frame_master_bpm, sigma_filtering=True):
 # process_sky_frames
 ###############################################################################
 
-def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, sigma_filtering=True):
+def process_sky_frames(path_sky_files, indices_to_remove_sky):
     '''
     Create a master sky frame from the SKY-files
     
     Input:
         path_sky_files: string or list of strings specifying paths of SKY-files
         indices_to_remove_sky: list of arrays with indices of frames to remove for each SKY-file
-        frame_master_bpm: frame indicating location of bad pixels with 0's and good
-            pixels with 1's
-        sigma_filtering: if True remove bad pixels remaining after applying
-            master bad pixel map using sigma-filtering (default = True)
 
     Output:
         frame_master_sky: master sky frame
@@ -1277,11 +1273,8 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
     # Make a single image cube from list of image cubes or frames
     cube_sky_raw = np.vstack(list_cube_sky_raw)
 
-    # Remove bad pixels of each frame
-    cube_sky_filtered = remove_bad_pixels(cube=cube_sky_raw, frame_master_bpm=frame_master_bpm, sigma_filtering=sigma_filtering)
-
     # Compute median of sky frames
-    frame_master_sky = np.median(cube_sky_filtered, axis=0)
+    frame_master_sky = np.median(cube_sky_raw, axis=0)
             
     printandlog('\nCreated master sky frame out of ' + str(len(path_sky_files)) + 
                 ' raw SKY-file(s) comprising a total of ' + str(cube_sky_raw.shape[0]) + ' frame(s).')
@@ -1322,9 +1315,9 @@ def create_bpm_darks(list_frame_dark):
         # Initialize a bad pixel array with 1 as default pixel value
         frame_bpm = np.ones(frame_dark.shape)
         
-        # Set pixels that deviate by more than 5 sigma from the frame median value 
+        # Set pixels that deviate by more than 3.5 sigma from the frame median value 
         # to 0 to flag them as bad pixels
-        frame_bpm[frame_dark > 5*stddev] = 0    
+        frame_bpm[frame_dark > 3.5*stddev] = 0    
         
         # Add bad pixels found to master bad pixel map 
         frame_bpm_dark *= frame_bpm
@@ -1374,9 +1367,9 @@ def create_bpm_flats(list_frame_flat, list_exptime_flat):
     index_array_left = np.abs(comparison[15:1024, 36:933] - factor)
     index_array_right = np.abs(comparison[5:1018, 1062:1958] - factor)    
     
-    # Identify pixels that deviate by more than 5 sigma from linear response
-    mask_left = index_array_left > 5*stddev_left        
-    mask_right = index_array_right > 5*stddev_right    
+    # Identify pixels that deviate by more than 3.5 sigma from linear response
+    mask_left = index_array_left > 3.5*stddev_left        
+    mask_right = index_array_right > 3.5*stddev_right    
 
     # All good pixels are set to 1 and all non-linear responding pixels are set to 0
     badpix_left = np.ones(index_array_left.shape)
@@ -1451,7 +1444,7 @@ def process_dark_flat_frames(path_dark_files, path_flat_files, indices_to_remove
 
         # Filter dark-subtracted flat for zeros and NaN's
         frame_flat_dark_subtracted = np.nan_to_num(frame_flat_dark_subtracted)
-        frame_flat_dark_subtracted[frame_flat_dark_subtracted == 0] = 1
+        frame_flat_dark_subtracted[frame_flat_dark_subtracted <= 0] = 1
         
         # Determine exposure time of each flat file and normalize flat with it
         exptime = header_flat['EXPTIME']
@@ -3089,9 +3082,7 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('###############################################################################') 
 
         frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, 
-                                              indices_to_remove_sky=indices_to_remove_sky, 
-                                              frame_master_bpm=frame_master_bpm, 
-                                              sigma_filtering=sigma_filtering)
+                                              indices_to_remove_sky=indices_to_remove_sky)
         
         # Write master sky-frame
         printandlog('')
@@ -3207,9 +3198,7 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('###############################################################################') 
 
         frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, 
-                                                   indices_to_remove_sky=indices_to_remove_sky_flux, 
-                                                   frame_master_bpm=frame_master_bpm, 
-                                                   sigma_filtering=sigma_filtering)
+                                                   indices_to_remove_sky=indices_to_remove_sky_flux)
         
         # Write master sky-frame
         printandlog('')
