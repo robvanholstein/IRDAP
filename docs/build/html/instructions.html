@@ -88,17 +88,15 @@
 <li class="toctree-l1"><a class="reference internal" href="example.html">Example reduction</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage instructions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#running-irdap">Running IRDAP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#data-reduction-in-brief">Data reduction in brief</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#pre-processing">Pre-processing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#post-processing">Post-processing</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#pre-processing-in-brief">Pre-processing in brief</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#post-processing-in-brief">Post-processing in brief</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
 <li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing and issues</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
+<li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
 </ul>
@@ -172,7 +170,7 @@
 <p>Reducing data with IRDAP is very straightforward and only requires two commands to be entered in the terminal. First, create a directory (e.g. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20</span></code>) containing a subdirectory called <code class="file docutils literal notranslate"><span class="pre">raw</span></code> (i.e. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20/raw</span></code>) in which you place the raw FITS-files.</p>
 <div class="admonition attention">
 <p class="first admonition-title">Attention</p>
-<p class="last">The raw FITS-files should have <cite>DPR TYPE</cite> equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see <a class="reference internal" href="#pre-processing"><span class="std std-ref">Pre-processing</span></a>) <cite>DPR TYPE</cite> can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.</p>
+<p class="last">The raw FITS-files should have <cite>DPR TYPE</cite> equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see <a class="reference internal" href="#pre-processing-in-brief"><span class="std std-ref">Pre-processing in brief</span></a>) <cite>DPR TYPE</cite> can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.</p>
 </div>
 <div class="admonition hint">
 <p class="first admonition-title">Hint</p>
@@ -184,7 +182,7 @@
 </div>
 <p>This creates a default configuration file <code class="file docutils literal notranslate"><span class="pre">config.conf</span></code> in the main directory.
 You can then adjust the parameters in the configuration file with a text
-editor (see <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">Configuration file</span></a>). Finally in the terminal type:</p>
+editor (see <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">Configuration file</span></a>). Finally, in the terminal type:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">run</span>
 </pre></div>
 </div>
@@ -194,49 +192,46 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="last">In general a first reduction can be performed without making changes to the configuration file. After this first reduction, some of the input parameters can be adjusted and IRDAP can be run again (but this is often not necessary!).</p>
 </div>
 </div>
-<div class="section" id="data-reduction-in-brief">
-<h2>Data reduction in brief<a class="headerlink" href="#data-reduction-in-brief" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pre-processing-in-brief">
+<h2>Pre-processing in brief<a class="headerlink" href="#pre-processing-in-brief" title="Permalink to this headline">¶</a></h2>
+<p>The data reduction is divided in a pre-processing and a post-processing part.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">The data-reduction steps are only described concisely here. The log file that IRDAP creates describes the steps in more detail and also briefly describes the output files created. It is therefore recommended to carefully read the log file the first time you run IRDAP.</p>
 </div>
-<p>The data reduction is divided in a pre-processing and a post-processing part.</p>
-<div class="section" id="pre-processing">
-<h3>Pre-processing<a class="headerlink" href="#pre-processing" title="Permalink to this headline">¶</a></h3>
-<p>The pre-processing starts with reading the configuration file and creating the log file of the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the raw subdirectory, sorts the raw data and creates subdirectories to write the output files to.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">When running IRDAP, a copy of the configuration file is made. When subsequently re-running IRDAP, this copy is moved together with the log file to the <code class="docutils literal notranslate"><span class="pre">logs</span></code> subdirectory as a record of the performed reductions.</p>
-</div>
+<p>The pre-processing starts with reading the configuration file and creating the log file that contains all the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the raw subdirectory, sorts the raw data and creates subdirectories to write the output files to.</p>
 <div class="admonition hint">
 <p class="first admonition-title">Hint</p>
 <p class="last">The header overviews can also be created without running IRDAP by typing <code class="code docutils literal notranslate"><span class="pre">irdap</span> <span class="pre">--headers</span></code> in the terminal.</p>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">When running IRDAP a copy of the configuration file is made. When subsequently re-running IRDAP, this copy is moved together with the log file to the <code class="docutils literal notranslate"><span class="pre">logs</span></code> subdirectory as a record of the performed reductions.</p>
+</div>
 <p>After these initial steps, IRDAP will pre-process the OBJECT-files. To this end, it loads the static bad pixel map and the static master flat of the right filter, and creates a master sky frame from the provided SKY-files. The OBJECT-files are then sky (or background) subtracted, flat fielded, bad-pixel filtered and centered with a method chosen by the user. The centering would generally be performed using the CENTER-files, which are then processed accordingly.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">It is possible to create a new master flat and bad pixel map by including a sequence of FLAT,LAMP- and DARK,BACKGROUND- or DARK-files in the <code class="docutils literal notranslate"><span class="pre">raw</span></code> subdirectory (e.g. a sequence with exposure times 1, 2, 3, 4 and 5 s).</p>
+<p class="last">Rather than using the static bad pixel map and master flat, the user can also create a master flat and bad pixel map by including a sequence of FLAT,LAMP- and DARK,BACKGROUND-files (or DARK-files) in the <code class="docutils literal notranslate"><span class="pre">raw</span></code> subdirectory (e.g. a sequence with exposure times 1, 2, 3, 4 and 5 s). The FLAT,LAMP-files need to have the P0-90 polarizer set inserted.</p>
 </div>
-<p>A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, it will process these to subtract the sky background from the master flat frame.</p>
-<p>The pre-processed OBJECT-data is written to the subdirectory <code class="docutils literal notranslate"><span class="pre">preprocessed</span></code> and the processed SKY-, CENTER- and FLUX-data to the subdirectory <code class="docutils literal notranslate"><span class="pre">calibration</span></code>.</p>
+<p>A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flat frame.</p>
+<p>The pre-processed OBJECT-data is written to the subdirectory <code class="docutils literal notranslate"><span class="pre">preprocessed</span></code> and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory <code class="docutils literal notranslate"><span class="pre">calibration</span></code>.</p>
 </div>
-<div class="section" id="post-processing">
-<h3>Post-processing<a class="headerlink" href="#post-processing" title="Permalink to this headline">¶</a></h3>
-<p>For the post-processing part, IRDAP will first compute the double sum and double difference, and apply the model-based correction method to remove the instrumental polarization and cross-talk (see <cite>van Holstein et al. 2019 &lt;ADS link&gt;_</cite>). The correction method for pupil-tracking observations differs slightly from that of field-tracking observations (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V">van Holstein et al. 2017</a>). Subsequently, the background in the images will subtracted and the polarization of the star will be determined. The FITS-files of the final images will then be written to two subdirectories:</p>
+<div class="section" id="post-processing-in-brief">
+<h2>Post-processing in brief<a class="headerlink" href="#post-processing-in-brief" title="Permalink to this headline">¶</a></h2>
+<p>For the post-processing part, IRDAP computes the double sum and double difference from the pre-processed OBJECT-files. It then applies the model-based correction method as described in <a class="reference external" href="ADSlink">van Holstein et al. 2019</a> to remove the instrumental polarization and cross-talk. The correction method for pupil-tracking observations has some differences compared to that of field-tracking observations (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V">van Holstein et al. 2017</a>). Subsequently, the background in the images is subtracted and the polarization of the star determined. The FITS-files of the final images are then written to two subdirectories:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">reduced</span></code>, containing the final images with the polarization of the star still present;</li>
-<li><code class="docutils literal notranslate"><span class="pre">reduced_star_pol_subtr</span></code>, containing the final images with the polarization of the star removed.</li>
+<li><code class="docutils literal notranslate"><span class="pre">reduced_star_pol_subtr</span></code>, containing the final images with the polarization of the star subtracted.</li>
 </ul>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
-<p class="last">The possibility to measure the polarization of the central star and the ability to create final images with and without this stellar polarization is a big advantage of IRDAP (see <a class="reference external" href="ADSlink">van Holstein et al. 2019</a>. For images of a star or circumstellar disk for example, the stellar polarization can indicate the presence of an unresolved (inner) disk if it can be proven (or reasonably expected) that the polarization does not originate from interstellar dust. In that case one would use the images with the star polarization still present when making a comparison with radiative transfer models. Measuring the polarization of the star is also vital when measuring the polarization of substellar companions.</p>
+<p class="last">The possibility to measure the polarization of the central star and the ability to create final images with and without this stellar polarization is a big advantage of IRDAP (see <a class="reference external" href="ADSlink">van Holstein et al. 2019</a>). For images of a star or circumstellar disk for example, the stellar polarization can indicate the presence of an unresolved (inner) disk if it can be proven (or reasonably expected) that the polarization does not originate from interstellar dust. In that case one would use the images with the star polarization still present when making a comparison with radiative transfer models. Measuring the polarization of the star is also vital when measuring the polarization of substellar companions.</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory <code class="docutils literal notranslate"><span class="pre">reduced</span></code>, i.e. those without the polarization subtracted.</p>
 </div>
-<p>To understand all the input parameters, continue to <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">Configuration file</span></a>.</p>
-</div>
+<p>To understand all the input parameters, continue with the <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">configuration file</span></a>.</p>
 </div>
 </div>
 

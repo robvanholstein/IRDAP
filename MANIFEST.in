@@ -3,3 +3,4 @@ recursive-include irdap *.conf
 recursive-include irdap/static_calibs *
 recursive-include docs *
 recursive-exclude irdap/example_data *
+recursive-exclude mailing_list.txt

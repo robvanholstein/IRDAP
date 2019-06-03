@@ -29,7 +29,7 @@
     :target: https://pypi.python.org/pypi/irdap/
 	
 .. |python| image:: https://img.shields.io/badge/Python-3.6%2C%203.7-yellow.svg?style=flat
-    :target: https://pypi.python.org/pypi/pynpoint
+    :target: https://pypi.python.org/pypi/irdap/
 
 .. |github| image:: https://img.shields.io/github/release/robvanholstein/IRDAP.svg
    :target: https://github.com/robvanholstein/IRDAP/ 
@@ -40,8 +40,11 @@
 .. |license| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
     :target: https://github.com/robvanholstein/IRDAP/blob/master/LICENSE
 
-.. |ads| image:: https://img.shields.io/badge/ads-%3CADS%20link%3E-blueviolet.svg
+.. |ads1| image:: https://img.shields.io/badge/ADS-%3CADS%20link%3E-blueviolet.svg
 	:target: <ADS link>
+
+.. |ads2| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2017)-blueviolet.svg
+	:target: https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V
 	
 .. Made ads-link above on https://shields.io/ with "your badge"
 	
@@ -50,11 +53,11 @@
 IRDAP
 =================================
 
-|pypi| |python| |github| |last-commit| |license| |ads|
+|pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
   
 IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data. Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2019) <ADS link>`_. 
 
-Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs the full reduction from raw data to the final data products.
+Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs a complete data reduction from raw data to final data products.
 
 .. attention::
    If you use IRDAP for your publication, please :ref:`cite our papers <Citing IRDAP>`.
@@ -79,6 +82,7 @@ Contents
    citing
    contributing    
    changelog
+   mailinglist
    acknowledgements
    GitHub <https://github.com/robvanholstein/IRDAP>
 

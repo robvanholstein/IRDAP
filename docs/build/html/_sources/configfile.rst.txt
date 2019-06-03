@@ -7,16 +7,17 @@ The configuration file with the input parameters for IRDAP is shown below:
 .. include:: ../../irdap/config.conf
    :literal:
 
-The input parameters are divided in four groups:
+The input parameters are divided into four groups:
 
 - :ref:`Basic pre-processing options`
 - :ref:`Basic post-processing options`
 - :ref:`Advanced pre-processing options`
 - :ref:`Advanced post-processing options`
 
-While the user will quite frequently have to adapt the basic options, the
-advanced options generally do not need to be changed. Below we discuss for each parameter of the configuration file what it does and what the valid input options are.
+Below we discuss for each parameter of the configuration file what it does and what the valid input options are.
 
+.. important::
+   While the user will quite frequently have to adapt the basic options, the advanced options generally do not need to be changed. 
 	
 Basic pre-processing options
 ----------------------------

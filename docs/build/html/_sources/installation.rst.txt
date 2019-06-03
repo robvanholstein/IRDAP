@@ -2,7 +2,7 @@
 Installation
 ============
 
-To use IRDAP, the user needs to have Python 3.6 or 3.7 installed. 
+To run IRDAP the user needs to have Python 3.6 or 3.7 installed. 
 
 Installing IRDAP
 ----------------
@@ -18,7 +18,7 @@ Because IRDAP is being actively developed, it is recommended to regularly check 
 
    pip install --upgrade irdap
    
-and install the latest version.
+and install the latest version. To be kept up-to-date via e-mail, sign up to the :ref:`mailing list <Mailing list>`.
 
 The most recent release of IRDAP is also available for download from the 
 `GithHub repository <https://github.com/robvanholstein/IRDAP/releases/latest/>`_. 
@@ -26,7 +26,7 @@ The most recent release of IRDAP is also available for download from the
 Testing the installation
 ------------------------
 
-In a terminal, try to access the basic help and the version of IRDAP:
+In the terminal, try to access the basic help and the version of IRDAP:
 ::
  
    irdap --help
@@ -35,4 +35,5 @@ In a terminal, try to access the basic help and the version of IRDAP:
 
 If that works, IRDAP is most likely installed correctly. 
 
-As a next step, it is recommended to run the :ref:`Example reduction`. 
+As a next step, it is recommended to run the :ref:`example reduction <Example reduction>`. 
+
