@@ -20,7 +20,7 @@ Changelog |last-commit| |issues|
    - (!) Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)
    - (!) Add model correction for narrowband filters
    - (!) Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)	
-
+      
    - (?) Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)	
    - (?) Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)
    - (?) Add option for 'stupid ADI' for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset

@@ -696,9 +696,15 @@ def check_sort_data_create_directories(frames_to_remove=[],
         
         if any([x['ESO INS1 FILT ID'] != object_filter for x in header_flat]):
             raise IOError('\n\nOne or more FLAT-files have a different filter than the OBJECT-files.')
+
+        if len(set([x['ESO INS1 OPTI2 NAME'] for x in header_flat])) != 1:
+            raise IOError('\n\nThe FLAT-files use different setups for the filter wheel containing the polarizer set.')
             
-        if any([x['ESO INS1 OPTI2 NAME'] != 'P0-90' for x in header_flat]):
-            raise IOError('\n\nOne or more FLAT-files do not have the P0-90 polarizer set inserted. The FLAT-files with and without P0-90 polarizer show significant differences.')
+        if not header_flat[0]['ESO INS1 OPTI2 NAME'] in ['P0-90', 'CLEAR']:
+            raise IOError('\n\nThe FLAT-files do not use the P0-90 polarizer set or no filter.')
+
+        if header_flat[0]['ESO INS1 OPTI2 NAME'] != 'P0-90':
+            printandlog('\nWARNING, the FLAT-files do not have the P0-90 polarizer set inserted. The polarizer set causes strong vignetting at the edges of the field of view, which will not be corrected with these flats.')
 
         if set([x['EXPTIME'] for x in header_dark_all]) != set([x['EXPTIME'] for x in header_flat]):
             raise IOError('\n\nThe exposure time of one or more FLAT-files cannot be matched to the exposure time of a DARK(,BACKGROUND)-file or vice versa.')
