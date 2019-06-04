@@ -3,8 +3,8 @@ Contributing and issues
 =======================
 
 Active help with the development of new functionalities and fixing bugs is very welcome. 
-In case you would like to contribute, feel free to fork the `Github repository 
-<https://github.com/robvanholstein/IRDAP/releases/latest/>`_ and to create a pull 
+In case you would like to contribute, feel free to fork the `GitHub repository 
+<https://github.com/robvanholstein/IRDAP>`_ and to create a pull 
 request. Please have a look at the :ref:`changelog <Changelog>` for a list of functionalities 
 that still need to be added.
 

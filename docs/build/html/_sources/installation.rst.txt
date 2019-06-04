@@ -21,7 +21,7 @@ Because IRDAP is being actively developed, it is recommended to regularly check 
 and install the latest version. To be kept up-to-date via e-mail, sign up to the :ref:`mailing list <Mailing list>`.
 
 The most recent release of IRDAP is also available for download from the 
-`GithHub repository <https://github.com/robvanholstein/IRDAP/releases/latest/>`_. 
+`GitHub repository <https://github.com/robvanholstein/IRDAP/releases/latest/>`_. 
 
 Testing the installation
 ------------------------

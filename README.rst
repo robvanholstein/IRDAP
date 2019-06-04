@@ -32,7 +32,7 @@
 IRDAP
 =====
 
-|pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
+|pypi| |python| |last-commit| |license| |ads1| |ads2|
 
 **IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce SPHERE-IRDIS polarimetric data that is written for Python 3.6 and 3.7.**
 
