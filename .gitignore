@@ -1,5 +1,5 @@
 __pycache__/
-/build/
+build/
 dist/
 irdap.egg-info/
 mailing_list.txt
