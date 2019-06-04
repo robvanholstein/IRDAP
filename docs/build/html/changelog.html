@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &mdash; IRDAP 0.1.2 documentation</title>
+  <title>Changelog and to-do &mdash; IRDAP 0.1.2 documentation</title>
   
 
   
@@ -90,7 +90,12 @@
 <li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
 <li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing and issues</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog  </a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Changelog and to-do</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#changelog">Changelog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#to-do-high-priority">To-do high priority</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#to-do-low-priority">To-do low priority</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
@@ -139,7 +144,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Changelog  </li>
+      <li>Changelog and to-do</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -158,39 +163,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="changelog-last-commit-issues">
-<span id="changelog"></span><h1>Changelog <a class="reference external" href="https://github.com/robvanholstein/IRDAP/"><img alt="last-commit" src="https://img.shields.io/github/last-commit/robvanholstein/IRDAP.svg?colorB=e6c000" /></a> <a class="reference external" href="https://github.com/robvanholstein/IRDAP/issues"><img alt="issues" src="https://img.shields.io/github/issues/robvanholstein/IRDAP.svg?color=b4001e" /></a><a class="headerlink" href="#changelog-last-commit-issues" title="Permalink to this headline">¶</a></h1>
-<div class="admonition-todo admonition" id="index-0">
-<p class="first admonition-title">Todo</p>
-<ul class="last simple">
-<li>(!) Replace static flat in Ks by one with P0-90 inserted</li>
-<li>(!) Combine data of different OB’s with automatic selection of correct center, sky and flux images</li>
-<li>(!) Add ADI (including PCA) of total intensity images for pupil-tracking observations</li>
-<li>(!) Change config file option skip_preprocessing to perform_preprocessing: True/False, perform_polarimetry: True/False and perform_adi: True/False</li>
-<li>(!) Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2</li>
-<li>(!) Add plot of center coordinates of center frames vs time</li>
-<li>(!) Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)</li>
-<li>(!) Add model correction for narrowband filters</li>
-<li>(!) Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)</li>
-<li>(?) Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)</li>
-<li>(?) Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)</li>
-<li>(?) Add option for ‘stupid ADI’ for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset</li>
-<li>(?) Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number</li>
-<li>(?) Add optional ADI (including PCA) for polarization images</li>
-<li>(?) Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)</li>
-<li>(?) When rotating images, make complete frame still visible to not cut out any parts of the data</li>
-<li>(?) Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images)</li>
-<li>(?) Test finding of satellite spots of center files when waffle pattern is ‘+’</li>
-<li>(?) Add weighted least-squares as option for model correction (depending on image quality or polarimetric efficiency)</li>
-<li>(?) Add multiprocessing for sigma filtering and centering of frames</li>
-<li>(?) Make IRDAP runable from a script by importing it and calling main function</li>
-<li>(?) Add option to scale the master sky frame to subtract from the object frames (especially for Ks; see also Gallicher et al. 2011)</li>
-<li>(?) Exclude saturated pixels in aperture to determine star polarization (same way as used in function fit_2d_gaussian)</li>
-<li>(?) Determine star polarization as a function of aperture radius</li>
-<li>(?) Add optional RDI for total intensity images</li>
-<li>(?) Make docstrings compliant with accepted conventions and create API doc on website</li>
-</ul>
-</div>
+  <div class="section" id="changelog-and-to-do">
+<h1>Changelog and to-do<a class="headerlink" href="#changelog-and-to-do" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="changelog">
+<h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
 <dt>v0.1.2 June 2019, R.G. van Holstein:</dt>
 <dd><ul class="first last simple">
@@ -199,6 +175,47 @@
 </ul>
 </dd>
 </dl>
+</div>
+<div class="section" id="to-do-high-priority">
+<h2>To-do high priority<a class="headerlink" href="#to-do-high-priority" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Replace static flat in Ks by one with P0-90 inserted</li>
+<li>Combine data of different OB’s with automatic selection of correct center, sky and flux images</li>
+<li>Add ADI (including PCA) of total intensity images for pupil-tracking observations</li>
+<li>Change config file option skip_preprocessing to perform_preprocessing: True/False, perform_polarimetry: True/False and perform_adi: True/False</li>
+<li>Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2</li>
+<li>Add plot of center coordinates of center frames vs time</li>
+<li>Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)</li>
+<li>Add model correction for narrowband filters</li>
+<li>Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="to-do-low-priority">
+<h2>To-do low priority<a class="headerlink" href="#to-do-low-priority" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)</li>
+<li>Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)</li>
+<li>Add option for ‘stupid ADI’ for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset</li>
+<li>Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number</li>
+<li>Add optional ADI (including PCA) for polarization images</li>
+<li>Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)</li>
+<li>When rotating images, make complete frame still visible to not cut out any parts of the data</li>
+<li>Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images)</li>
+<li>Test finding of satellite spots of center files when waffle pattern is ‘+’</li>
+<li>Add weighted least-squares as option for model correction (depending on image quality or polarimetric efficiency)</li>
+<li>Add multiprocessing for sigma filtering and centering of frames</li>
+<li>Make IRDAP runable from a script by importing it and calling main function</li>
+<li>Add option to scale the master sky frame to subtract from the object frames (especially for Ks; see also Gallicher et al. 2011)</li>
+<li>Exclude saturated pixels in aperture to determine star polarization (same way as used in function fit_2d_gaussian)</li>
+<li>Determine star polarization as a function of aperture radius</li>
+<li>Add optional RDI for total intensity images</li>
+<li>Make docstrings compliant with accepted conventions and create API doc on website</li>
+</ul>
+</div></blockquote>
+</div>
 </div>
 
 

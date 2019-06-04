@@ -8,7 +8,7 @@ Running IRDAP
 Reducing data with IRDAP is very straightforward and only requires two commands to be entered in the terminal. First, create a directory (e.g. :file:`/home/T_Cha_2016-02-20`) containing a subdirectory called :file:`raw` (i.e. :file:`/home/T_Cha_2016-02-20/raw`) in which you place the raw FITS-files. 
 
 .. attention::
-   The raw FITS-files should have `DPR TYPE` equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see :ref:`Pre-processing in brief`) `DPR TYPE` can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.
+   The raw FITS-files should have `DPR TYPE` equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see :ref:`Pre-processing in a nutshell`) `DPR TYPE` can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.
 
 .. hint::
    It is recommended to download the raw data from the `SPHERE data archive <http://archive.eso.org/wdb/wdb/eso/sphere/form>`_ and when doing so setting the search field `DPR TECH` to `any POLARIMETRY`. This way only data that is required for IRDAP will be downloaded.
@@ -30,8 +30,8 @@ to perform the data reduction.
 .. note::
 	In general a first reduction can be performed without making changes to the configuration file. After this first reduction, some of the input parameters can be adjusted and IRDAP can be run again (but this is often not necessary!).
  
-Pre-processing in brief
------------------------
+Pre-processing in a nutshell
+----------------------------
 
 The data reduction is divided in a pre-processing and a post-processing part. 
 
@@ -55,8 +55,8 @@ A master flux frame is created by processing the FLUX-files in a similar fashion
 
 The pre-processed OBJECT-data is written to the subdirectory ``preprocessed`` and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory ``calibration``.
 
-Post-processing in brief
-------------------------
+Post-processing in a nutshell
+-----------------------------
 
 For the post-processing part, IRDAP computes the double sum and double difference from the pre-processed OBJECT-files. It then applies the model-based correction method as described in `van Holstein et al. 2019 <ADS link>`_ to remove the instrumental polarization and cross-talk. The correction method for pupil-tracking observations has some differences compared to that of field-tracking observations (see `van Holstein et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_). Subsequently, the background in the images is subtracted and the polarization of the star determined. The FITS-files of the final images are then written to two subdirectories: 
 

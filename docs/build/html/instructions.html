@@ -88,14 +88,14 @@
 <li class="toctree-l1"><a class="reference internal" href="example.html">Example reduction</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage instructions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#running-irdap">Running IRDAP</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#pre-processing-in-brief">Pre-processing in brief</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#post-processing-in-brief">Post-processing in brief</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pre-processing-in-a-nutshell">Pre-processing in a nutshell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#post-processing-in-a-nutshell">Post-processing in a nutshell</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
 <li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing and issues</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog and to-do</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
@@ -170,7 +170,7 @@
 <p>Reducing data with IRDAP is very straightforward and only requires two commands to be entered in the terminal. First, create a directory (e.g. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20</span></code>) containing a subdirectory called <code class="file docutils literal notranslate"><span class="pre">raw</span></code> (i.e. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20/raw</span></code>) in which you place the raw FITS-files.</p>
 <div class="admonition attention">
 <p class="first admonition-title">Attention</p>
-<p class="last">The raw FITS-files should have <cite>DPR TYPE</cite> equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see <a class="reference internal" href="#pre-processing-in-brief"><span class="std std-ref">Pre-processing in brief</span></a>) <cite>DPR TYPE</cite> can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.</p>
+<p class="last">The raw FITS-files should have <cite>DPR TYPE</cite> equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see <a class="reference internal" href="#pre-processing-in-a-nutshell"><span class="std std-ref">Pre-processing in a nutshell</span></a>) <cite>DPR TYPE</cite> can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.</p>
 </div>
 <div class="admonition hint">
 <p class="first admonition-title">Hint</p>
@@ -192,8 +192,8 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="last">In general a first reduction can be performed without making changes to the configuration file. After this first reduction, some of the input parameters can be adjusted and IRDAP can be run again (but this is often not necessary!).</p>
 </div>
 </div>
-<div class="section" id="pre-processing-in-brief">
-<h2>Pre-processing in brief<a class="headerlink" href="#pre-processing-in-brief" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pre-processing-in-a-nutshell">
+<h2>Pre-processing in a nutshell<a class="headerlink" href="#pre-processing-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
 <p>The data reduction is divided in a pre-processing and a post-processing part.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -216,8 +216,8 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p>A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flat frame.</p>
 <p>The pre-processed OBJECT-data is written to the subdirectory <code class="docutils literal notranslate"><span class="pre">preprocessed</span></code> and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory <code class="docutils literal notranslate"><span class="pre">calibration</span></code>.</p>
 </div>
-<div class="section" id="post-processing-in-brief">
-<h2>Post-processing in brief<a class="headerlink" href="#post-processing-in-brief" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="post-processing-in-a-nutshell">
+<h2>Post-processing in a nutshell<a class="headerlink" href="#post-processing-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
 <p>For the post-processing part, IRDAP computes the double sum and double difference from the pre-processed OBJECT-files. It then applies the model-based correction method as described in <a class="reference external" href="ADSlink">van Holstein et al. 2019</a> to remove the instrumental polarization and cross-talk. The correction method for pupil-tracking observations has some differences compared to that of field-tracking observations (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V">van Holstein et al. 2017</a>). Subsequently, the background in the images is subtracted and the polarization of the star determined. The FITS-files of the final images are then written to two subdirectories:</p>
 <ul class="simple">
 <li><code class="docutils literal notranslate"><span class="pre">reduced</span></code>, containing the final images with the polarization of the star still present;</li>

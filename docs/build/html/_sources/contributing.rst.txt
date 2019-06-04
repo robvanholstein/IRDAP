@@ -5,7 +5,7 @@ Contributing and issues
 Active help with the development of new functionalities and fixing bugs is very welcome. 
 In case you would like to contribute, feel free to fork the `GitHub repository 
 <https://github.com/robvanholstein/IRDAP>`_ and to create a pull 
-request. Please have a look at the :ref:`changelog <Changelog>` for a list of functionalities 
+request. Please have a look at the :ref:`to-do list <To-do high priority>` for the functionalities 
 that still need to be added.
 
 If you encounter a bug or problem, please `submit a 
