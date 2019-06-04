@@ -2,7 +2,7 @@ include LICENSE
 recursive-include irdap *.conf
 recursive-include irdap/static_calibs *
 recursive-include docs/build *
-recursive-exclude docs/index.html
+recursive-include docs/index.html
 recursive-exclude irdap/example_data *
 recursive-exclude MANIFEST.in
 recursive-exclude mailing_list.txt
