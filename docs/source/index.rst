@@ -53,13 +53,11 @@
 IRDAP
 =================================
 
-|pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
-  
 IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data. Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2019) <ADS link>`_. IRDAP handles data taken both in field- and pupil-tracking mode and using the broadband filters Y, J, H and K\ :sub:`s`. In the near future, support for the narrowband filter will be added as well.
 
 Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs a complete data reduction from raw data to final data products.
 
-.. attention::
+.. note::
    If you use IRDAP for your publication, please :ref:`cite our papers <Citing IRDAP>`.
 
 .. figure:: ./figs/home_3disks.png
@@ -69,6 +67,8 @@ Reducing data with IRDAP is very straightforward and does not require the user t
 
 IRDAP yields a multitude of improvements for observations of circumstellar disks: it enables us to accurately study the morphology of disks, measure non-azimuthal polarization and determine scattering phase functions and particle properties. Because IRDAP discerns instrumental polarization from stellar polarization, it is a vital tool for accurate radiative transfer modeling of disks and enables the detection of unresolved (inner) disks and the measurement of the polarization of substellar companions. Finally, IRDAP enables accurate data-reduction for targets that cannot be reduced with the conventional data-reduction methods (because there is no bright star in the field of view), such as as solar system objects and galaxies.
 
+|pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
+  
 Contents
 ---------
 .. toctree::
