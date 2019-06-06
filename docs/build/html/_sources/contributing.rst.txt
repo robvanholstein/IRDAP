@@ -1,6 +1,6 @@
 
-Contributing and issues
-=======================
+Contributing & issues
+=====================
 
 Active help with the development of new functionalities and fixing bugs is very welcome. 
 In case you would like to contribute, feel free to fork the `GitHub repository 

@@ -8,8 +8,8 @@
 ..
    |last-commit| |issues|
 
-Changelog and to-do
-===================
+Changelog & to-do
+=================
 
 Changelog
 ---------

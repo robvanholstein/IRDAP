@@ -8,8 +8,8 @@
 ..
    |last-commit| |issues|
 
-Changelog and to-do
-===================
+Changelog & to-do
+=================
 
 Changelog
 ---------
@@ -17,6 +17,10 @@ Changelog
 v0.1.2 June 2019, R.G. van Holstein:
  - Release of IRDAP package on PyPI and GitHub
  - Documentation put online
+
+..
+   v0.1.3 June 2019, R.G. van Holstein:
+    - Replaced static flat in Ks by one with P0-90 inserted (REMOVE in to-do below)
  
 To-do high priority
 -------------------
