@@ -11,7 +11,7 @@ Reducing data with IRDAP is very straightforward and only requires two commands 
    The raw FITS-files should have `DPR TYPE` equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see :ref:`Pre-processing in a nutshell`) `DPR TYPE` can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.
 
 .. hint::
-   It is recommended to download the raw data from the `SPHERE data archive <http://archive.eso.org/wdb/wdb/eso/sphere/form>`_ and when doing so setting the search field `DPR TECH` to `any POLARIMETRY`. This way only data that is required for IRDAP will be downloaded.
+   To only download the raw data that is required for IRDAP, use the `SPHERE data archive <http://archive.eso.org/wdb/wdb/eso/sphere/form>`_ and set the search field `DPR TECH` to `any POLARIMETRY`.
    
 In the terminal navigate to the main directory (e.g. ``cd /home/T_Cha_2016-02-20``) and type:
 ::

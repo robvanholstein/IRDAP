@@ -34,7 +34,8 @@ To-do high priority
    - Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)
    - Add model correction for narrowband filters
    - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)	
-
+   - Add detection limits (e.g. contrast curves)
+   
 To-do low priority
 ------------------
      
