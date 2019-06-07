@@ -2,6 +2,9 @@
 Citing IRDAP
 ============
 
+.. attention::
+   The paper *van Holstein et al. 2019* is to be published soon. Please return to this page later for the correct link and BibTeX citation to the paper.  
+
 If you use IRDAP for your publication, please cite `van Holstein et al. 
 (2019) <ADS link>`_. For data in pupil-tracking mode please additionally 
 cite `van Holstein et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
