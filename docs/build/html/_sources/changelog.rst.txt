@@ -14,18 +14,17 @@ Changelog & to-do
 Changelog
 ---------
 
+v0.2.0 June 2019, R.G. van Holstein:
+ - Changed the definition of the tuple of the input parameters *annulus_star*, *annulus_background* and *flux_annulus_background*: *width* is replaced by *outer_radius* and the definition of *start_angle* and *end_angle* is now the same as in DS9
+ - Replaced static flat in Ks by one with P0-90 inserted
+	
 v0.1.2 June 2019, R.G. van Holstein:
  - Release of IRDAP package on PyPI and GitHub
  - Documentation put online
-
-..
-   v0.1.3 June 2019, R.G. van Holstein:
-    - Replaced static flat in Ks by one with P0-90 inserted (REMOVE in to-do below)
  
 To-do high priority
 -------------------
 
-   - Replace static flat in Ks by one with P0-90 inserted
    - Combine data of different OB's with automatic selection of correct center, sky and flux images
    - Add ADI (including PCA) of total intensity images for pupil-tracking observations
    - Change config file option skip_preprocessing to perform_preprocessing: True/False, perform_polarimetry: True/False and perform_adi: True/False
@@ -43,7 +42,8 @@ To-do low priority
    - Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)
    - Add option for 'stupid ADI' for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset
    - Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number
-   - Add optional ADI (including PCA) for polarization images	
+   - Add optional ADI (including PCA) for polarization images
+   - Make figures with sub-images horizontal, or make multiple lines of left and right images in a single figure   
    - Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)
    - When rotating images, make complete frame still visible to not cut out any parts of the data
    - Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images)

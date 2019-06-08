@@ -76,20 +76,20 @@ Basic post-processing options
 
    ``automatic``, ``ao residuals``, ``star aperture``, `list`, `tuple` (default = ``automatic``)
 
-   Annulus used to measure the polarization of the central star (or any other source in the field of view) from the *Q*-, *I_Q*-, *U*-, and *I_U*-images. This measured polarization signal is subtracted from the polarization images written to the subdirectory ``reduced_star_pol_subtr``. For the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk. The measured polarization signal is affected by the subtraction of the background in the images (see annulus_background_).
+   Annulus used to measure the polarization of the central star (or any other source in the field of view) from the *Q*-, *I*\ :sub:`Q`-, *U*-, and *I*\ :sub:`U`-images. This measured polarization signal is subtracted from the polarization images written to the subdirectory ``reduced_star_pol_subtr``. For the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. The measured polarization signal is affected by the subtraction of the background in the images (see annulus_background_).
    
-   If ``ao residuals``, the annulus will be centered on the central star and be located over the AO residuals. The inner radius and width of the annulus will automatically be adapted to the filter used. If ``star aperture``, the star polarization will be determined from a small aperture with a radius of 11 pixels located at the position of the central star. If ``automatic``, an annulus over the AO residuals (as for ``ao residuals``) will be used in case of coronagraphic data, and a small aperture at the position of the central star (as for ``star aperture``) in case of non-coronagraphic data. 
+   If ``ao residuals``, the annulus will be centered on the central star and be located over the AO residuals. The inner and outer radius of the annulus will automatically be adapted to the filter used. If ``star aperture``, the star polarization will be determined from a small aperture with a radius of 11 pixels located at the position of the central star. If ``automatic``, an annulus over the AO residuals (as for ``ao residuals``) will be used in case of coronagraphic data, and a small aperture at the position of the central star (as for ``star aperture``) in case of non-coronagraphic data. 
    
    Generally the user would do a first data reduction using ``automatic``. If after this first reduction it appears that more control over the exact shape of the annulus is required, the user can define the annulus with a tuple of 6 parameters:
    
    - *coord_center_x*: x-coordinate of center (pixels)
    - *coord_center_y*: y-coordinate of center (pixels)
    - *inner_radius*: Inner radius (pixels)
-   - *width*: Width (pixels)
+   - *outer_radius*: Outer radius (pixels)
    - *start_angle*: Start angle of annulus sector (deg)
    - *end_angle*: End angle of annulus sector (deg)
    
-   For example ``(512.5, 512.5, 60, 35, 0, 360)`` will create an annulus that is centered on the central star and is located over the AO residuals in H-band.
+   For example ``(512.5, 512.5, 60, 95, 0, 360)`` will create an annulus that is centered on the central star and is located over the AO residuals in H-band.
 
    .. attention::
       IRDAP uses the same 1-based indexed coordinates as `DS9 <http://ds9.si.edu/>`_. Therefore coordinates read from DS9 can be used for the configuration file without applying any conversion.
@@ -97,9 +97,11 @@ Basic post-processing options
       IRDAP centers the frames at the coordinates (x, y) = (512.5, 512.5). Therefore a centered annulus will have *coord_center_x* and *coord_center_y* equal to 512.5.
 
    .. attention::
-      *start_angle* and *end_angle* are defined with respect to the orientation of the final images with 0 deg oriented up and positive angles rotating counterclockwise. Therefore an angle of 0 deg points to the North, except when single_posang_north_up_ is set to ``False`` for observations taken in field-tracking mode with a single derotator position angle.
-   
-   If even more control over the shape of the annulus is required, the user can define a list of length-6-tuples. This is for instance useful to exclude signal of a circumstellar disk from the annulus. ``[(512.5, 512.5, 60, 35, 15, 165), (512.5, 512.5, 60, 35, 195, 345)]`` will for example create an annulus with a gap at the top and bottom each spanning 30 deg.
+      *start_angle* and *end_angle* are defined with respect to the orientation of the final images with 0 deg oriented to the right and positive angles rotating counterclockwise. Therefore an angle of 0 deg points to the West, except when single_posang_north_up_ is set to ``False`` for observations taken in field-tracking mode with a single derotator position angle.
+	   
+      The definition of the angles is the same as used in `DS9 <http://ds9.si.edu/>`_. When using DS9 to draw a line starting at the center coordinates, the angle indicated can be used for the configuration file without applying any conversion.
+
+   If even more control over the shape of the annulus is required, the user can define a list of length-6-tuples. This is for instance useful to exclude signal of a circumstellar disk from the annulus. ``[(512.5, 512.5, 60, 95, 105, 255), (512.5, 512.5, 60, 95, 285, 75)]`` will for example create an annulus with a gap at the top and bottom each spanning 30 deg.
 
 
 .. _annulus_background:
@@ -108,9 +110,9 @@ Basic post-processing options
 
    ``large annulus``, `list`, `tuple` (default = ``large annulus``)
 
-   Annulus used to measure and remove the background in the *Q*-, *I_Q*-, *U*-, and *I_U*-images. This background subtraction also affects the computation of the polarization of the central star (see annulus_star_). For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. 
+   Annulus used to measure and remove the background in the *Q*-, *I*\ :sub:`Q`-, *U*-, and *I*\ :sub:`U`-images. This background subtraction also affects the computation of the polarization of the central star (see annulus_star_). For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. 
   
-   If ``large annulus``, the annulus will be centered on the central star and be located far away from the star with an inner radius of 360 pixels and a width of 60 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for annulus_star_.
+   If ``large annulus``, the annulus will be centered on the central star and be located far away from the star with an inner radius of 360 pixels and an outer radius of 420 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for annulus_star_.
 
 
 .. py:function:: normalized_polarization_images:
@@ -119,15 +121,15 @@ Basic post-processing options
 
    If ``True``, create final images of degree of linear polarization, normalized Stokes *q* and *u* (see `van Holstein et al. 2019 <ADS link>`_) and degree and angle of linear polarization computed from *q* and *u*: 
    
-   - DoLP = sqrt(Q^2 + U^2) / (0.5 * (I_Q + I_U))
-   - q = Q / I_Q
-   - u = U / I_U
-   - AoLP_norm = 0.5 * arctan(u / q)
-   - DoLP_norm = sqrt(q^2 + u^2)
+   - *DoLP* = sqrt(*Q*\ :sup:`2`\ + *U*\ :sup:`2`\) / [0.5 (*I*\ :sub:`Q` + *I*\ :sub:`U`)]
+   - *q* = *Q* / *I*\ :sub:`Q`
+   - *u* = *U* / *I*\ :sub:`U`
+   - *AoLP_norm* = 0.5 arctan(*u* / *q*)
+   - *DoLP_norm* = sqrt(*q*\ :sup:`2`\ + *u*\ :sup:`2`\)
    
    These additional final images are only valid if all flux in the images originates from the source of interest. This is generally the case for observations of for example solar system objects or galaxies. The images are generally not valid for observations of circumstellar disks or companions because in that case a large part of the flux in the total intensity images originates from the central star. 
    
-   DoLP_norm and AoLP_norm are potentially more accurate than DoLP (above) and AoLP = 0.5 * arctan(U / Q) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If ``False``, do not create these images.
+   *DoLP_norm* and *AoLP_norm* are potentially more accurate than *DoLP* (above) and *AoLP* = 0.5 arctan(*U* / *Q*) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If ``False``, do not create these images.
 
 Advanced pre-processing options
 -------------------------------
@@ -237,7 +239,7 @@ Advanced pre-processing options
 
    ``large annulus``, `list`, `tuple` (default = ``large annulus``)
 
-   Annulus used to remove the background in the FLUX-frames. For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. If ``large annulus``, the annulus will be centered on the central star and be located far away from the star with an inner radius of 320 pixels and a width of 60 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for annulus_star_.
+   Annulus used to remove the background in the FLUX-frames. For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. If ``large annulus``, the annulus will be centered on the central star and be located far away from the star with an inner radius of 320 pixels and an outer radius of 380 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for annulus_star_.
 
 
 Advanced post-processing options

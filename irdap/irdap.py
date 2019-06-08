@@ -2539,9 +2539,9 @@ def compute_annulus_values(cube, param):
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             
     Output:
         values_annulus: values of the image cube in the annulus
@@ -2565,15 +2565,14 @@ def compute_annulus_values(cube, param):
         param = [param]
 
     for param_sel in param:
-        coord_center_x, coord_center_y, inner_radius, width, start_angle, end_angle = param_sel
-        outer_radius = inner_radius + width
+        coord_center_x, coord_center_y, inner_radius, outer_radius, start_angle, end_angle = param_sel
 
         start_angle = np.mod(start_angle, 360)
         end_angle = np.mod(end_angle, 360)
         
         # Of each pixel calculate radius and angle in range [0, 360)
         radius = np.sqrt((xm - coord_center_x)**2 + (ym - coord_center_y)**2)
-        angle = np.mod(np.rad2deg(np.arctan2(coord_center_x - xm, ym - coord_center_y)), 360)
+        angle = np.mod(np.rad2deg(np.arctan2(ym - coord_center_y, xm - coord_center_x)), 360)
            
         # Select pixels that satisfy provided requirements
         if start_angle < end_angle:
@@ -2613,10 +2612,10 @@ def subtract_background(cube, annulus_background):
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+
     Output:
         cube_background_subtracted: image cube or frame with background subtracted
         background: float or array of background values for each image
@@ -2670,11 +2669,11 @@ def process_flux_frames(path_flux_files,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and 
-                rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and 
-                rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise)
         sigma_filtering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
         centering_method: method to center the images. If 'manual', use fixed 
@@ -2778,9 +2777,9 @@ def annulus_1_to_0_based(annulus):
             coord_center_x: x-coordinate of center (pixels; 1-based)
             coord_center_y: y-coordinate of center (pixels; 1-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             
     Output:
         annulus: same as for input, but with coord_center_x and coord_center_y
@@ -2812,9 +2811,9 @@ def annulus_0_to_1_based(annulus):
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             
     Output:
         annulus: same as for input, but with coord_center_x and coord_center_y
@@ -2986,14 +2985,14 @@ def perform_preprocessing(frames_to_remove=[],
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and 
-                rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and 
-                rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise)
             If string 'large annulus' the annulus will be star-centered and 
             located far away from the star with an inner radius of 320 pixels
-            and a width of 60 pixels (default = 'large annulus').
+            and an out radius of 380 pixels (default = 'large annulus').
         save_preprocessed_data: If True, save preprocessed cubes of single-sum 
             and single-difference images in the 'preprocessed' folder so that 
             the preprocessing can be skipped when re-running the pipeline
@@ -3233,7 +3232,7 @@ def perform_preprocessing(frames_to_remove=[],
                 for x in flux_annulus_background:
                     printandlog(annulus_0_to_1_based(x))
         elif flux_annulus_background == 'large annulus':
-            flux_annulus_background = (511.5, 511.5, 320, 60, 0, 360)
+            flux_annulus_background = (511.5, 511.5, 320, 380, 0, 360)
             printandlog('\nThe background will be determined with a star-centered annulus located far away from the star:')
             printandlog(annulus_0_to_1_based(flux_annulus_background))
 
@@ -3288,15 +3287,10 @@ def perform_preprocessing(frames_to_remove=[],
 #            coord_center_x: x-coordinate of center (pixels; 0-based)
 #            coord_center_y: y-coordinate of center (pixels; 0-based)
 #            inner_radius: inner radius (pixels)
-#            width: width (pixels)
-#            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-#            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)#        annulus_Y: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
-#            coord_center_x: x-coordinate of center (pixels; 0-based)
-#            coord_center_y: y-coordinate of center (pixels; 0-based)
-#            inner_radius: inner radius (pixels)
-#            width: width (pixels)
-#            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-#            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)#              
+#            outer_radius: outer_radius (pixels)
+#            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+#            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)#            coord_center_x: x-coordinate of center (pixels; 0-based)
+         
 #    Output:
 #        flux_star: ?
 #        
@@ -3452,16 +3446,16 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
         annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
               
     Output:
         q: normalized Stokes q measured in annulus
@@ -3818,16 +3812,16 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
         annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
         combination_method_polarization: method to be used to produce the incident Q- and U-images, 
             'least squares', 'trimmed mean' or 'median' (default = 'least squares')
         trimmed_mean_prop_to_cut_polar: fraction to cut off of both tails of the distribution if 
@@ -4424,12 +4418,12 @@ def perform_postprocessing(cube_left_frames,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             If string 'ao residuals' the annulus will be automatically determined and 
-            be star-centered and located over the AO residuals. The inner radius 
-            and width of the annulus will depend on the filter used. If 
+            be star-centered and located over the AO residuals. The inner and 
+            outer radius of the annulus will depend on the filter used. If 
             'star aperture' a small aparture located at the position of
             the central star will be used. If 'automatic', annulus_star will 
             first be set to 'ao residuals' in case of coronagraphic data, and to 
@@ -4438,12 +4432,12 @@ def perform_postprocessing(cube_left_frames,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             If string 'large annulus' the annulus will be star-centered and 
             located far away from the star with an inner radius of 360 pixels
-            and a width of 60 pixels (default = 'large annulus').
+            and an outer radius of 420 pixels (default = 'large annulus').
         double_difference_type: type of double difference to be computed, either
         'conventional' or 'normalized' (see van Holstein et al. 2019; default = 'conventional')
         remove_vertical_band_detector_artefact: If True remove the vertical band detector artefact seen in 
@@ -4499,13 +4493,13 @@ def perform_postprocessing(cube_left_frames,
                 printandlog(annulus_0_to_1_based(x))
     elif annulus_star == 'ao residuals':
         if filter_used == 'FILT_BBF_Y':
-            annulus_star = (511.5, 511.5, 40, 25, 0, 360)
+            annulus_star = (511.5, 511.5, 40, 65, 0, 360)
         elif filter_used == 'FILT_BBF_J':
-            annulus_star = (511.5, 511.5, 45, 30, 0, 360)
+            annulus_star = (511.5, 511.5, 45, 75, 0, 360)
         elif filter_used == 'FILT_BBF_H':
-            annulus_star = (511.5, 511.5, 60, 35, 0, 360)
+            annulus_star = (511.5, 511.5, 60, 95, 0, 360)
         elif filter_used == 'FILT_BBF_Ks':
-            annulus_star = (511.5, 511.5, 80, 40, 0, 360)  
+            annulus_star = (511.5, 511.5, 80, 120, 0, 360)  
         printandlog('\nThe star polarization will be determined with a star-centered annulus located over the AO residuals:')
         printandlog(annulus_0_to_1_based(annulus_star))
         if coronagraph_used == 'N_NS_CLEAR':
@@ -4524,7 +4518,7 @@ def perform_postprocessing(cube_left_frames,
             for x in annulus_background:
                 printandlog(annulus_0_to_1_based(x))
     elif annulus_background == 'large annulus':
-        annulus_background = (511.5, 511.5, 360, 60, 0, 360)
+        annulus_background = (511.5, 511.5, 360, 420, 0, 360)
         printandlog('\nThe background will be determined with a star-centered annulus located far away from the central star:')
         printandlog(annulus_0_to_1_based(annulus_background))
     

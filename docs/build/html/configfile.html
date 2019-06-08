@@ -95,8 +95,8 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing and issues</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog and to-do</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing &amp; issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog &amp; to-do</a></li>
 <li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
 <li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
@@ -265,18 +265,18 @@
 <dt>
 <code class="descname">annulus_star:</code></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">automatic</span></code>, <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>, <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>, <cite>list</cite>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">automatic</span></code>)</p>
-<p>Annulus used to measure the polarization of the central star (or any other source in the field of view) from the <em>Q</em>-, <em>I_Q</em>-, <em>U</em>-, and <em>I_U</em>-images. This measured polarization signal is subtracted from the polarization images written to the subdirectory <code class="docutils literal notranslate"><span class="pre">reduced_star_pol_subtr</span></code>. For the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk. The measured polarization signal is affected by the subtraction of the background in the images (see <a class="reference internal" href="#annulus-background">annulus_background</a>).</p>
-<p>If <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>, the annulus will be centered on the central star and be located over the AO residuals. The inner radius and width of the annulus will automatically be adapted to the filter used. If <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>, the star polarization will be determined from a small aperture with a radius of 11 pixels located at the position of the central star. If <code class="docutils literal notranslate"><span class="pre">automatic</span></code>, an annulus over the AO residuals (as for <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>) will be used in case of coronagraphic data, and a small aperture at the position of the central star (as for <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>) in case of non-coronagraphic data.</p>
+<p>Annulus used to measure the polarization of the central star (or any other source in the field of view) from the <em>Q</em>-, <em>I</em><sub>Q</sub>-, <em>U</em>-, and <em>I</em><sub>U</sub>-images. This measured polarization signal is subtracted from the polarization images written to the subdirectory <code class="docutils literal notranslate"><span class="pre">reduced_star_pol_subtr</span></code>. For the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. The measured polarization signal is affected by the subtraction of the background in the images (see <a class="reference internal" href="#annulus-background">annulus_background</a>).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>, the annulus will be centered on the central star and be located over the AO residuals. The inner and outer radius of the annulus will automatically be adapted to the filter used. If <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>, the star polarization will be determined from a small aperture with a radius of 11 pixels located at the position of the central star. If <code class="docutils literal notranslate"><span class="pre">automatic</span></code>, an annulus over the AO residuals (as for <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>) will be used in case of coronagraphic data, and a small aperture at the position of the central star (as for <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>) in case of non-coronagraphic data.</p>
 <p>Generally the user would do a first data reduction using <code class="docutils literal notranslate"><span class="pre">automatic</span></code>. If after this first reduction it appears that more control over the exact shape of the annulus is required, the user can define the annulus with a tuple of 6 parameters:</p>
 <ul class="simple">
 <li><em>coord_center_x</em>: x-coordinate of center (pixels)</li>
 <li><em>coord_center_y</em>: y-coordinate of center (pixels)</li>
 <li><em>inner_radius</em>: Inner radius (pixels)</li>
-<li><em>width</em>: Width (pixels)</li>
+<li><em>outer_radius</em>: Outer radius (pixels)</li>
 <li><em>start_angle</em>: Start angle of annulus sector (deg)</li>
 <li><em>end_angle</em>: End angle of annulus sector (deg)</li>
 </ul>
-<p>For example <code class="docutils literal notranslate"><span class="pre">(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">35,</span> <span class="pre">0,</span> <span class="pre">360)</span></code> will create an annulus that is centered on the central star and is located over the AO residuals in H-band.</p>
+<p>For example <code class="docutils literal notranslate"><span class="pre">(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">95,</span> <span class="pre">0,</span> <span class="pre">360)</span></code> will create an annulus that is centered on the central star and is located over the AO residuals in H-band.</p>
 <div class="admonition attention">
 <p class="first admonition-title">Attention</p>
 <p>IRDAP uses the same 1-based indexed coordinates as <a class="reference external" href="http://ds9.si.edu/">DS9</a>. Therefore coordinates read from DS9 can be used for the configuration file without applying any conversion.</p>
@@ -284,17 +284,18 @@
 </div>
 <div class="admonition attention">
 <p class="first admonition-title">Attention</p>
-<p class="last"><em>start_angle</em> and <em>end_angle</em> are defined with respect to the orientation of the final images with 0 deg oriented up and positive angles rotating counterclockwise. Therefore an angle of 0 deg points to the North, except when <a class="reference internal" href="#single-posang-north-up">single_posang_north_up</a> is set to <code class="docutils literal notranslate"><span class="pre">False</span></code> for observations taken in field-tracking mode with a single derotator position angle.</p>
+<p><em>start_angle</em> and <em>end_angle</em> are defined with respect to the orientation of the final images with 0 deg oriented to the right and positive angles rotating counterclockwise. Therefore an angle of 0 deg points to the West, except when <a class="reference internal" href="#single-posang-north-up">single_posang_north_up</a> is set to <code class="docutils literal notranslate"><span class="pre">False</span></code> for observations taken in field-tracking mode with a single derotator position angle.</p>
+<p class="last">The definition of the angles is the same as used in <a class="reference external" href="http://ds9.si.edu/">DS9</a>. When using DS9 to draw a line starting at the center coordinates, the angle indicated can be used for the configuration file without applying any conversion.</p>
 </div>
-<p>If even more control over the shape of the annulus is required, the user can define a list of length-6-tuples. This is for instance useful to exclude signal of a circumstellar disk from the annulus. <code class="docutils literal notranslate"><span class="pre">[(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">35,</span> <span class="pre">15,</span> <span class="pre">165),</span> <span class="pre">(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">35,</span> <span class="pre">195,</span> <span class="pre">345)]</span></code> will for example create an annulus with a gap at the top and bottom each spanning 30 deg.</p>
+<p>If even more control over the shape of the annulus is required, the user can define a list of length-6-tuples. This is for instance useful to exclude signal of a circumstellar disk from the annulus. <code class="docutils literal notranslate"><span class="pre">[(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">95,</span> <span class="pre">105,</span> <span class="pre">255),</span> <span class="pre">(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">95,</span> <span class="pre">285,</span> <span class="pre">75)]</span></code> will for example create an annulus with a gap at the top and bottom each spanning 30 deg.</p>
 </dd></dl>
 
 <span class="target" id="annulus-background"></span><dl class="function">
 <dt>
 <code class="descname">annulus_background:</code></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, <cite>list</cite>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>)</p>
-<p>Annulus used to measure and remove the background in the <em>Q</em>-, <em>I_Q</em>-, <em>U</em>-, and <em>I_U</em>-images. This background subtraction also affects the computation of the polarization of the central star (see <a class="reference internal" href="#annulus-star">annulus_star</a>). For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view.</p>
-<p>If <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, the annulus will be centered on the central star and be located far away from the star with an inner radius of 360 pixels and a width of 60 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
+<p>Annulus used to measure and remove the background in the <em>Q</em>-, <em>I</em><sub>Q</sub>-, <em>U</em>-, and <em>I</em><sub>U</sub>-images. This background subtraction also affects the computation of the polarization of the central star (see <a class="reference internal" href="#annulus-star">annulus_star</a>). For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, the annulus will be centered on the central star and be located far away from the star with an inner radius of 360 pixels and an outer radius of 420 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
 </dd></dl>
 
 <dl class="function">
@@ -303,14 +304,14 @@
 <dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
 <p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, create final images of degree of linear polarization, normalized Stokes <em>q</em> and <em>u</em> (see <a class="reference external" href="ADSlink">van Holstein et al. 2019</a>) and degree and angle of linear polarization computed from <em>q</em> and <em>u</em>:</p>
 <ul class="simple">
-<li>DoLP = sqrt(Q^2 + U^2) / (0.5 * (I_Q + I_U))</li>
-<li>q = Q / I_Q</li>
-<li>u = U / I_U</li>
-<li>AoLP_norm = 0.5 * arctan(u / q)</li>
-<li>DoLP_norm = sqrt(q^2 + u^2)</li>
+<li><em>DoLP</em> = sqrt(<em>Q</em><sup>2</sup>+ <em>U</em><sup>2</sup>) / [0.5 (<em>I</em><sub>Q</sub> + <em>I</em><sub>U</sub>)]</li>
+<li><em>q</em> = <em>Q</em> / <em>I</em><sub>Q</sub></li>
+<li><em>u</em> = <em>U</em> / <em>I</em><sub>U</sub></li>
+<li><em>AoLP_norm</em> = 0.5 arctan(<em>u</em> / <em>q</em>)</li>
+<li><em>DoLP_norm</em> = sqrt(<em>q</em><sup>2</sup>+ <em>u</em><sup>2</sup>)</li>
 </ul>
 <p>These additional final images are only valid if all flux in the images originates from the source of interest. This is generally the case for observations of for example solar system objects or galaxies. The images are generally not valid for observations of circumstellar disks or companions because in that case a large part of the flux in the total intensity images originates from the central star.</p>
-<p>DoLP_norm and AoLP_norm are potentially more accurate than DoLP (above) and AoLP = 0.5 * arctan(U / Q) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not create these images.</p>
+<p><em>DoLP_norm</em> and <em>AoLP_norm</em> are potentially more accurate than <em>DoLP</em> (above) and <em>AoLP</em> = 0.5 arctan(<em>U</em> / <em>Q</em>) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not create these images.</p>
 </dd></dl>
 
 </div>
@@ -406,7 +407,7 @@
 <dt>
 <code class="descname">flux_annulus_background:</code></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, <cite>list</cite>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>)</p>
-<p>Annulus used to remove the background in the FLUX-frames. For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. If <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, the annulus will be centered on the central star and be located far away from the star with an inner radius of 320 pixels and a width of 60 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
+<p>Annulus used to remove the background in the FLUX-frames. For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. If <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, the annulus will be centered on the central star and be located far away from the star with an inner radius of 320 pixels and an outer radius of 380 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
 </dd></dl>
 
 </div>
