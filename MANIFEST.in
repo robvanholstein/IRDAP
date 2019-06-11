@@ -1,9 +1,13 @@
 include LICENSE
+exclude MANIFEST.in
 recursive-include irdap *.conf
 recursive-include irdap/static_calibs *
 recursive-include docs/build *
 recursive-include docs/index.html
 recursive-exclude irdap/example_data *
-recursive-exclude MANIFEST.in
+recursive-exclude docs/source *
+exclude docs/.nojekyll
+exclude docs/make.bat
+exclude docs/Makefile
 recursive-exclude mailing_list.txt
 recursive-exclude update_procedure.txt

@@ -592,16 +592,24 @@ def check_sort_data_create_directories(frames_to_remove=[],
         
     if not all([x['ESO INS4 OPTI8 NAME'] == 'H_NIR' for x in header_on_sky]):
         raise IOError('\n\nOne or more files of the on-sky data do not have the NIR half-wave plate inserted.')
-    
+
+    if not all([x['ESO INS1 OPTI2 NAME'] == 'P0-90' for x in header_on_sky]):
+        raise IOError('\n\nOne or more files of the on-sky data do not have the P0-90 polarizer set inserted.')
+        
     if len(set([x['ESO INS1 FILT ID'] for x in header_on_sky])) != 1:
         raise IOError('\n\nThe on-sky data provided have different filters.')
 
-    if not header_on_sky[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
-        raise IOError('\n\nThe filter used for the on-sky data is not broadband Y, J, H or Ks. Narrowband filters will be supported in the near future.')
-    
-    if not all([x['ESO INS1 OPTI2 NAME'] == 'P0-90' for x in header_on_sky]):
-        raise IOError('\n\nOne or more files of the on-sky data do not have the P0-90 polarizer set inserted.')
-   
+    if header_on_sky[0]['ESO INS1 FILT ID'] in ['FILT_NBF_HeI', 'FILT_NBF_ContJ', 'FILT_NBF_PaB', 'FILT_NBF_ContH', 'FILT_NBF_FeII', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
+        narrowband_continue = input_wrap('\nThe on-sky data uses a narrowband filter. The model-based correction method for the narrowband filters will be added in the near future. For now, the narrowband data can be reduced using the model of the broadband filter that encompasses the wavelength range of the narrowband filter. However, the correction of the instrumental polarization effects will not be as accurate as for the broadband filters. If continuing, note that for accurate flat fielding it is highly recommended to construct a master flat for the narrowband filter by including a set of FLAT- and DARK(,BACKGROUND)-files in the raw subdirectory. If not, a static flat of the corresponding broadband filter will be used. Finally, you may need to adapt the input parameters \'center_param_centering\', \'object_center_coordinates\' and \'object_param_centering\' to make IRDAP correctly center the data, and change the input parameter \'annulus_star\' to better position the annulus to compute the stellar polarization from. Reduce the narrowband data using the model of the corresponding broadband filter? (y/n) ')
+        if narrowband_continue == 'y':
+            printandlog('\nWARNING, continuing reduction of narrowband data although the results will not be as accurate as for the broadband filters.')
+        elif narrowband_continue == 'n':
+            raise IOError('\n\nAborting data reduction.')
+        else:
+            raise IOError('\n\nThe provided input \'' + str(narrowband_continue) + '\' is not valid.')
+    elif not header_on_sky[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
+        raise IOError('\n\nThe filter used for the on-sky data is not broadband Y, J, H or Ks or any of the narrowband filters.')
+     
     # Perform checks on header values that apply only to OBJECT files
     header_object = [x for x in header if x['ESO DPR TYPE'] == 'OBJECT']
         
@@ -715,9 +723,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
         mjd_dark_background = [x['MJD-OBS'] for x in header_dark_background]
         mjd_flat = [x['MJD-OBS'] for x in header_flat] 
         
-        if header_flat[0]['ESO INS1 FILT ID'] == 'FILT_BBF_Ks':
+        if header_flat[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
             if max(mjd_flat) - min(mjd_dark_background) > 1/24 or max(mjd_dark_background) - min(mjd_flat) > 1/24:
-                printandlog('\nWARNING, (some of) the DARK,BACKGROUND- and FLAT-files use the Ks-band filter and are taken more than 1 hour apart. The background in the DARK,BACKGROUND-files in Ks-band is known to generally be strongly time-varying.')
+                printandlog('\nWARNING, (some of) the DARK,BACKGROUND- and FLAT-files are taken more than 1 hour apart and use the Ks-band filter or one of the narrowband filters that are close in wavelength to Ks. The background in these files in Ks-band is known to generally be strongly time-varying.')
 
     if any(header_dark_all) and not any(header_flat):
         raise IOError('\n\nThere are DARK(,BACKGROUND)-files but no FLAT-files.')
@@ -971,6 +979,12 @@ def check_sort_data_create_directories(frames_to_remove=[],
     if object_centering_method == 'center frames' and not any(path_center_files):
         raise IOError('\n\nobject_centering_method = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(object_centering_method))
 
+    # Raise warning when there are no center files, but the data is coronagraphic
+    coronagraph_used = header_object[0]['ESO INS COMB ICOR']
+    
+    if not any(path_center_files) and coronagraph_used != 'N_NS_CLEAR':
+        printandlog('\nWARNING, the data uses a coronagraph, but there are no CENTER-files. Although challenging, in most cases the data can still be centered with some accuracy by manually defining the centers of the left and right images using the input parameter \'object_center_coordinates\', and by setting a sub-image crop radius of around 20 pixels with the input parameter \'object_param_centering\'.')
+        
     ###############################################################################
     # Create directories to write processed data to
     ###############################################################################
@@ -1525,19 +1539,19 @@ def compute_fwhm_separation(filter_used):
     pixel_scale = 12.25e-3
 
     # Define approximate separation of satellite spots (pixels) and filter central wavelength and bandwidth (m)
-    if filter_used == 'FILT_BBF_Y':
+    if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
         separation = 31.0
         lambda_c = 1043e-9
         delta_lambda = 140e-9
-    elif filter_used == 'FILT_BBF_J':
+    elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
         separation = 37.4
         lambda_c = 1245e-9
         delta_lambda = 240e-9
-    elif filter_used == 'FILT_BBF_H':
+    elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
         separation = 48.5
         lambda_c = 1625e-9
         delta_lambda = 290e-9
-    elif filter_used == 'FILT_BBF_Ks':
+    elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
         separation = 64.5
         lambda_c = 2182e-9
         delta_lambda = 300e-9
@@ -3061,20 +3075,24 @@ def perform_preprocessing(frames_to_remove=[],
         filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
     
         # Read static master flat    
-        if filter_used == 'FILT_BBF_Y':
+        if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
             path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_Y.fits')
-        elif filter_used == 'FILT_BBF_J':
+            filter_static_flat = 'FILT_BBF_Y'
+        elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
             path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_J.fits')
-        elif filter_used == 'FILT_BBF_H':
+            filter_static_flat = 'FILT_BBF_J'
+        elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
             path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_H.fits')
-        elif filter_used == 'FILT_BBF_Ks':
+            filter_static_flat = 'FILT_BBF_H'
+        elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
             path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_Ks.fits')
-        
+            filter_static_flat = 'FILT_BBF_Ks'
+            
         frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
        
         # Read static bad pixel map
         frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_calib_dir, 'master_badpix.fits'), silent=True)[0])
-        printandlog('\nRead static bad pixel map and static master flat in ' + filter_used + '.')
+        printandlog('\nRead static bad pixel map and static master flat in ' + filter_static_flat + '.')
         
     ###############################################################################
     # Computing master sky for object images
@@ -3638,11 +3656,10 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
     '''   
                 
     # Define model parameters that do not depend on the date of the observations
-    printandlog('\nUsing model parameters corresponding to filter ' + filter_used[5:] + '.')
     delta_hwp = -0.613158589269
     delta_der = 0.500072483779
             
-    if filter_used == 'FILT_BBF_Y':
+    if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
         Delta_UT = 171.891576898
         Delta_M4 = 171.891576898
         epsilon_hwp = -0.00021492286258857182
@@ -3650,8 +3667,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = -0.0009423930026144313                                     
         Delta_der = 126.11957538036766
         d_CI = 0.9801695109615369
-                                     
-    elif filter_used == 'FILT_BBF_J':
+        filter_model = 'FILT_BBF_Y'
+                                    
+    elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
         Delta_UT = 173.414169049                
         Delta_M4 = 173.414169049
         epsilon_hwp = -0.00043278581895049085
@@ -3659,8 +3677,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = -0.008303978181252019                                      
         Delta_der = 156.0584333408133
         d_CI = 0.9894796343284551
-
-    elif filter_used == 'FILT_BBF_H':
+        filter_model = 'FILT_BBF_J'
+        
+    elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
         Delta_UT = 174.998748608
         Delta_M4 = 174.998748608
         epsilon_hwp = -0.00029657803108325395
@@ -3668,8 +3687,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = -0.002260131403393225                                       
         Delta_der = 99.32313652084311
         d_CI = 0.9955313968849352
+        filter_model = 'FILT_BBF_H'
                                                                            
-    elif filter_used == 'FILT_BBF_Ks':
+    elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
         Delta_UT = 176.302288996           
         Delta_M4 = 176.302288996
         epsilon_hwp = -0.00041456866069250524
@@ -3677,6 +3697,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = 0.0035517563420643166                                        
         Delta_der = 84.13439892002613
         d_CI = 0.9841908773870153
+        filter_model = 'FILT_BBF_Ks'
+
+    printandlog('\nUsing model parameters corresponding to filter ' + filter_model[5:] + '.')
     
     # Define Mueller matrices of HWP, derotator and common path and IRDIS
     M_hwp = compute_reflection_mueller_matrix(epsilon_hwp, Delta_hwp)
@@ -3708,7 +3731,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
     for i in range(n):
         
         # Define model parameters that depend on the date of the observations
-        if filter_used == 'FILT_BBF_Y':
+        if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.023607413903534567 
                 epsilon_M4 = 0.018211735858186456
@@ -3716,7 +3739,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
                 epsilon_UT = 0.01745394681183012
                 epsilon_M4 = 0.018194769704367342
             
-        elif filter_used == 'FILT_BBF_J':
+        elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.016685701811847004
                 epsilon_M4 = 0.012844478639635984
@@ -3724,7 +3747,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
                 epsilon_UT = 0.01213513552053676
                 epsilon_M4 = 0.013046513475544473
    
-        elif filter_used == 'FILT_BBF_H':
+        elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.012930082215499676
                 epsilon_M4 = 0.009845229155837451 
@@ -3732,7 +3755,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
                 epsilon_UT = 0.009032205030412622
                 epsilon_M4 = 0.009220985704954044   
                 
-        elif filter_used == 'FILT_BBF_Ks':
+        elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.010575041739439168
                 epsilon_M4 = 0.007766430613637994 
@@ -4492,13 +4515,13 @@ def perform_postprocessing(cube_left_frames,
             for x in annulus_star:
                 printandlog(annulus_0_to_1_based(x))
     elif annulus_star == 'ao residuals':
-        if filter_used == 'FILT_BBF_Y':
+        if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
             annulus_star = (511.5, 511.5, 40, 65, 0, 360)
-        elif filter_used == 'FILT_BBF_J':
+        elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
             annulus_star = (511.5, 511.5, 45, 75, 0, 360)
-        elif filter_used == 'FILT_BBF_H':
+        elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
             annulus_star = (511.5, 511.5, 60, 95, 0, 360)
-        elif filter_used == 'FILT_BBF_Ks':
+        elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
             annulus_star = (511.5, 511.5, 80, 120, 0, 360)  
         printandlog('\nThe star polarization will be determined with a star-centered annulus located over the AO residuals:')
         printandlog(annulus_0_to_1_based(annulus_star))
@@ -5141,7 +5164,7 @@ def run_pipeline(path_main_dir):
     elif len(path_log_file_old) == 1:
         # Extract path of old log file and its number
         path_log_file_old = path_log_file_old[0]
-        log_file_old_number = int(os.path.splitext(path_log_file_old)[0][-1])
+        log_file_old_number = int(os.path.splitext(path_log_file_old)[0].split('log_')[1])
     else:
         # Set file number to zero
         log_file_old_number = 0
@@ -5168,7 +5191,7 @@ def run_pipeline(path_main_dir):
     elif len(path_config_file_copy_old) == 1:
         # Extract path of old copy of configuration file and its number
         path_config_file_copy_old = path_config_file_copy_old[0]
-        config_file_copy_old_number = int(os.path.splitext(path_config_file_copy_old)[0][-1])
+        config_file_copy_old_number = int(os.path.splitext(path_config_file_copy_old)[0].split('config_')[1])
     else:
         # Set file number to zero
         config_file_copy_old_number = 0
