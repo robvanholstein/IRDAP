@@ -56,7 +56,7 @@ IRDAP
 .. 
    |pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
 
-IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data. Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2019) <ADS link>`_. IRDAP handles data taken both in field- and pupil-tracking mode and using the broadband filters Y, J, H and K\ :sub:`s`. In the near future, support for the narrowband filter will be added as well.
+IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data. Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2019) <ADS link>`_. IRDAP handles data taken both in field- and pupil-tracking mode and using the broadband filters Y, J, H and K\ :sub:`s`. Data taken with the narrowband filters can be reduced as well, although with a somewhat worse accuracy. 
 
 Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs a complete data reduction from raw data to final data products.
 

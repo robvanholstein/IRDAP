@@ -14,6 +14,9 @@ Changelog & to-do
 Changelog
 ---------
 
+v0.2.1 June 2019, R.G. van Holstein:
+ - Added the possibility to reduce data taken with the narrowband filters using the existing model of the broadband filters
+
 v0.2.0 June 2019, R.G. van Holstein:
  - Changed the definition of the tuple of the input parameters *annulus_star*, *annulus_background* and *flux_annulus_background*: *width* is replaced by *outer_radius* and the definition of *start_angle* and *end_angle* is now the same as in DS9
  - Replaced static flat in Ks by one with P0-90 inserted
@@ -31,7 +34,7 @@ To-do high priority
    - Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2
    - Add plot of center coordinates of center frames vs time
    - Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)
-   - Add model correction for narrowband filters
+   - Add accurate (calibrated) model correction for narrowband filters
    - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)	
    - Add detection limits (e.g. contrast curves)
    

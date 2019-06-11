@@ -40,6 +40,9 @@ The data reduction is divided in a pre-processing and a post-processing part.
  
 The pre-processing starts with reading the configuration file and creating the log file that contains all the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the raw subdirectory, sorts the raw data and creates subdirectories to write the output files to.
 
+.. important::
+   When reducing data with IRDAP, keep an eye out for the WARNING messages printed on screen and in the log file. 
+
 .. hint::
    The header overviews can also be created without running IRDAP by typing :code:`irdap --headers` in the terminal.
    

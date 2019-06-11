@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &amp; to-do &mdash; IRDAP 0.1.2 documentation</title>
+  <title>Changelog &amp; to-do &mdash; IRDAP 0.2.1 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                0.1.2
+                0.2.1
               </div>
             
           
@@ -168,6 +168,11 @@
 <div class="section" id="changelog">
 <h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
+<dt>v0.2.1 June 2019, R.G. van Holstein:</dt>
+<dd><ul class="first last simple">
+<li>Added the possibility to reduce data taken with the narrowband filters using the existing model of the broadband filters</li>
+</ul>
+</dd>
 <dt>v0.2.0 June 2019, R.G. van Holstein:</dt>
 <dd><ul class="first last simple">
 <li>Changed the definition of the tuple of the input parameters <em>annulus_star</em>, <em>annulus_background</em> and <em>flux_annulus_background</em>: <em>width</em> is replaced by <em>outer_radius</em> and the definition of <em>start_angle</em> and <em>end_angle</em> is now the same as in DS9</li>
@@ -192,7 +197,7 @@
 <li>Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2</li>
 <li>Add plot of center coordinates of center frames vs time</li>
 <li>Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)</li>
-<li>Add model correction for narrowband filters</li>
+<li>Add accurate (calibrated) model correction for narrowband filters</li>
 <li>Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)</li>
 <li>Add detection limits (e.g. contrast curves)</li>
 </ul>

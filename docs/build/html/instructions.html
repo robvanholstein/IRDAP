@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Usage instructions &mdash; IRDAP 0.1.2 documentation</title>
+  <title>Usage instructions &mdash; IRDAP 0.2.1 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                0.1.2
+                0.2.1
               </div>
             
           
@@ -200,6 +200,10 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="last">The data-reduction steps are only described concisely here. The log file that IRDAP creates describes the steps in more detail and also briefly describes the output files created. It is therefore recommended to carefully read the log file the first time you run IRDAP.</p>
 </div>
 <p>The pre-processing starts with reading the configuration file and creating the log file that contains all the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the raw subdirectory, sorts the raw data and creates subdirectories to write the output files to.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">When reducing data with IRDAP, keep an eye out for the WARNING messages printed on screen and in the log file.</p>
+</div>
 <div class="admonition hint">
 <p class="first admonition-title">Hint</p>
 <p class="last">The header overviews can also be created without running IRDAP by typing <code class="code docutils literal notranslate"><span class="pre">irdap</span> <span class="pre">--headers</span></code> in the terminal.</p>
