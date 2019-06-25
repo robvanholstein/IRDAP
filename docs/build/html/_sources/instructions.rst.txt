@@ -40,14 +40,11 @@ The data reduction is divided in a pre-processing and a post-processing part.
  
 The pre-processing starts with reading the configuration file and creating the log file that contains all the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the raw subdirectory, sorts the raw data and creates subdirectories to write the output files to.
 
-.. important::
-   When reducing data with IRDAP, keep an eye out for the WARNING messages printed on screen and in the log file. 
+.. admonition:: Hints
 
-.. hint::
-   The header overviews can also be created without running IRDAP by typing :code:`irdap --headers` in the terminal.
-   
-.. note::
-   When running IRDAP a copy of the configuration file is made. When subsequently re-running IRDAP, this copy is moved together with the log file to the ``logs`` subdirectory as a record of the performed reductions. 
+   - When reducing data with IRDAP, keep an eye out for the WARNING messages printed on screen and in the log file; 
+   - The header overviews can also be created without running IRDAP by typing :code:`irdap --headers` in the terminal;
+   - When running IRDAP a copy of the configuration file is made. When subsequently re-running IRDAP, this copy is moved together with the log file to the ``logs`` subdirectory as a record of the performed reductions. 
 
 After these initial steps, IRDAP will pre-process the OBJECT-files. To this end, it loads the static bad pixel map and the static master flat of the right filter, and creates a master sky frame from the provided SKY-files. The OBJECT-files are then sky (or background) subtracted, flat fielded, bad-pixel filtered and centered with a method chosen by the user. The centering would generally be performed using the CENTER-files, which are then processed accordingly.
 
@@ -57,7 +54,9 @@ After these initial steps, IRDAP will pre-process the OBJECT-files. To this end,
 A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flat frame. 
 
 The pre-processed OBJECT-data is written to the subdirectory ``preprocessed`` and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory ``calibration``.
-In case the pre-processed OBJECT- or FLUX-data is not correctly centered, IRDAP should be run again after adapting the :ref:`Advanced pre-processing options` of the configuration file.
+
+.. important::
+   In case the pre-processed OBJECT- or FLUX-data is not correctly centered, IRDAP should be run again after adapting the :ref:`Advanced pre-processing options` of the configuration file.
 
 Post-processing in a nutshell
 -----------------------------
