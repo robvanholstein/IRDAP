@@ -57,6 +57,7 @@ After these initial steps, IRDAP will pre-process the OBJECT-files. To this end,
 A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flat frame. 
 
 The pre-processed OBJECT-data is written to the subdirectory ``preprocessed`` and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory ``calibration``.
+In case the pre-processed OBJECT- or FLUX-data is not correctly centered, IRDAP should be run again after adapting the :ref:`Advanced pre-processing options` of the configuration file.
 
 Post-processing in a nutshell
 -----------------------------
@@ -72,4 +73,4 @@ For the post-processing part, IRDAP computes the double sum and double differenc
 .. warning::
    For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory ``reduced``, i.e. those without the polarization subtracted.
 
-To understand all the input parameters, continue with the :ref:`configuration file <Configuration file>`. 
+To understand the input parameters, continue with the :ref:`configuration file <Configuration file>`. 

@@ -218,7 +218,8 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="last">Rather than using the static bad pixel map and master flat, the user can also create a master flat and bad pixel map by including a sequence of FLAT,LAMP- and DARK,BACKGROUND-files (or DARK-files) in the <code class="docutils literal notranslate"><span class="pre">raw</span></code> subdirectory (e.g. a sequence with exposure times 1, 2, 3, 4 and 5 s). The FLAT,LAMP-files preferably have the P0-90 polarizer set inserted, because it causes strong vignetting at the edges of the field of view which will otherwise not be corrected.</p>
 </div>
 <p>A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flat frame.</p>
-<p>The pre-processed OBJECT-data is written to the subdirectory <code class="docutils literal notranslate"><span class="pre">preprocessed</span></code> and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory <code class="docutils literal notranslate"><span class="pre">calibration</span></code>.</p>
+<p>The pre-processed OBJECT-data is written to the subdirectory <code class="docutils literal notranslate"><span class="pre">preprocessed</span></code> and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory <code class="docutils literal notranslate"><span class="pre">calibration</span></code>.
+In case the pre-processed OBJECT- or FLUX-data is not correctly centered, IRDAP should be run again after adapting the <a class="reference internal" href="configfile.html#advanced-pre-processing-options"><span class="std std-ref">Advanced pre-processing options</span></a> of the configuration file.</p>
 </div>
 <div class="section" id="post-processing-in-a-nutshell">
 <h2>Post-processing in a nutshell<a class="headerlink" href="#post-processing-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
@@ -235,7 +236,7 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="first admonition-title">Warning</p>
 <p class="last">For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory <code class="docutils literal notranslate"><span class="pre">reduced</span></code>, i.e. those without the polarization subtracted.</p>
 </div>
-<p>To understand all the input parameters, continue with the <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">configuration file</span></a>.</p>
+<p>To understand the input parameters, continue with the <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">configuration file</span></a>.</p>
 </div>
 </div>
 
