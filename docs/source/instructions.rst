@@ -72,4 +72,9 @@ For the post-processing part, IRDAP computes the double sum and double differenc
 .. warning::
    For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory ``reduced``, i.e. those without the polarization subtracted.
 
+.. note::
+
+
+   The units of the *I*\ :sub:`Q`-, *I*\ :sub:`U`- and *I*\ :sub:`tot`-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the *Q*-, *U*-, *Q*:math:`_\phi`- and *U*:math:`_\phi`-images are the number of counts when substracting the right from the left frame half of a single exposure. 
+
 To understand the input parameters, continue with the :ref:`configuration file <Configuration file>`. 
