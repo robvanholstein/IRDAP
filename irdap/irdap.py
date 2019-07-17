@@ -4370,6 +4370,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     # Subtract intrumental polarization from Q- and U-images
     cube_Q_IP_subtracted = cube_Q_double_difference - IP_Q[:, np.newaxis, np.newaxis]*cube_I_Q_double_sum
     cube_U_IP_subtracted = cube_U_double_difference - IP_U[:, np.newaxis, np.newaxis]*cube_I_U_double_sum
+
+    # added for a test by JM
+    write_fits_files(data=cube_Q_IP_subtracted, path=os.path.join(path_preprocessed_dir, 'cube_Q_IP_subtracted.fits'), header=False)
     
     # Derotate IP-subtracted Q- and U-images
     cube_Q_derotated = np.zeros(cube_Q_IP_subtracted.shape)
@@ -4380,6 +4383,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     
     for i, (frame_U, rotation_angle_U) in enumerate(zip(cube_U_IP_subtracted, rotation_angles_U)):
         cube_U_derotated[i, :, :] = rotate(frame_U, rotation_angle_U, reshape=False)
+
+    # added for a test by JM
+    write_fits_files(data=cube_Q_derotated, path=os.path.join(path_preprocessed_dir, 'cube_Q_derotated.fits'), header=False)
          
     # Calculate Q- and U-images incident on telescope by solving system of equations per HWP cycle
     number_frames_min = min(len(cube_Q_derotated), len(cube_U_derotated))
@@ -4395,6 +4401,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         cube_QU_incident = cube_QU_incident_stretched.reshape(cube_QU_incident_stretched.shape[0], Y.shape[1], Y.shape[2]) 
         cube_Q_incident[i, :, :] = cube_QU_incident[0, :, :]
         cube_U_incident[i, :, :] = cube_QU_incident[1, :, :]
+
+    # added for a test by JM
+    write_fits_files(data=cube_Q_incident, path=os.path.join(path_preprocessed_dir, 'cube_Q_incident.fits'), header=False)
         
     # Create incident Q- and U-images
     if combination_method_polarization == 'least squares':
