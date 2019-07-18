@@ -123,7 +123,7 @@ def read_config_file(path_config_file):
     flux_center_coordinates   = literal_eval(config.get('Advanced pre-processing options', 'flux_center_coordinates'))
     flux_param_centering      = literal_eval(config.get('Advanced pre-processing options', 'flux_param_centering'))
     flux_annulus_background   = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_background'))
-    flux_aperture             = config_list_tuple(config.get('Advanced pre-processing options', 'flux_aperture'))
+    flux_annulus_star             = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_star'))
     
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
@@ -147,7 +147,7 @@ def read_config_file(path_config_file):
            flux_center_coordinates, \
            flux_param_centering, \
            flux_annulus_background, \
-           flux_aperture, \
+           flux_annulus_star, \
            double_difference_type, \
            single_posang_north_up,adi,convert_in_contrast_per_arcsec2
 
@@ -2948,7 +2948,7 @@ def perform_preprocessing(frames_to_remove=[],
                           flux_annulus_background='large annulus',
                           save_preprocessed_data=True, 
                           combination_method_polarization='least squares',\
-                          flux_aperture='automatic',\
+                          flux_annulus_star='automatic',\
                           convert_in_contrast_per_arcsec2=False):
     '''
     Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data, 
@@ -3099,7 +3099,7 @@ def perform_preprocessing(frames_to_remove=[],
         combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median' 
             (default = 'least squares')
-        flux_aperture: (list of) length-6-tuple(s) with parameters 
+        flux_annulus_star: (list of) length-6-tuple(s) with parameters 
             to generate an annulus (normally a full circular aperture but we let 
             the option to exclude an inner circle or a wedge in special circumstances like 
             a binary system) to measure the star total flux in master flux frame:
@@ -3123,7 +3123,7 @@ def perform_preprocessing(frames_to_remove=[],
         combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
         star_flux: float with the total star flux as computed using the parameters 
-            defined by the flux_aperture tuple, in ADU, corrected by the DIT ratio
+            defined by the flux_annulus_star tuple, in ADU, corrected by the DIT ratio
             between FLUX and OBJECT frames and the potential use of ND filters
             
     File written by Rob van Holstein; based on function by Christian Ginski; 
@@ -3390,17 +3390,17 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
 
-        if flux_aperture == 'automatic':
-            flux_aperture = (511.5, 511.5, 0, 140, 0, 360)
-            printandlog('\nflux_aperture is \'automatic\': setting it to ' + str(tuple(x + 1 for x in flux_aperture)))
+        if flux_annulus_star == 'automatic':
+            flux_annulus_star = (511.5, 511.5, 0, 140, 0, 360)
+            printandlog('\nflux_annulus_star is \'automatic\': setting it to ' + str(tuple(x + 1 for x in flux_annulus_star)))
         printandlog('\nThe star total flux will be determined from the master flux image with an aperture located on:')
-        printandlog(annulus_0_to_1_based(flux_aperture))
+        printandlog(annulus_0_to_1_based(flux_annulus_star))
                         
         star_flux, dit_ratio,nd_ratio = determine_star_flux(\
                                             frame_master_flux,path_flux_files, \
-                                            path_object_files, flux_aperture)
+                                            path_object_files, flux_annulus_star)
         reference_flux = star_flux*nd_ratio*dit_ratio
-        table_star_flux = pd.DataFrame({'aperture parameters':[flux_aperture],\
+        table_star_flux = pd.DataFrame({'aperture parameters':[flux_annulus_star],\
                                         'encircled_flux (ADU)':[star_flux],\
                                         'DIT ratio (OBJECT/FLUX)':[dit_ratio],\
                                         'ND filter ratio (OBJECT/FLUX)':[nd_ratio],\
@@ -3415,7 +3415,7 @@ def perform_preprocessing(frames_to_remove=[],
 ################################################################################
 ## determine_star_flux
 ################################################################################
-def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flux_aperture):   
+def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flux_annulus_star):   
     '''
     Determine flux of star in the master flux frame using aperture photometry 
      
@@ -3423,7 +3423,7 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flu
         frame_master_flux: master flux frame 
         path_flux_files: list of paths to raw FLUX-files
         path_object_files: list of paths to raw OBJECT-files
-        flux_aperture: (list of) length-6-tuple(s) with parameters 
+        flux_annulus_star: (list of) length-6-tuple(s) with parameters 
             to generate an annulus (normally a full circular aperture but we let 
             the option to exclude an inner circle or a wedge in special circumstances like 
             a binary system) to measure the star total flux in master flux frame:
@@ -3437,7 +3437,7 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flu
                 positive rotation counterclockwise; by default 360)        
     Output:
         star_total_flux: flux of the star in ADU encircled in the region defined
-                        by the parameters flux_aperture.
+                        by the parameters flux_annulus_star.
                         The reference flux to use to convert from ADU to contrast 
                         is the product star_total_flux *  dit_ratio * nd_ratio
         dit_ratio: ratio between the DIT of OBJECT frames over FLUX frames
@@ -3454,9 +3454,9 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flu
 #            (frame_master_flux.shape[0]/2.-0.5,frame_master_flux.shape[0]/2.-0.5),r=radius)
 #    aper_phot = photutils.aperture_photometry(frame_master_flux,aper)
 #    star_total_flux = aper_phot['aperture_sum'][0]
-    star_total_flux = np.median(compute_annulus_values(cube=frame_master_flux, param=flux_aperture)[0])
+    star_total_flux = np.sum(compute_annulus_values(cube=frame_master_flux, param=flux_annulus_star)[0])
     printandlog('The star reference flux encircled in the annulus ({0:s}) is {1:.1f} ADU'.format(\
-                ', '.join(['{0:3.1f}'.format(f) for f in flux_aperture]),star_total_flux))
+                ', '.join(['{0:3.1f}'.format(f) for f in flux_annulus_star]),star_total_flux))
 
     # Determine filter used
     filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
@@ -5493,7 +5493,7 @@ def run_pipeline(path_main_dir):
     flux_center_coordinates, \
     flux_param_centering, \
     flux_annulus_background, \
-    flux_aperture, \
+    flux_annulus_star, \
     double_difference_type, \
     single_posang_north_up, adi, \
     convert_in_contrast_per_arcsec2     = read_config_file(path_config_file)
@@ -5797,33 +5797,33 @@ def run_pipeline(path_main_dir):
         elif any([type(y) not in [int, float] for x in annulus_background for y in x]):
             raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
-    #flux_aperture 
-    if type(flux_aperture) not in [str, tuple, list]:
-        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    #flux_annulus_star 
+    if type(flux_annulus_star) not in [str, tuple, list]:
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
-    if flux_aperture == [] or flux_aperture == ():
-        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    if flux_annulus_star == [] or flux_annulus_star == ():
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
-    if type(flux_aperture) is str and flux_aperture not in ['automatic']:
-        raise ValueError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    if type(flux_annulus_star) is str and flux_annulus_star not in ['automatic']:
+        raise ValueError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
-    if type(flux_aperture) is tuple and len(flux_aperture) != 6:
-        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    if type(flux_annulus_star) is tuple and len(flux_annulus_star) != 6:
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
-    if type(flux_aperture) is tuple and any([type(x) not in [int, float] for x in flux_aperture]):
-        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    if type(flux_annulus_star) is tuple and any([type(x) not in [int, float] for x in flux_annulus_star]):
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
         
-    if type(flux_aperture) is list:        
-        if any([type(x) is not tuple for x in flux_aperture]):
-            raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-        elif any([len(x) != 6 for x in flux_aperture]):
-            raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-        elif any([type(y) not in [int, float] for x in flux_aperture for y in x]):
-            raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-        elif flux_aperture[2] != 0:
-            printandlog('Warning, the aperture inner radius for the star photometry (3rd element of flux_aperture) is set to {0:.1f}. It should be set to 0 to encompass the star flux unless very specific circumstances'.format(flux_aperture[2]))        
-        elif flux_aperture[3] >140:
-            printandlog('Warning, the aperture outer radius for the star photometry (4th element of flux_aperture) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star'.format(flux_aperture[3]))        
+    if type(flux_annulus_star) is list:        
+        if any([type(x) is not tuple for x in flux_annulus_star]):
+            raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([len(x) != 6 for x in flux_annulus_star]):
+            raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([type(y) not in [int, float] for x in flux_annulus_star for y in x]):
+            raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif flux_annulus_star[2] != 0:
+            printandlog('Warning, the aperture inner radius for the star photometry (3rd element of flux_annulus_star) is set to {0:.1f}. It should be set to 0 to encompass the star flux unless very specific circumstances'.format(flux_annulus_star[2]))        
+        elif flux_annulus_star[3] >140:
+            printandlog('Warning, the aperture outer radius for the star photometry (4th element of flux_annulus_star) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star'.format(flux_annulus_star[3]))        
         
     # combination_method_polarization
     if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
@@ -5917,7 +5917,7 @@ def run_pipeline(path_main_dir):
                                 flux_annulus_background=flux_annulus_background, 
                                 save_preprocessed_data=save_preprocessed_data, 
                                 combination_method_polarization=combination_method_polarization,\
-                                flux_aperture = flux_aperture,\
+                                flux_annulus_star = flux_annulus_star,\
                                 convert_in_contrast_per_arcsec2=convert_in_contrast_per_arcsec2)
     
         # Print that post-processing starts

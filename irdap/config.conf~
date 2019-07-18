@@ -23,7 +23,7 @@ flux_centering_method           = gaussian
 flux_center_coordinates         = (478, 522, 1504, 512)
 flux_param_centering            = (60, None, 30000)
 flux_annulus_background         = large annulus
-flux_aperture                   = 140
+flux_aperture                   = automatic
 
 [Advanced post-processing options]
 # Generally do not need to be changed
