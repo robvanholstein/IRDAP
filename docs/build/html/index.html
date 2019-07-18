@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>IRDAP &mdash; IRDAP 2019.5.12 documentation</title>
+  <title>IRDAP &mdash; IRDAP 0.2.1 documentation</title>
   
 
   
@@ -57,7 +57,7 @@
             
             
               <div class="version">
-                2019.5.12
+                0.2.1
               </div>
             
           
@@ -84,10 +84,14 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Home</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="example_reduction.html">Example reduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="running.html">Usage instructions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
-<li class="toctree-l1"><a class="reference internal" href="acknowledge.html">Acknowledging fcmaker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example reduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instructions.html">Usage instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing &amp; issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog &amp; to-do</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
 </ul>
 
@@ -155,17 +159,31 @@
             
   <div class="section" id="irdap">
 <h1>IRDAP<a class="headerlink" href="#irdap" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="https://pypi.python.org/pypi/irdap/"><img alt="pypi" src="https://img.shields.io/pypi/v/irdap.svg?colorB=&lt;brightgreen&gt;" /></a> <a class="reference external" href="https://pypi.python.org/pypi/pynpoint"><img alt="python" src="https://img.shields.io/badge/Python-3.6%2C%203.7-yellow.svg?style=flat" /></a> <a class="reference external" href="https://github.com/robvanholstein/IRDAP/"><img alt="github" src="https://img.shields.io/github/release/robvanholstein/IRDAP.svg" /></a> <a class="reference external" href="https://github.com/robvanholstein/IRDAP/"><img alt="last-commit" src="https://img.shields.io/github/last-commit/robvanholstein/IRDAP.svg?colorB=e6c000" /></a> <a class="reference external" href="https://github.com/robvanholstein/IRDAP/blob/master/LICENSE"><img alt="license" src="https://img.shields.io/badge/License-GPLv3-blue.svg" /></a> <a class="reference external" href="&lt;ADSlink&gt;"><img alt="ads" src="https://img.shields.io/badge/ads-%3CADS%20link%3E-blueviolet.svg" /></a></p>
+<p>IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce <a class="reference external" href="https://www.eso.org/sci/facilities/paranal/instruments/sphere.html">SPHERE-IRDIS</a> polarimetric data. Its core feature is the model-based correction method of the instrumental polarization effects as described in <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a>. IRDAP handles data taken both in field- and pupil-tracking mode and using the broadband filters Y, J, H and K<sub>s</sub>. Data taken with the narrowband filters can be reduced as well, although with a somewhat worse accuracy.</p>
+<p>Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs a complete data reduction from raw data to final data products.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you use IRDAP for your publication, please <a class="reference internal" href="citing.html#citing-irdap"><span class="std std-ref">cite our papers</span></a>.</p>
+</div>
+<div class="figure" id="id1">
+<a class="reference internal image-reference" href="_images/home_3disks.png"><img alt="_images/home_3disks.png" src="_images/home_3disks.png" style="width: 750px;" /></a>
+<p class="caption"><span class="caption-text"><em>Three examples of data sets reduced with IRDAP: the circumstellar disk of PDS 70 including its inner disk that polarizes the central star</em> <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2018A%26A...617A..44K"><em>(Keppler et al. 2018),</em></a> <em>the circumstellar disk and polarized companion of CS Cha</em> <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2018A%26A...616A..79G"><em>(Ginski et al. 2018)</em></a> <em>and the circumstellar disk of T Cha</em> <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2017A%26A...605A..34P"><em>(Pohl et al. 2017;</em></a> <a class="reference external" href="ADSlink"><em>van Holstein et al. 2019).</em></a></span></p>
+</div>
+<p>IRDAP yields a multitude of improvements for observations of circumstellar disks: it enables us to accurately study the morphology of disks, measure non-azimuthal polarization and determine scattering phase functions and particle properties. Because IRDAP discerns instrumental polarization from stellar polarization, it is a vital tool for accurate radiative transfer modeling of disks and enables the detection of unresolved (inner) disks and the measurement of the polarization of substellar companions. Finally, IRDAP enables accurate data-reduction for targets that cannot be reduced with the conventional data-reduction methods (because there is no bright star in the field of view), such as as solar system objects and galaxies.</p>
 <div class="section" id="contents">
 <h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Home</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="example_reduction.html">Example reduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="running.html">Usage instructions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog  </a></li>
-<li class="toctree-l1"><a class="reference internal" href="acknowledge.html">Acknowledging fcmaker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example reduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instructions.html">Usage instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing &amp; issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog &amp; to-do</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
 </ul>
 </div>

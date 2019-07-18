@@ -5,13 +5,13 @@ it.
 IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
-Full documentation: https://robvanholstein.github.io/IRDAP
+Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al. 
 (2019): <ADS link>. 
 For data in pupil-tracking mode please additionally cite van Holstein et al. 
-(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.
+(2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
                                                  
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ def main(args=None):
         print('\nNo arguments were provided. Please check the help message by typing\n"irdap --help".')
         
     # Define the arser including the description and epilog
-    parser = argparse.ArgumentParser(description='IRDAP (IRDIS Data-reduction for Accurate Polarimetry) is a pipeline for\n' +
+    parser = argparse.ArgumentParser(description='IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a pipeline for\n' +
                                                  'accurate reduction of SPHERE-IRDIS polarimetric data.\n\n' + 
                                                  'To run IRDAP, create a directory (e.g. "/home/T_Cha_2016-02-20") containing a\n' +
                                                  'subdirectory called "raw" in which you place the raw FITS-files. Then in the\n' +
@@ -77,8 +77,8 @@ def main(args=None):
                                                  'When publishing data reduced with IRDAP, please cite van Holstein et al.\n' +
                                                  '(2019): <ADS link>.\n' +
                                                  'For data in pupil-tracking mode please additionally cite van Holstein et al.\n' +
-                                                 '(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.',
-                                     epilog='Full documentation: https://robvanholstein.github.io/IRDAP\n' +
+                                                 '(2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.',
+                                     epilog='Full documentation: https://irdap.readthedocs.io\n' +
                                             'Feedback, questions, comments: vanholstein@strw.leidenuniv.nl\n\n' + 
                                             'IRDAP Copyright (C) 2019 R.G. van Holstein', 
                                             formatter_class=RawTextHelpFormatter)
@@ -103,7 +103,7 @@ def main(args=None):
     
     if args.version:
         # Print the current version 
-        print('\nIRDAP %s' % __version__)
+        print('\nIRDAP version %s' % __version__)
         
     if args.demo:
         # Run example reduction

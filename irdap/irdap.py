@@ -4,13 +4,13 @@ This file contains all functions used by IRDAP.
 IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
-Full documentation: https://robvanholstein.github.io/IRDAP
+Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al. 
 (2019): <ADS link>. 
 For data in pupil-tracking mode please additionally cite van Holstein et al. 
-(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.
+(2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@ import configparser
 import textwrap
 import urllib
 import numpy as np
+import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
@@ -54,13 +55,12 @@ from astropy.modeling import models, fitting
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
-import pandas as pd
 from astropy import coordinates as coords
 from astropy import units as u
 from astropy.time import Time
-import photutils
 from scipy.interpolate import interp1d
 from astropy.io import ascii
+from .version import __version__
 
 ###############################################################################
 # read_config_file
@@ -112,8 +112,6 @@ def read_config_file(path_config_file):
     # Get parameters from [Basic post-processing options] section
     annulus_star                    = config_list_tuple(config.get('Basic post-processing options', 'annulus_star'))
     annulus_background              = config_list_tuple(config.get('Basic post-processing options', 'annulus_background'))
-    combination_method_polarization = config.get('Basic post-processing options', 'combination_method_polarization')
-    combination_method_intensity    = config.get('Basic post-processing options', 'combination_method_intensity')
     normalized_polarization_images  = config_true_false(config.get('Basic post-processing options', 'normalized_polarization_images'))
 
     # Get parameters from [Advanced pre-processing options] section
@@ -125,12 +123,10 @@ def read_config_file(path_config_file):
     flux_center_coordinates   = literal_eval(config.get('Advanced pre-processing options', 'flux_center_coordinates'))
     flux_param_centering      = literal_eval(config.get('Advanced pre-processing options', 'flux_param_centering'))
     flux_annulus_background   = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_background'))
-    flux_aperture             = config.getfloat('Advanced pre-processing options', 'flux_aperture')
+    flux_aperture             = config_list_tuple(config.get('Advanced pre-processing options', 'flux_aperture'))
     
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
-    trimmed_mean_prop_to_cut_polar  = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_polar')
-    trimmed_mean_prop_to_cut_intens = config.getfloat('Advanced post-processing options', 'trimmed_mean_prop_to_cut_intens')
     single_posang_north_up          = config_true_false(config.get('Advanced post-processing options', 'single_posang_north_up'))
     adi                             = config_true_false(config.get('Advanced post-processing options', 'adi'))
     convert_in_contrast_per_arcsec2 = config_true_false(config.get('Advanced post-processing options', 'convert_in_contrast_per_arcsec2'))
@@ -142,8 +138,6 @@ def read_config_file(path_config_file):
            frames_to_remove, \
            annulus_star, \
            annulus_background, \
-           combination_method_polarization, \
-           combination_method_intensity, \
            normalized_polarization_images, \
            center_subtract_object, \
            center_param_centering, \
@@ -155,8 +149,6 @@ def read_config_file(path_config_file):
            flux_annulus_background, \
            flux_aperture, \
            double_difference_type, \
-           trimmed_mean_prop_to_cut_polar, \
-           trimmed_mean_prop_to_cut_intens, \
            single_posang_north_up,adi,convert_in_contrast_per_arcsec2
 
 ###############################################################################
@@ -361,12 +353,14 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
     np.savetxt(path_overview, print_array, fmt = '%s', newline= '\r\n')
 
     # Save the overview to a csv file
+#    df_array = pd.DataFrame(print_array[1:,1:],columns=print_array[0,1:],index=print_array[1:, 0])
     df_array = pd.DataFrame(print_array[1:,1:],columns=print_array[0,1:],index=print_array[1:, 0])
+    df_array.index.name = print_array[0, 0]
     df_array.to_csv(path_overview.replace('.txt','.csv'))
 
     if log:
-        printandlog('\nWrote file ' + path_overview + ' and ' + \
-                    path_overview.replace('.txt','.csv') + ' showing an overview of relevant headers for each file in the raw directory.')
+        printandlog('\nWrote files ' + path_overview + ' and ' + \
+                    path_overview.replace('.txt','.csv') + ' showing overviews of the relevant header keywords for each file in the raw directory.')
 
 ###############################################################################
 # check_own_programs
@@ -425,7 +419,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
                                        combination_method_polarization='least squares', 
                                        object_centering_method='automatic', 
                                        save_preprocessed_data=True, 
-                                       show_images_center_coordinates=True):
+                                       show_images_center_coordinates=True,\
+                                       convert_in_contrast_per_arcsec2=False):
     '''
     Check the FITS-headers of the data in the raw directory, remove files and 
     frames as specified by the user, sort the data and create directories to 
@@ -462,6 +457,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
             center coordinates for each frame. The plots allow for checking
             whether the centering is correct and to scan the data for frames 
             with bad quality (default = True). 
+        convert_in_contrast_per_arcsec2: 
+            TODO:h 
     
     Note that combination_method_polarization, object_centering_method, 
     save_preprocessed_data and show_images_center_coordinates are input to this 
@@ -525,7 +522,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
     
     # Extract headers
     header = [pyfits.getheader(x) for x in path_raw_files]
-#    check_own_programs(header)
+    check_own_programs(header)
     
     # Sort raw files and headers based on observation date in headers
     date_obs = [x['DATE-OBS'] for x in header]
@@ -607,16 +604,24 @@ def check_sort_data_create_directories(frames_to_remove=[],
         
     if not all([x['ESO INS4 OPTI8 NAME'] == 'H_NIR' for x in header_on_sky]):
         raise IOError('\n\nOne or more files of the on-sky data do not have the NIR half-wave plate inserted.')
-    
+
+    if not all([x['ESO INS1 OPTI2 NAME'] == 'P0-90' for x in header_on_sky]):
+        raise IOError('\n\nOne or more files of the on-sky data do not have the P0-90 polarizer set inserted.')
+        
     if len(set([x['ESO INS1 FILT ID'] for x in header_on_sky])) != 1:
         raise IOError('\n\nThe on-sky data provided have different filters.')
 
-    if not header_on_sky[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
-        raise IOError('\n\nThe filter used for the on-sky data is not broadband Y, J, H or Ks. Narrowband filters will be supported in the near future.')
-    
-    if not all([x['ESO INS1 OPTI2 NAME'] == 'P0-90' for x in header_on_sky]):
-        raise IOError('\n\nOne or more files of the on-sky data do not have the P0-90 polarizer set inserted.')
-   
+    if header_on_sky[0]['ESO INS1 FILT ID'] in ['FILT_NBF_HeI', 'FILT_NBF_ContJ', 'FILT_NBF_PaB', 'FILT_NBF_ContH', 'FILT_NBF_FeII', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
+        narrowband_continue = input_wrap('\nThe on-sky data uses a narrowband filter. The model-based correction method for the narrowband filters will be added in the near future. For now, the narrowband data can be reduced using the model of the broadband filter that encompasses the wavelength range of the narrowband filter. However, the correction of the instrumental polarization effects will not be as accurate as for the broadband filters. If continuing, note that for accurate flat fielding it is highly recommended to construct a master flat for the narrowband filter by including a set of FLAT- and DARK(,BACKGROUND)-files in the raw subdirectory. If not, a static flat of the corresponding broadband filter will be used. Finally, you may need to adapt the input parameters \'center_param_centering\', \'object_center_coordinates\' and \'object_param_centering\' to make IRDAP correctly center the data, and change the input parameter \'annulus_star\' to better position the annulus to compute the stellar polarization from. Reduce the narrowband data using the model of the corresponding broadband filter? (y/n) ')
+        if narrowband_continue == 'y':
+            printandlog('\nWARNING, continuing reduction of narrowband data although the results will not be as accurate as for the broadband filters.')
+        elif narrowband_continue == 'n':
+            raise IOError('\n\nAborting data reduction.')
+        else:
+            raise IOError('\n\nThe provided input \'' + str(narrowband_continue) + '\' is not valid.')
+    elif not header_on_sky[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H', 'FILT_BBF_Ks']:
+        raise IOError('\n\nThe filter used for the on-sky data is not broadband Y, J, H or Ks or any of the narrowband filters.')
+     
     # Perform checks on header values that apply only to OBJECT files
     header_object = [x for x in header if x['ESO DPR TYPE'] == 'OBJECT']
         
@@ -703,14 +708,23 @@ def check_sort_data_create_directories(frames_to_remove=[],
         if len(header_dark_all) != len(header_flat):
             raise IOError('\n\nThe number of DARK(,BACKGROUND)- and FLAT-files is unequal.')
 
+        if len(header_flat) == 1:
+            raise IOError('\n\nThere is only one pair of DARK(,BACKGROUND)- and FLAT-files. To make the bad pixel map we need at least two pairs with each a different exposure time.')
+
         if any([x['ESO INS1 FILT ID'] != object_filter for x in header_dark_background]):
             raise IOError('\n\nOne or more DARK,BACKGROUND-files have a different filter than the OBJECT-files.')
         
         if any([x['ESO INS1 FILT ID'] != object_filter for x in header_flat]):
             raise IOError('\n\nOne or more FLAT-files have a different filter than the OBJECT-files.')
+
+        if len(set([x['ESO INS1 OPTI2 NAME'] for x in header_flat])) != 1:
+            raise IOError('\n\nThe FLAT-files use different setups for the filter wheel containing the polarizer set.')
             
-        if any([x['ESO INS1 OPTI2 NAME'] in ['P0-90', 'P45-135'] for x in header_flat]):
-            raise IOError('\n\nOne or more FLAT-files have the P0-90 or P45-135 polarizer set inserted. Using FLAT-files taken with a polarizer set will result in overcorrection of the instrumental polarization during post processing.')
+        if not header_flat[0]['ESO INS1 OPTI2 NAME'] in ['P0-90', 'CLEAR']:
+            raise IOError('\n\nThe FLAT-files do not use the P0-90 polarizer set or no filter.')
+
+        if header_flat[0]['ESO INS1 OPTI2 NAME'] != 'P0-90':
+            printandlog('\nWARNING, the FLAT-files do not have the P0-90 polarizer set inserted. The polarizer set causes strong vignetting at the edges of the field of view, which will not be corrected with these flats.')
 
         if set([x['EXPTIME'] for x in header_dark_all]) != set([x['EXPTIME'] for x in header_flat]):
             raise IOError('\n\nThe exposure time of one or more FLAT-files cannot be matched to the exposure time of a DARK(,BACKGROUND)-file or vice versa.')
@@ -721,8 +735,9 @@ def check_sort_data_create_directories(frames_to_remove=[],
         mjd_dark_background = [x['MJD-OBS'] for x in header_dark_background]
         mjd_flat = [x['MJD-OBS'] for x in header_flat] 
         
-        if max(mjd_flat) - min(mjd_dark_background) > 1/24 or max(mjd_dark_background) - min(mjd_flat) > 1/24:
-            printandlog('\nWARNING, (some of) the DARK,BACKGROUND- and FLAT-files are taken more than 1 hour apart. The background in the DARK,BACKGROUND-files is known to generally be strongly time-varying.')
+        if header_flat[0]['ESO INS1 FILT ID'] in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
+            if max(mjd_flat) - min(mjd_dark_background) > 1/24 or max(mjd_dark_background) - min(mjd_flat) > 1/24:
+                printandlog('\nWARNING, (some of) the DARK,BACKGROUND- and FLAT-files are taken more than 1 hour apart and use the Ks-band filter or one of the narrowband filters that are close in wavelength to Ks. The background in these files in Ks-band is known to generally be strongly time-varying.')
 
     if any(header_dark_all) and not any(header_flat):
         raise IOError('\n\nThere are DARK(,BACKGROUND)-files but no FLAT-files.')
@@ -976,6 +991,16 @@ def check_sort_data_create_directories(frames_to_remove=[],
     if object_centering_method == 'center frames' and not any(path_center_files):
         raise IOError('\n\nobject_centering_method = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(object_centering_method))
 
+    # Raise error if the user request the conversion to contrast per arcsec^2 but there is no FLUX
+    if convert_in_contrast_per_arcsec2 and not any(path_flux_files):
+        raise IOError("\n\n'convert_in_contrast_per_arcsec2' is True while there is no FLUX frames supplied.")    
+    
+    # Raise warning when there are no center files, but the data is coronagraphic
+    coronagraph_used = header_object[0]['ESO INS COMB ICOR']
+    
+    if not any(path_center_files) and coronagraph_used != 'N_NS_CLEAR':
+        printandlog('\nWARNING, the data uses a coronagraph, but there are no CENTER-files. Although challenging, in most cases the data can still be centered with some accuracy by manually defining the centers of the left and right images using the input parameter \'object_center_coordinates\', and by setting a sub-image crop radius of around 20 pixels with the input parameter \'object_param_centering\'.')
+        
     ###############################################################################
     # Create directories to write processed data to
     ###############################################################################
@@ -1253,17 +1278,13 @@ def remove_bad_pixels(cube, frame_master_bpm, sigma_filtering=True):
 # process_sky_frames
 ###############################################################################
 
-def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, sigma_filtering=True):
+def process_sky_frames(path_sky_files, indices_to_remove_sky):
     '''
-    Create a master sky-frame from the SKY-files
+    Create a master sky frame from the SKY-files
     
     Input:
         path_sky_files: string or list of strings specifying paths of SKY-files
         indices_to_remove_sky: list of arrays with indices of frames to remove for each SKY-file
-        frame_master_bpm: frame indicating location of bad pixels with 0's and good
-            pixels with 1's
-        sigma_filtering: if True remove bad pixels remaining after applying
-            master bad pixel map using sigma-filtering (default = True)
 
     Output:
         frame_master_sky: master sky frame
@@ -1276,7 +1297,7 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
     list_cube_sky_raw = []
         
     for path_sel, indices_sel in zip(path_sky_files, indices_to_remove_sky):
-        # Read data and header from file
+        # Read data from file
         cube_sel = read_fits_files(path=path_sel, silent=True)[0]
 
         # Remove frames based on list of indices provided by the user
@@ -1288,270 +1309,224 @@ def process_sky_frames(path_sky_files, indices_to_remove_sky, frame_master_bpm, 
     # Make a single image cube from list of image cubes or frames
     cube_sky_raw = np.vstack(list_cube_sky_raw)
 
-    # Remove bad pixels of each frame
-    cube_sky_filtered = remove_bad_pixels(cube=cube_sky_raw, frame_master_bpm=frame_master_bpm, sigma_filtering=sigma_filtering)
-
     # Compute median of sky frames
-    frame_master_sky = np.median(cube_sky_filtered, axis=0)
+    frame_master_sky = np.median(cube_sky_raw, axis=0)
             
-    printandlog('\nThe master sky frame was created out of ' + str(len(path_sky_files)) + 
+    printandlog('\nCreated master sky frame out of ' + str(len(path_sky_files)) + 
                 ' raw SKY-file(s) comprising a total of ' + str(cube_sky_raw.shape[0]) + ' frame(s).')
     
     return frame_master_sky
 
 ###############################################################################
-# create masterflat and bad pixel mask from raw calibration data
+# create_bpm_darks
 ###############################################################################
 
-def create_badpix_from_flat_sequence(flat_array):
-    
+def create_bpm_darks(list_frame_dark):
     '''
-    This function finds bad pixels in darks based on bias offsets and sigma filtering
+    Create a bad pixel map from DARK(,BACKGROUND)-files based on bias offsets and
+    sigma filtering.
     
     Input:
-        flat_array: A list of tuples with flat_array[x][0] containing the data and flat_array[x][1] the exposure time
-        
+        list_frame_dark: list of (mean-combined) DARK(,BACKGROUND)-frames
+    
     Output:
-        flat_badpix: A numpy array containing a bad pixel mask of all non-linear responding pixels
+        frame_bpm_dark: bad pixel map created from darks
+        
+    Function written by Rob van Holstein; constructed from functions by Christian Ginski
+    Function status: verified
+    '''
+
+    # Create initial bad pixel map with only 1's
+    frame_bpm_dark = np.ones(list_frame_dark[0].shape)
+
+    for frame_dark in list_frame_dark:  
+        # Remove outliers from dark frame and compute median and standard deviation    
+        frame_dark_cleaned = sigmaclip(frame_dark, 5, 5)[0]
+        stddev = np.nanstd(frame_dark_cleaned)
+        median = np.nanmedian(frame_dark_cleaned)
+    
+        # Subtract median from dark frame and take absolute value
+        frame_dark = np.abs(frame_dark - median)    
+        
+        # Initialize a bad pixel array with 1 as default pixel value
+        frame_bpm = np.ones(frame_dark.shape)
+        
+        # Set pixels that deviate by more than 3.5 sigma from the frame median value 
+        # to 0 to flag them as bad pixels
+        frame_bpm[frame_dark > 3.5*stddev] = 0    
+        
+        # Add bad pixels found to master bad pixel map 
+        frame_bpm_dark *= frame_bpm
+        
+    return frame_bpm_dark
+        
+###############################################################################
+# create_bpm_flats
+###############################################################################
+
+def create_bpm_flats(list_frame_flat, list_exptime_flat):
+    '''
+    Create a bad pixel map from FLAT-files by finding all non-linear responding 
+    pixels
+    
+    Input:
+        list_frame_flat: list of (mean-combined) FLAT-frames
+        list_exptime_flat: list of corresponding exposure times of flat
+    
+    Output:
+        frame_bpm_flat: bad pixel map created from flats
+        
+    Function written by Christian Ginski; adapted by Rob van Holstein
+    Function status: verified
     '''
     
-    # divide the flats with the longest and shortest expoure time
-    comparison = flat_array[-1][0] / flat_array[0][0]
+    # Divide the flats with the longest and shortest exposure time
+    comparison = list_frame_flat[-1] / list_frame_flat[0]
 
-    # compute the factor by which exposure time and thus pixel counts should have increased
-    factor = flat_array[-1][1] / flat_array[0][1]
+    # Compute the factor by which exposure time and thus pixel counts should have increased
+    factor = list_exptime_flat[-1] / list_exptime_flat[0]
     
-    # set all pixels that were undefined to 1
-    comparison[np.isneginf(comparison)]=1
-    comparison[np.isinf(comparison)]=1
-    comparison[np.isnan(comparison)]=1      
+    # Set all pixels that were undefined to 1
+    comparison[np.isinf(comparison)] = 1
+    comparison[np.isnan(comparison)] = 1      
+   
+    # Create an array for the left and right detector side that does not contain strong outliers
+    left = sigmaclip(comparison[15:1024, 36:933], 5, 5)[0]
+    right = sigmaclip(comparison[5:1018, 1062:1958], 5, 5)[0]
     
-    # create an array for the left and right detector side that does not contain strong outliers
-    left, low, high = sigmaclip(comparison[15:1024,36:933],5,5)    
-    right, low, high = sigmaclip(comparison[5:1018,1062:1958],5,5)        
-    
-    # determine the standard deviation in the sigma filtered array
+    # Determine the standard deviation in the sigma filtered array
     stddev_left = np.nanstd(left)
     stddev_right = np.nanstd(right) 
     
-    # subtracting the factor from the comparison array
-    # the resulting array should contain 0 for all well responding pixels
-    index_array_left = np.abs(comparison[15:1024,36:933] - factor)
-    index_array_right = np.abs(comparison[5:1018,1062:1958] - factor)    
+    # Subtract the factor from the comparison array
+    # The resulting array should contain 0 for all well responding pixels
+    index_array_left = np.abs(comparison[15:1024, 36:933] - factor)
+    index_array_right = np.abs(comparison[5:1018, 1062:1958] - factor)    
     
-    # identifying pixels that deviate by more than 5 sigma from linear response
-    mask_left = index_array_left > 5 * stddev_left        
-    mask_right = index_array_right > 5 * stddev_right    
+    # Identify pixels that deviate by more than 3.5 sigma from linear response
+    mask_left = index_array_left > 3.5*stddev_left        
+    mask_right = index_array_right > 3.5*stddev_right    
 
-    # all non-linear responding pixels are set to 0
-    badpix_left = index_array_left / index_array_left
+    # All good pixels are set to 1 and all non-linear responding pixels are set to 0
+    badpix_left = np.ones(index_array_left.shape)
     badpix_left[mask_left] = 0
 
-    badpix_right = index_array_right / index_array_right
+    badpix_right = np.ones(index_array_right.shape)
     badpix_right[mask_right] = 0
     
-    # final left and right side combined bad pixel mask is created
-    flat_badpix = comparison / comparison
-    flat_badpix[15:1024,36:933]=badpix_left
-    flat_badpix[5:1018,1062:1958]=badpix_right
+    # Final left and right side combined bad pixel mask is created
+    frame_bpm_flat = np.ones(comparison.shape)
+    frame_bpm_flat[15:1024, 36:933] = badpix_left
+    frame_bpm_flat[5:1018, 1062:1958] = badpix_right
 
-    # it is ensured that there are no nan values in the final bad pixel mask
-    flat_badpix = np.nan_to_num(flat_badpix)
+    # It is ensured that there are no NaN values in the final bad pixel mask
+    frame_bpm_flat = np.nan_to_num(frame_bpm_flat)
 
-    return flat_badpix
+    return frame_bpm_flat
 
+###############################################################################
+# process_dark_flat_frames
+###############################################################################
 
-def create_badpix_from_single_dark(dark_frame):
-    
+def process_dark_flat_frames(path_dark_files, path_flat_files, indices_to_remove_dark, indices_to_remove_flat):
     '''
-    This function finds bad pixels in darks based on bias offsets and sigma filtering
+    Process DARK(,BACKGROUND)- and FLAT-files to create a master flat frame and 
+    a bad pix map. The number of dark and flat frames provided must be the same, 
+    and they must have matching exposure times. Generally a sequence of darks and 
+    flats with exposure times 1, 2, 3, 4, 5 s or 2, 4, 6, 8, 10 s is used. The bad 
+    pixel mask contains flags for all pixels that have a strong bias offset or that 
+    respond non-linearly.
     
     Input:
-        dark_frame: single dark frame as numpy array
+        path_dark_files: list of paths to raw DARK(,BACKGROUND)-files
+        path_flat_files: list of paths to raw FLAT-files
+        indices_to_remove_dark: list of 1-D arrays with indices of frames to 
+            be removed for each DARK(,BACKGROUND)-file. If no frames are to be 
+            removed the array is empty. 
+        indices_to_remove_flat: list of 1-D arrays with indices of frames to 
+            be removed for each FLAT-file. If no frames are to be removed the 
+            array is empty.         
         
     Output:
-        A bad pixel frame as numpy array
+        frame_master_flat: master flat frame
+        frame_master_bpm: master bad pixel map (1 indicates good pixel; 
+                                                0 indicates bad pixel)
+    
+    File written by Christian Ginski; adapted by Rob van Holstein
+    Function status: verified
     '''
-    
-    clean_dark_frame, low, high = sigmaclip(dark_frame,5,5)
-    stddev = np.nanstd(clean_dark_frame)
-    dark_frame_median = np.nanmedian(dark_frame)
+  
+    # Read dark and flat frames, compute mean and prepare flats
+    list_frame_dark = []       
+    list_frame_flat = []
+    list_frame_flat_norm = []
+    list_exptime_flat = []
 
-    dark_frame = np.abs(dark_frame - dark_frame_median)    
-    
-    # Initialize a bad pixel array with 1 as default pixel value
-    
-    badpix = np.nan_to_num(dark_frame / dark_frame)
-    
-    # Set pixel that deviate by more than 5 sigma from the frame median value 
-    # to 0 to flag them as bad pixels
-    
-    badpix[dark_frame > 5*stddev]=0    
-    
-    return badpix
-
-
-def create_badpix_from_multiple_dark(dark_array):
-    
-    '''
-    This is a simple wrapper function that takes a dark input array from reduced_IRDIS_flat_dark_sequence
-    The underlying function finds bad pixels in darks based on bias offsets and sigma filtering
-    
-    Input:
-        dark_array: a list of tuples, each tuple contains a dark frame as numpy array and the exposure time
-        Note that the exposure time is not strictly needed but the data format is kept as convenience from 
-        reduced_IRDIS_flat_dark_sequence
-    
-    Output:
-        A list of bad pixel frames based on each individual dark frame
-    '''
-    badpix_array = []    
-    
-    for k in range(0,len(dark_array)):
-        badpix_tmp = create_badpix_from_single_dark(dark_array[k][0])
-        badpix_array.append(badpix_tmp)
-    
-    return badpix_array
-
-
-def combine_badpix(badpix_array):
-    
-    '''
-    Creates a combined bad pixel mask from multipel individual bad pixel masks
-    
-    Input:
-        badpix_array: A list of numpy arrays each containing a bad pixel mask 
-            
-    Output:
-        badpix: A single numpy array containing the combined bad pixel mask
-    '''
-    
-    badpix = badpix_array[0] * badpix_array[1]    
-    
-    for r in range(0,len(badpix_array)):
-        badpix = badpix * badpix_array[r]   
-
-    return badpix
-
-def reduce_IRDIS_flat_dark_sequence(path_dark_files, path_flat_files, indices_to_remove_dark, indices_to_remove_flat):
-    '''
-    Reduce an IRDIS flat sequece. The sequence should consist of 5 flat images
-    taken with different exposure times. Typically 1,2,3,4,5s or
-    2,4,6,8,10s. 
-    The function additionally creates a master bad pixel mask.
-    The bad pixel mask contains flags for all pixels that have a strong bias offset or that respond non-linearly.
-    
-    Input:
-        dark_path: path containing darks with exposure times matching th flat images
-        flat_path: path containing flat files (dark_path != flat_path)
-        
-    Output:
-        No return value. Instead a masterflat file and a master bad pixel mask are written to the flat_path
-    
-    File written by Christian Ginski
-    Function status: verified externally ;)
-    '''
-    
-    list_cube_flat_raw_exp = []
-    list_cube_dark_raw_exp = []    
-    
-    # Reading in darks
-    
-    for path_sel, indices_sel in zip(path_dark_files, indices_to_remove_dark):
-        # Read data and header from file
-        dark_cube_sel, dark_cube_header = read_fits_files(path=path_sel, silent=True)
+    for path_dark, path_flat, indices_dark, indices_flat in zip(path_dark_files, path_flat_files, indices_to_remove_dark, indices_to_remove_flat):
+        # Read data from files
+        cube_dark = read_fits_files(path=path_dark, silent=True)[0]
+        cube_flat, header_flat = read_fits_files(path=path_flat, silent=True)
 
         # Remove frames based on list of indices provided by the user
-        cube_sel = np.delete(cube_sel, indices_sel, axis=0)
+        cube_dark = np.delete(cube_dark, indices_dark, axis=0)
+        cube_flat = np.delete(cube_flat, indices_flat, axis=0)
 
-        # get exposure time for each dark cube
-        exptime = dark_cube_header["EXPTIME"]
+        # Compute mean of cubes
+        frame_dark = np.mean(cube_dark, axis=0)
+        frame_flat = np.mean(cube_flat, axis=0)
         
-        # Append cube to list, list is list of tuples with data and exposure time
-        list_cube_dark_raw_exp.append((cube_sel,exptime))
-    
-    # sort list by exposure time in case files were not sorted
-    list_cube_dark_raw_exp_sorted = sorted(file_list, key=lambda tup: tup[1])
-    
-    # Reading in flats
-    
-    for path_sel, indices_sel in zip(path_flat_files, indices_to_remove_flat):
-        # Read data and header from file
-        flat_cube_sel, flat_cube_header = read_fits_files(path=path_sel, silent=True)
+        # Dark-subtract flat frame
+        frame_flat_dark_subtracted = frame_flat - frame_dark
 
-        # Remove frames based on list of indices provided by the user
-        cube_sel = np.delete(cube_sel, indices_sel, axis=0)
-
-        # get exposure time for each dark cube
-        exptime = flat_cube_header["EXPTIME"]
+        # Filter dark-subtracted flat for zeros and NaN's
+        frame_flat_dark_subtracted = np.nan_to_num(frame_flat_dark_subtracted)
+        frame_flat_dark_subtracted[frame_flat_dark_subtracted <= 0] = 1
         
-        # Append cube to list, list is list of tuples with data and exposure time
-        list_cube_flat_raw_exp.append((cube_sel,exptime))
-    
-    # sort list by exposure time in case files were not sorted
-    list_cube_flat_raw_exp_sorted = sorted(file_list, key=lambda tup: tup[1])
-    
-    # a simple change in variable names, it makes the code easier to read:
-    
-    darks = list_cube_dark_raw_exp_sorted
-    flats = list_cube_flat_raw_exp_sorted
+        # Determine exposure time of each flat file and normalize flat with it
+        exptime = header_flat['EXPTIME']
+        frame_flat_norm = frame_flat_dark_subtracted / exptime
 
-    subtracted_flat = []
-    subtracted_norm_flat = []
+        # Append frames and exposure time to lists
+        list_frame_dark.append(frame_dark)
+        list_frame_flat.append(frame_flat_dark_subtracted)      
+        list_frame_flat_norm.append(frame_flat_norm)
+        list_exptime_flat.append(exptime)
 
-    # flats and darks are matched based on their exposure time
-    # subtracted and normalized (by the exposure time) flats are created
-
-    for r in range(0,len(flats)):
-        for k in range(0,len(darks)):
-            if darks[k][1] == flats[r][1]:
-                subtracted_flat.append((flats[r][0]-darks[k][0],flats[r][1]))
-                subtracted_norm_flat.append((flats[r][0]-darks[k][0])/flats[r][1])
-
-    # Median combination of all normalized flats
-
-    flat = np.median(np.array(subtracted_norm_flat),axis=0)
+    # Median combine all normalized flats
+    frame_flat = np.median(np.array(list_frame_flat_norm), axis=0)
     
-    # Selection of the left and right detectir area that actualy receives signal
+    # Select the left and right detector area that actualy receives signal
+    frame_flat_left = frame_flat[15:1024, 36:933] 
+    frame_flat_right = frame_flat[5:1018, 1062:1958]
+
+    # Normalize left and right side of the flat with the respective median values
+    frame_flat_left_norm = frame_flat_left / np.median(frame_flat_left)
+    frame_flat_right_norm = frame_flat_right / np.median(frame_flat_right)
     
-    flat_left = flat[15:1024,36:933] 
-    flat_right = flat[5:1018,1062:1958]
-    
-    # Creation of a baseline flat image that encompases left and right detector side 
+    # Create a baseline flat image that encompases left and right detector side
     # All values are 1, i.e. if applied this baseline flat does not influence the reduction
-    # This is mainly to prevent later edge areas from containing blown up data values
+    # This is mainly to prevent later edge areas from containing blown-up data values
+    frame_master_flat = np.ones(frame_flat.shape)
     
-    masterflat = np.nan_to_num(flat / flat)
-    masterflat[masterflat==0] = 1
-    
-    # Left and right side of the flat are normalized by the respective median values
-    
-    flat_norm_left = flat_left / np.median(flat_left)
-    flat_norm_right = flat_right / np.median(flat_right)
+    # Construct the final full detector flat
+    frame_master_flat[15:1024, 36:933] = frame_flat_left_norm 
+    frame_master_flat[5:1018, 1062:1958] = frame_flat_right_norm    
 
-    # The final full detector flat is constructed
-
-    masterflat[15:1024,36:933] = flat_norm_left 
-    masterflat[5:1018,1062:1958] = flat_norm_right    
-
-
-    #-------Badpix Mask--------------------------------------------
-    # Creating a bad pixel map based on dark and flat frames
+    # Create a bad pixel map based on dark and flat frames 
     # Theoretically all detector artefacts should be identified this way
+    # Create a list of bad pixel maps with pixels with a bias offset flagged as bad
+    frame_bpm_dark = create_bpm_darks(list_frame_dark)
 
-    # Flaging non-linear responding pixels as bad
-    badpix_flat = create_badpix_from_flat_sequence_array(subtracted_flat)
-    
-    # Flaging pixels that have a bias offset as bad
-    badpix_dark_array = create_badpix_from_multiple_dark(darks)
+    # Createa a bad pixel map with non-linear responding pixels flagged as bad
+    frame_bpm_flat = create_bpm_flats(list_frame_flat, list_exptime_flat)
 
-    # Appending the flat bad pixel mask to the dark bad pixel array
-    badpix_array_dark.append(badpix_flat)
+    # Create the master bad pixel map by combing the one from the darks and flats    
+    frame_master_bpm = frame_bpm_dark * frame_bpm_flat
 
-    # creating a combined bad pixel mask
-    master_badpix = combine_badpix(badpix_array_dark)
+    printandlog('\nCreated master flat frame and bad pixel map out of ' + str(len(path_flat_files)) + 
+                ' pairs of raw FLAT- and DARK(,BACKGROUND)-file(s).')
 
-    return masterflat, master_badpix
+    return frame_master_flat, frame_master_bpm
 
 ###############################################################################
 # compute_fwhm_separation
@@ -1580,19 +1555,19 @@ def compute_fwhm_separation(filter_used):
     pixel_scale = 12.25e-3
 
     # Define approximate separation of satellite spots (pixels) and filter central wavelength and bandwidth (m)
-    if filter_used == 'FILT_BBF_Y':
+    if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
         separation = 31.0
         lambda_c = 1043e-9
         delta_lambda = 140e-9
-    elif filter_used == 'FILT_BBF_J':
+    elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
         separation = 37.4
         lambda_c = 1245e-9
         delta_lambda = 240e-9
-    elif filter_used == 'FILT_BBF_H':
+    elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
         separation = 48.5
         lambda_c = 1625e-9
         delta_lambda = 290e-9
-    elif filter_used == 'FILT_BBF_Ks':
+    elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
         separation = 64.5
         lambda_c = 2182e-9
         delta_lambda = 300e-9
@@ -2073,7 +2048,7 @@ def find_center_coordinates(list_frame_center_processed,
         f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 1] + 1, y_fit[1, 1] + 1))
         f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 3] + 1, y_fit[1, 3] + 1))        
         f.close()  
-        printandlog('\nWrote file ' + path_reg_file + ' which can be loaded as a region in DS9 and shows the fitted coordinates of the satellite spots and the center.')
+        printandlog('\nWrote file ' + path_reg_file + ' which can be loaded as a region in DS9 (in the top bar: Region --> Load Regions) and shows the fitted coordinates of the satellite spots and the center.')
 
     # Print center coordinates found
     max_path_length = max([len(os.path.basename(x)) for x in path_processed_center_files])
@@ -2659,9 +2634,9 @@ def compute_annulus_values(cube, param):
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 deg is up and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             
     Output:
         values_annulus: values of the image cube in the annulus
@@ -2685,15 +2660,14 @@ def compute_annulus_values(cube, param):
         param = [param]
 
     for param_sel in param:
-        coord_center_x, coord_center_y, inner_radius, width, start_angle, end_angle = param_sel
-        outer_radius = inner_radius + width
+        coord_center_x, coord_center_y, inner_radius, outer_radius, start_angle, end_angle = param_sel
 
         start_angle = np.mod(start_angle, 360)
         end_angle = np.mod(end_angle, 360)
         
         # Of each pixel calculate radius and angle in range [0, 360)
         radius = np.sqrt((xm - coord_center_x)**2 + (ym - coord_center_y)**2)
-        angle = np.mod(np.rad2deg(np.arctan2(coord_center_x - xm, ym - coord_center_y)), 360)
+        angle = np.mod(np.rad2deg(np.arctan2(ym - coord_center_y, xm - coord_center_x)), 360)
            
         # Select pixels that satisfy provided requirements
         if start_angle < end_angle:
@@ -2733,9 +2707,9 @@ def subtract_background(cube, annulus_background):
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
 
     Output:
         cube_background_subtracted: image cube or frame with background subtracted
@@ -2790,11 +2764,11 @@ def process_flux_frames(path_flux_files,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and
-                rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and 
-                rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise)
         sigma_filtering: if True remove bad pixels remaining after applying
             master bad pixel map using sigma-filtering (default = True)
         centering_method: method to center the images. If 'manual', use fixed 
@@ -2882,7 +2856,7 @@ def process_flux_frames(path_flux_files,
     number_frames_removed = sum([len(x) for x in indices_to_remove_flux])
     number_frames_used = number_frames_total - number_frames_removed
     
-    printandlog('\nThe master flux frame was created out of ' + str(len(path_flux_files)) + 
+    printandlog('\nCreated master flux frame out of ' + str(len(path_flux_files)) + 
             ' raw FLUX-file(s) comprising a total of ' + str(number_frames_used) + ' frame(s).')
 
     return frame_master_flux, frame_annulus_background
@@ -2900,10 +2874,10 @@ def annulus_1_to_0_based(annulus):
             coord_center_x: x-coordinate of center (pixels; 1-based)
             coord_center_y: y-coordinate of center (pixels; 1-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            
     Output:
         annulus: same as for input, but with coord_center_x and coord_center_y
             0-based
@@ -2934,10 +2908,10 @@ def annulus_0_to_1_based(annulus):
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            
     Output:
         annulus: same as for input, but with coord_center_x and coord_center_y
             1-based
@@ -2974,7 +2948,8 @@ def perform_preprocessing(frames_to_remove=[],
                           flux_annulus_background='large annulus',
                           save_preprocessed_data=True, 
                           combination_method_polarization='least squares',\
-                          flux_aperture=140):
+                          flux_aperture='automatic',\
+                          convert_in_contrast_per_arcsec2=False):
     '''
     Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data, 
     background subtraction, flat-fielding, bad pixel removal, centering and compution
@@ -2982,7 +2957,7 @@ def perform_preprocessing(frames_to_remove=[],
 
     Input:
         frames_to_remove: list of integers and length-2-tuples of integers 
-            indicating which files and frames to remove (0-based). A complete
+            indicating which files and frames to remove (1-based). A complete
             file can be removed by specifying its integer index, while a frame
             of specific file can be removed by specifying a tuple
             (file_index, frame_index). If no files or frames should be removed, 
@@ -3001,15 +2976,16 @@ def perform_preprocessing(frames_to_remove=[],
             The plots allow for checking whether the centering is correct and 
             to scan the data for frames with bad quality (default = True).    
         object_centering_method: method to center the OBJECT-frames. If 
-            'center frames' or 'manual', use fixed coordinates as provided by 
-            object_center_coordinates. If 'gaussian', fit a 2D Gaussian to each frame. 
+            'center frames' determine the center coordinates from the 
+            CENTER-frames. If 'gaussian', fit a 2D Gaussian to each frame. 
             If 'cross-correlation', fit a 2D Gaussian to the first frame and then
             use cross-correlation to align (register) the other frames onto the 
             centered first  frame. For 'gaussian' and 'cross-correlation' 
             object_center_coordinates is used as initial guess of the center 
             coordinates and the determined center coordinates are plotted for
-            each image. If 'automatic', object_centering_method is set to
-            'center frames' if there are CENTER-files, and is set to 'gaussian' 
+            each image. If 'manual', use fixed coordinates as provided by 
+            object_center_coordinates. If 'automatic', object_centering_method is 
+            set to 'center frames' if there are CENTER-files, and is set to 'gaussian' 
             if there are no CENTER-files (default = 'automatic').
         center_subtract_object: if True subtract the OBJECT-file(s) taken
             closest in time from the CENTER-file(s) (default = True). This generally
@@ -3092,30 +3068,30 @@ def perform_preprocessing(frames_to_remove=[],
                 used for the fitting and center_coordinates is ignored. The
                 value of crop_radius is also used to create the sub-images when
                 show_images_center_coordinates = True.
-            sigfactor: all sub-image pixels with values smaller than 
+        sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
                 to mask them for fitting the 2D Gaussian. If None, no pixels are
                 replaced by Gaussian noise.
-            saturation_level: all pixels within the smallest circle encompassing 
+        saturation_level: all pixels within the smallest circle encompassing 
                 the pixels with a value equal to or higher than saturation_level 
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-            The default value of flux_param_centering is (60, None, 30000).
-            flux_param_centering is only used when flux_centering_method is 'gaussian'.  
+                The default value of flux_param_centering is (60, None, 30000).
+                flux_param_centering is only used when flux_centering_method is 'gaussian'.  
         flux_annulus_background: (list of) length-6-tuple(s) with parameters 
             to generate annulus to measure and subtract background in master flux frame:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and
-                rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and 
-                rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise)
             If string 'large annulus' the annulus will be star-centered and 
             located far away from the star with an inner radius of 320 pixels
-            and a width of 60 pixels (default = 'large annulus').
+            and an out radius of 380 pixels (default = 'large annulus').
         save_preprocessed_data: If True, save preprocessed cubes of single-sum 
             and single-difference images in the 'preprocessed' folder so that 
             the preprocessing can be skipped when re-running the pipeline
@@ -3123,7 +3099,21 @@ def perform_preprocessing(frames_to_remove=[],
         combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median' 
             (default = 'least squares')
-        flux_aperture: radius in pixels to use for the aperture photometry of the star  
+        flux_aperture: (list of) length-6-tuple(s) with parameters 
+            to generate an annulus (normally a full circular aperture but we let 
+            the option to exclude an inner circle or a wedge in special circumstances like 
+            a binary system) to measure the star total flux in master flux frame:
+            coord_center_x: x-coordinate of center (pixels; 0-based; by default 255.5)
+            coord_center_y: y-coordinate of center (pixels; 0-based; by default 255.5)
+            inner_radius: inner radius (pixels; by default 0)
+            outer_radius: outer_radius (pixels; by default 140)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise; by default 0)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise; by default 360)        
+        convert_in_contrast_per_arcsec2: if True, performs aperture photometry 
+            on the master flux frame, and convert all the output frames in contrast 
+            per arcsec^2.
         
     Output:
         cube_left_frames: cube of pre-processed left frames 
@@ -3132,9 +3122,12 @@ def perform_preprocessing(frames_to_remove=[],
         file_index_object: list of file indices of OBJECT-files (0-based)
         combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
-        star_flux: 
+        star_flux: float with the total star flux as computed using the parameters 
+            defined by the flux_aperture tuple, in ADU, corrected by the DIT ratio
+            between FLUX and OBJECT frames and the potential use of ND filters
             
-    File written by Rob van Holstein; based on function by Christian Ginski
+    File written by Rob van Holstein; based on function by Christian Ginski; 
+    complemented by Julien Milli
     Function status: verified
     '''
 
@@ -3158,46 +3151,54 @@ def perform_preprocessing(frames_to_remove=[],
                                          combination_method_polarization=combination_method_polarization, 
                                          object_centering_method=object_centering_method, 
                                          save_preprocessed_data=save_preprocessed_data, 
-                                         show_images_center_coordinates=show_images_center_coordinates)
+                                         show_images_center_coordinates=show_images_center_coordinates,\
+                                         convert_in_contrast_per_arcsec2=convert_in_contrast_per_arcsec2)
 
     ###############################################################################
     # Computing master flat and bad pixel map or reading static ones
     ###############################################################################
     
     if any(path_flat_files):
-        #TODO: Create master flats and master dark,backgrounds yourself  
         # Process the dark and flat files to create a master flat and bad pixel map
+        printandlog('\n###############################################################################')
+        printandlog('# Processing DARK(,BACKGROUND)- and FLAT-files')
+        printandlog('###############################################################################') 
         frame_master_flat, frame_master_bpm = process_dark_flat_frames(path_dark_files=path_dark_files, 
                                                                        path_flat_files=path_flat_files,
                                                                        indices_to_remove_dark=indices_to_remove_dark, 
-                                                                       indices_to_remove_flat=indices_to_remove_flat, 
-                                                                       sigma_filtering=sigma_filtering)
-    
+                                                                       indices_to_remove_flat=indices_to_remove_flat)
+
+        printandlog('')
+        write_fits_files(data=frame_master_flat, path=os.path.join(path_flat_dir, name_file_root + 'master_flat.fits'), header=False, silent=False)
+        write_fits_files(data=frame_master_bpm, path=os.path.join(path_bpm_dir, name_file_root + 'master_badpix.fits'), header=False, silent=False)
+        
     else:
         # Determine filter used
+        printandlog('\n###############################################################################')
+        printandlog('# Reading static master flat and bad pixel map')
+        printandlog('###############################################################################') 
         filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
     
         # Read static master flat    
-        #TODO: Make master flats for Y and Ks. 
-        if filter_used == 'FILT_BBF_Y':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Y.fits')
-        elif filter_used == 'FILT_BBF_J':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_J.fits')
-        elif filter_used == 'FILT_BBF_H':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_H.fits')
-        elif filter_used == 'FILT_BBF_Ks':
-            path_static_flat = os.path.join(path_static_calib_dir, 'masterflat_Ks.fits')
-        
+        if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_Y.fits')
+            filter_static_flat = 'FILT_BBF_Y'
+        elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_J.fits')
+            filter_static_flat = 'FILT_BBF_J'
+        elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_H.fits')
+            filter_static_flat = 'FILT_BBF_H'
+        elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
+            path_static_flat = os.path.join(path_static_calib_dir, 'master_flat_Ks.fits')
+            filter_static_flat = 'FILT_BBF_Ks'
+            
         frame_master_flat = np.squeeze(read_fits_files(path=path_static_flat, silent=True)[0])
-    
-        #TODO: Perform the the 2 lines below on the master flats and save them again so that these lines can be removed from the code
-        # Filter master flat for zeros and NaN's
-        frame_master_flat = np.nan_to_num(frame_master_flat)
-        frame_master_flat[frame_master_flat == 0] = 1
-    
+       
         # Read static bad pixel map
         frame_master_bpm = np.squeeze(read_fits_files(path=os.path.join(path_static_calib_dir, 'master_badpix.fits'), silent=True)[0])
-    
+        printandlog('\nRead static bad pixel map and static master flat in ' + filter_static_flat + '.')
+        
     ###############################################################################
     # Computing master sky for object images
     ###############################################################################
@@ -3209,9 +3210,7 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('###############################################################################') 
 
         frame_master_sky = process_sky_frames(path_sky_files=path_sky_files, 
-                                              indices_to_remove_sky=indices_to_remove_sky, 
-                                              frame_master_bpm=frame_master_bpm, 
-                                              sigma_filtering=sigma_filtering)
+                                              indices_to_remove_sky=indices_to_remove_sky)
         
         # Write master sky-frame
         printandlog('')
@@ -3337,9 +3336,7 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('###############################################################################') 
 
         frame_master_sky_flux = process_sky_frames(path_sky_files=path_sky_flux_files, 
-                                                   indices_to_remove_sky=indices_to_remove_sky_flux, 
-                                                   frame_master_bpm=frame_master_bpm, 
-                                                   sigma_filtering=sigma_filtering)
+                                                   indices_to_remove_sky=indices_to_remove_sky_flux)
         
         # Write master sky-frame
         printandlog('')
@@ -3368,7 +3365,7 @@ def perform_preprocessing(frames_to_remove=[],
                 for x in flux_annulus_background:
                     printandlog(annulus_0_to_1_based(x))
         elif flux_annulus_background == 'large annulus':
-            flux_annulus_background = (511.5, 511.5, 320, 60, 0, 360)
+            flux_annulus_background = (511.5, 511.5, 320, 380, 0, 360)
             printandlog('\nThe background will be determined with a star-centered annulus located far away from the star:')
             printandlog(annulus_0_to_1_based(flux_annulus_background))
 
@@ -3392,11 +3389,18 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=frame_master_flux, path=os.path.join(path_flux_dir, name_file_root + 'master_flux.fits'), header=False, silent=False)
         write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
+
+        if flux_aperture == 'automatic':
+            flux_aperture = (511.5, 511.5, 0, 140, 0, 360)
+            printandlog('\nflux_aperture is \'automatic\': setting it to ' + str(tuple(x + 1 for x in flux_aperture)))
+        printandlog('\nThe star total flux will be determined from the master flux image with an aperture located on:')
+        printandlog(annulus_0_to_1_based(flux_aperture))
+                        
         star_flux, dit_ratio,nd_ratio = determine_star_flux(\
                                             frame_master_flux,path_flux_files, \
                                             path_object_files, flux_aperture)
         reference_flux = star_flux*nd_ratio*dit_ratio
-        table_star_flux = pd.DataFrame({'aperture radius (px)':[flux_aperture],\
+        table_star_flux = pd.DataFrame({'aperture parameters':[flux_aperture],\
                                         'encircled_flux (ADU)':[star_flux],\
                                         'DIT ratio (OBJECT/FLUX)':[dit_ratio],\
                                         'ND filter ratio (OBJECT/FLUX)':[nd_ratio],\
@@ -3411,17 +3415,29 @@ def perform_preprocessing(frames_to_remove=[],
 ################################################################################
 ## determine_star_flux
 ################################################################################
-def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, radius):   
+def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flux_aperture):   
     '''
-    Determine flux of star in master flux frame using aperture photometry ......
+    Determine flux of star in the master flux frame using aperture photometry 
      
     Input:
         frame_master_flux: master flux frame 
         path_flux_files: list of paths to raw FLUX-files
         path_object_files: list of paths to raw OBJECT-files
-        radius: radius in pixels to use for the aperture photometry of the star              
+        flux_aperture: (list of) length-6-tuple(s) with parameters 
+            to generate an annulus (normally a full circular aperture but we let 
+            the option to exclude an inner circle or a wedge in special circumstances like 
+            a binary system) to measure the star total flux in master flux frame:
+            coord_center_x: x-coordinate of center (pixels; 0-based; by default 255.5)
+            coord_center_y: y-coordinate of center (pixels; 0-based; by default 255.5)
+            inner_radius: inner radius (pixels; by default 0)
+            outer_radius: outer_radius (pixels; by default 140)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise; by default 0)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise; by default 360)        
     Output:
-        star_total_flux: flux of the star in ADU encircled in a circle of radius "radius".
+        star_total_flux: flux of the star in ADU encircled in the region defined
+                        by the parameters flux_aperture.
                         The reference flux to use to convert from ADU to contrast 
                         is the product star_total_flux *  dit_ratio * nd_ratio
         dit_ratio: ratio between the DIT of OBJECT frames over FLUX frames
@@ -3433,14 +3449,14 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, rad
     File written by Julien Milli
     Function status: 
     '''
-    # We first perform aperture photometry on the mean PSF
-    aper = photutils.aperture.CircularAperture(\
-            (frame_master_flux.shape[0]/2.-0.5,frame_master_flux.shape[0]/2.-0.5),r=radius)
-    aper_phot = photutils.aperture_photometry(frame_master_flux,aper)
-    star_total_flux = aper_phot['aperture_sum'][0]
-    # if required we could here extract the uncertainty by adding the keyword error=... (RMS of the background evaluated in the region used for the background estimation)
-    # the the error would be aper_phot['aperture_sum_err']
-    printandlog('The star reference flux encircled in {0:.0f}px is {1:.1f} ADU'.format(radius,star_total_flux))
+    # We first perform aperture photometry on the master FLUX frame    
+#    aper = photutils.aperture.CircularAperture(\
+#            (frame_master_flux.shape[0]/2.-0.5,frame_master_flux.shape[0]/2.-0.5),r=radius)
+#    aper_phot = photutils.aperture_photometry(frame_master_flux,aper)
+#    star_total_flux = aper_phot['aperture_sum'][0]
+    star_total_flux = np.median(compute_annulus_values(cube=frame_master_flux, param=flux_aperture)[0])
+    printandlog('The star reference flux encircled in the annulus ({0:s}) is {1:.1f} ADU'.format(\
+                ', '.join(['{0:3.1f}'.format(f) for f in flux_aperture]),star_total_flux))
 
     # Determine filter used
     filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
@@ -3466,7 +3482,7 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, rad
     elif 'J' in filter_used:
         BB_filter='B_J'
     
-    # utility function to retriev the neutral density number 0.0, 1.0, 2.0 or 3.5
+    # utility function to retrieve the neutral density number 0.0, 1.0, 2.0 or 3.5
     def get_ND_value(ND_filter_name):
         if 'OPEN' in ND_filter_name:
             return 0
@@ -3531,7 +3547,7 @@ def sphere_transmission(BB_filter='B_H', NDset=0.):
 # compute_double_sum_double_difference
 ###############################################################################
 
-def compute_double_sum_double_difference(cube_single_sum, cube_single_difference, header, double_difference_type='standard'):
+def compute_double_sum_double_difference(cube_single_sum, cube_single_difference, header, double_difference_type='conventional'):
     '''  
     Compute double-sum I_Q- and I_U-images and double-difference Q- and U-images
     
@@ -3540,7 +3556,7 @@ def compute_double_sum_double_difference(cube_single_sum, cube_single_difference
         cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
         header: list of FITS-headers of raw science frames    
         double_difference_type: type of double difference to be computed, either
-        'standard' or 'normalized' (see van Holstein et al. 2019; default = 'standard')
+        'conventional' or 'normalized' (see van Holstein et al. 2019; default = 'conventional')
                
     Output:
         cube_I_Q_double_sum: cube of double-sum I_Q-images
@@ -3569,7 +3585,7 @@ def compute_double_sum_double_difference(cube_single_sum, cube_single_difference
     cube_I_Q_double_sum = 0.5*(cube_single_sum[indices_Qplus, :, :] + cube_single_sum[indices_Qminus, :, :])
     cube_I_U_double_sum = 0.5*(cube_single_sum[indices_Uplus, :, :] + cube_single_sum[indices_Uminus, :, :])
        
-    if double_difference_type == 'standard':
+    if double_difference_type == 'conventional':
         # Compute Q- and U-cubes using standard double difference
         printandlog('\nUsing the standard double difference to compute the Q- and U-images.')
         cube_Q_double_difference = 0.5*(cube_single_difference[indices_Qplus, :, :] - cube_single_difference[indices_Qminus, :, :])
@@ -3644,16 +3660,16 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
         annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
               
     Output:
         q: normalized Stokes q measured in annulus
@@ -3836,11 +3852,10 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
     '''   
                 
     # Define model parameters that do not depend on the date of the observations
-    printandlog('\nUsing model parameters corresponding to filter ' + filter_used[5:] + '.')
     delta_hwp = -0.613158589269
     delta_der = 0.500072483779
             
-    if filter_used == 'FILT_BBF_Y':
+    if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
         Delta_UT = 171.891576898
         Delta_M4 = 171.891576898
         epsilon_hwp = -0.00021492286258857182
@@ -3848,8 +3863,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = -0.0009423930026144313                                     
         Delta_der = 126.11957538036766
         d_CI = 0.9801695109615369
-                                     
-    elif filter_used == 'FILT_BBF_J':
+        filter_model = 'FILT_BBF_Y'
+                                    
+    elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
         Delta_UT = 173.414169049                
         Delta_M4 = 173.414169049
         epsilon_hwp = -0.00043278581895049085
@@ -3857,8 +3873,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = -0.008303978181252019                                      
         Delta_der = 156.0584333408133
         d_CI = 0.9894796343284551
-
-    elif filter_used == 'FILT_BBF_H':
+        filter_model = 'FILT_BBF_J'
+        
+    elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
         Delta_UT = 174.998748608
         Delta_M4 = 174.998748608
         epsilon_hwp = -0.00029657803108325395
@@ -3866,8 +3883,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = -0.002260131403393225                                       
         Delta_der = 99.32313652084311
         d_CI = 0.9955313968849352
+        filter_model = 'FILT_BBF_H'
                                                                            
-    elif filter_used == 'FILT_BBF_Ks':
+    elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
         Delta_UT = 176.302288996           
         Delta_M4 = 176.302288996
         epsilon_hwp = -0.00041456866069250524
@@ -3875,6 +3893,9 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         epsilon_der = 0.0035517563420643166                                        
         Delta_der = 84.13439892002613
         d_CI = 0.9841908773870153
+        filter_model = 'FILT_BBF_Ks'
+
+    printandlog('\nUsing model parameters corresponding to filter ' + filter_model[5:] + '.')
     
     # Define Mueller matrices of HWP, derotator and common path and IRDIS
     M_hwp = compute_reflection_mueller_matrix(epsilon_hwp, Delta_hwp)
@@ -3906,7 +3927,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
     for i in range(n):
         
         # Define model parameters that depend on the date of the observations
-        if filter_used == 'FILT_BBF_Y':
+        if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.023607413903534567 
                 epsilon_M4 = 0.018211735858186456
@@ -3914,7 +3935,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
                 epsilon_UT = 0.01745394681183012
                 epsilon_M4 = 0.018194769704367342
             
-        elif filter_used == 'FILT_BBF_J':
+        elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.016685701811847004
                 epsilon_M4 = 0.012844478639635984
@@ -3922,7 +3943,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
                 epsilon_UT = 0.01213513552053676
                 epsilon_M4 = 0.013046513475544473
    
-        elif filter_used == 'FILT_BBF_H':
+        elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.012930082215499676
                 epsilon_M4 = 0.009845229155837451 
@@ -3930,7 +3951,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
                 epsilon_UT = 0.009032205030412622
                 epsilon_M4 = 0.009220985704954044   
                 
-        elif filter_used == 'FILT_BBF_Ks':
+        elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
             if dates[i] < date_recoating:
                 epsilon_UT = 0.010575041739439168
                 epsilon_M4 = 0.007766430613637994 
@@ -4010,16 +4031,16 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
         annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
         combination_method_polarization: method to be used to produce the incident Q- and U-images, 
             'least squares', 'trimmed mean' or 'median' (default = 'least squares')
         trimmed_mean_prop_to_cut_polar: fraction to cut off of both tails of the distribution if 
@@ -4604,7 +4625,7 @@ def perform_postprocessing(cube_left_frames,
                            file_index_object, 
                            annulus_star='automatic', 
                            annulus_background='large annulus', 
-                           double_difference_type='standard', 
+                           double_difference_type='conventional', 
                            remove_vertical_band_detector_artefact=True, 
                            combination_method_polarization='least squares', 
                            trimmed_mean_prop_to_cut_polar=0.1, 
@@ -4626,12 +4647,12 @@ def perform_postprocessing(cube_left_frames,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             If string 'ao residuals' the annulus will be automatically determined and 
-            be star-centered and located over the AO residuals. The inner radius 
-            and width of the annulus will depend on the filter used. If 
+            be star-centered and located over the AO residuals. The inner and 
+            outer radius of the annulus will depend on the filter used. If 
             'star aperture' a small aparture located at the position of
             the central star will be used. If 'automatic', annulus_star will 
             first be set to 'ao residuals' in case of coronagraphic data, and to 
@@ -4640,14 +4661,14 @@ def perform_postprocessing(cube_left_frames,
             coord_center_x: x-coordinate of center (pixels; 0-based)
             coord_center_y: y-coordinate of center (pixels; 0-based)
             inner_radius: inner radius (pixels)
-            width: width (pixels)
-            start_angle: start angle of annulus sector (deg; 0 due right and rotating counterclockwise)
-            end_angle: end angle of annulus sector (deg; 0 due right and rotating counterclockwise)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             If string 'large annulus' the annulus will be star-centered and 
             located far away from the star with an inner radius of 360 pixels
-            and a width of 60 pixels (default = 'large annulus').
+            and an outer radius of 420 pixels (default = 'large annulus').
         double_difference_type: type of double difference to be computed, either
-        'standard' or 'normalized' (see van Holstein et al. 2019; default = 'standard')
+        'conventional' or 'normalized' (see van Holstein et al. 2019; default = 'conventional')
         remove_vertical_band_detector_artefact: If True remove the vertical band detector artefact seen in 
             the double-difference Q- and U-images. If False don't remove it (default = True).
         combination_method_polarization: method to be used to produce the incident Q- and U-images, 
@@ -4665,7 +4686,7 @@ def perform_postprocessing(cube_left_frames,
         normalized_polarization_images: if True create final images of degree of linear polarization, normalized Stokes q and u
             and degree and angle of linear polarization computed from q and u; such images only have meaning if all flux in the images
             originates from the astrophysical source of interest (default = False)
-        star_flux: if the option convert_in_contrast_per_arcsec2 is set to True,
+        reference_flux: if the option convert_in_contrast_per_arcsec2 is set to True,
             then the image is converted in contrast by using the number of counts 
             for the star specified by this value.
         
@@ -4703,21 +4724,21 @@ def perform_postprocessing(cube_left_frames,
             for x in annulus_star:
                 printandlog(annulus_0_to_1_based(x))
     elif annulus_star == 'ao residuals':
-        if filter_used == 'FILT_BBF_Y':
-            annulus_star = (511.5, 511.5, 40, 25, 0, 360)
-        elif filter_used == 'FILT_BBF_J':
-            annulus_star = (511.5, 511.5, 45, 30, 0, 360)
-        elif filter_used == 'FILT_BBF_H':
-            annulus_star = (511.5, 511.5, 60, 35, 0, 360)
-        elif filter_used == 'FILT_BBF_Ks':
-            annulus_star = (511.5, 511.5, 80, 40, 0, 360)  
+        if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
+            annulus_star = (511.5, 511.5, 40, 65, 0, 360)
+        elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
+            annulus_star = (511.5, 511.5, 45, 75, 0, 360)
+        elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
+            annulus_star = (511.5, 511.5, 60, 95, 0, 360)
+        elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
+            annulus_star = (511.5, 511.5, 80, 120, 0, 360)  
         printandlog('\nThe star polarization will be determined with a star-centered annulus located over the AO residuals:')
         printandlog(annulus_0_to_1_based(annulus_star))
         if coronagraph_used == 'N_NS_CLEAR':
             printandlog('\nWARNING, the data is non-coronagraphic so there might be little flux at the AO residuals. Determining the star polarization using an aperture at the position of the central star (\'star aperture\') will probably yield better results.')
     elif annulus_star == 'star aperture':
         annulus_star = (511.5, 511.5, 0, 11, 0, 360)
-        printandlog('\nThe star polarization will be determined with an aparture located at the position of the central star:')
+        printandlog('\nThe star polarization will be determined with an aperture located at the position of the central star:')
         printandlog(annulus_0_to_1_based(annulus_star))
     
     # Define and print annulus to determine the background from
@@ -4729,7 +4750,7 @@ def perform_postprocessing(cube_left_frames,
             for x in annulus_background:
                 printandlog(annulus_0_to_1_based(x))
     elif annulus_background == 'large annulus':
-        annulus_background = (511.5, 511.5, 360, 60, 0, 360)
+        annulus_background = (511.5, 511.5, 360, 420, 0, 360)
         printandlog('\nThe background will be determined with a star-centered annulus located far away from the central star:')
         printandlog(annulus_0_to_1_based(annulus_background))
     
@@ -5122,8 +5143,7 @@ def run_demo(path_main_dir):
 
     print_wrap('\nStarting example reduction using data of the circumstellar ' +
                'disk of T Cha (1 HWP cycle) as published in Pohl et al. (2017) ' +
-               'and used in van Holstein et al. (2019) ' + 
-               '(<ADS link>).')
+               'and used in van Holstein et al. (2019).')
     
     # Define path of raw directory
     path_raw_dir = os.path.join(path_main_dir, 'raw')
@@ -5247,8 +5267,8 @@ def create_overview_headers_main(path_main_dir):
           
             # Create overview of headers
             create_overview_headers(path_raw_dir, path_overview, log=False)
-            print_wrap('\nCreated an overview of the headers\n ' + path_overview + \
-                       '\n' + path_overview.replace('.txt','.csv') + '.')
+            print_wrap('\nCreated overview of the headers ' + path_overview + ' and ' + \
+                       path_overview.replace('.txt','.csv') + '.')
             
 ###############################################################################
 # run_pipeline
@@ -5364,9 +5384,21 @@ def run_pipeline(path_main_dir):
 
     name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
+    # Find path of log file from previous reduction
+    path_log_file_old = glob.glob(os.path.join(path_main_dir,'*_log_*'))
+
+    if len(path_log_file_old) > 1:
+        raise IOError('\n\nThere should only be one log file in the directory ' + path_main_dir + '. Please remove the latest one.')        
+    elif len(path_log_file_old) == 1:
+        # Extract path of old log file and its number
+        path_log_file_old = path_log_file_old[0]
+        log_file_old_number = int(os.path.splitext(path_log_file_old)[0].split('log_')[1])
+    else:
+        # Set file number to zero
+        log_file_old_number = 0
+
     # Define paths of log file, header overview and directory containing static calibrations
-    time_now = datetime.datetime.now().strftime('%Y-%m-%dT%H_%M_%S')
-    path_log_file = os.path.join(path_main_dir, name_file_root + 'log_' + time_now + '.txt')
+    path_log_file = os.path.join(path_main_dir, name_file_root + 'log_' + str(log_file_old_number + 1) + '.txt')
     path_overview = os.path.join(path_main_dir, name_file_root + 'headers.txt')
     path_static_calib_dir = os.path.join(os.path.dirname(__file__), 'static_calibs')
      
@@ -5378,19 +5410,20 @@ def run_pipeline(path_main_dir):
     path_config_file = os.path.join(path_main_dir, 'config.conf')
     if not os.path.exists(path_config_file):
         raise IOError('\n\nThere is no configuration file ' + path_config_file + '. Run \'irdap --makeconfig\' first.')
-   
-    # Find path of log file from previous reduction
-    path_log_file_old = glob.glob(os.path.join(path_main_dir,'*_log_*'))
-
-    if len(path_log_file_old) > 1:
-        raise IOError('\n\nThere should only be one log file in the directory ' + path_main_dir + '. Please remove the latest one.')    
-    
+       
     # Find path to copy of configuration file from previous reduction
     path_config_file_copy_old = glob.glob(os.path.join(path_main_dir,'*_config_*'))    
     
     if len(path_config_file_copy_old) > 1:
         raise IOError('\n\nThere should only be one copy of the configuration file in the directory ' + path_main_dir + '. Please remove the latest one.') 
-
+    elif len(path_config_file_copy_old) == 1:
+        # Extract path of old copy of configuration file and its number
+        path_config_file_copy_old = path_config_file_copy_old[0]
+        config_file_copy_old_number = int(os.path.splitext(path_config_file_copy_old)[0].split('config_')[1])
+    else:
+        # Set file number to zero
+        config_file_copy_old_number = 0
+        
     # Raise error if there is a log file of the previous reduction but no copy of the configuration file or vice versa
     if len(path_log_file_old) != 0 and len(path_config_file_copy_old) == 0:
         raise IOError('\n\nThere is a log file of the previous reduction, but no copy of the configuration file. Please remove the log file.')
@@ -5398,14 +5431,6 @@ def run_pipeline(path_main_dir):
     if len(path_log_file_old) == 0 and len(path_config_file_copy_old) != 0:
         raise IOError('\n\nThere is a copy of the configuration file of the previous reduction, but no log file. Please remove the copy of the configuration file.')
 
-    if len(path_log_file_old) != 0:
-        # Extract path of log file from its list
-        path_log_file_old = path_log_file_old[0]
-        
-    if len(path_config_file_copy_old) != 0:
-        # Extract path of old copy of configuration file from its list
-        path_config_file_copy_old = path_config_file_copy_old[0]
-        
     ###############################################################################
     # Check if there is a configuration file and start writing log file
     ###############################################################################
@@ -5423,6 +5448,7 @@ def run_pipeline(path_main_dir):
             log_file_lines = None
                
     # Start writing log file
+    time_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     printandlog('\n###############################################################################')
     printandlog('# Important notice')
     printandlog('###############################################################################')
@@ -5433,6 +5459,12 @@ def run_pipeline(path_main_dir):
     printandlog('\nFull documentation: https://robvanholstein.github.io/IRDAP')
     printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl')
     printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein')
+    printandlog('\n###############################################################################')
+    printandlog('# Starting IRDAP')
+    printandlog('###############################################################################')
+    printandlog('\nRunning IRDAP version ' + __version__)
+    printandlog('\nDate: ' + time_now[:time_now.find(' ')])
+    printandlog('Time: ' + time_now[time_now.find(' ') + 1:])   
     printandlog('\n###############################################################################')
     printandlog('# Preparing data reduction')
     printandlog('###############################################################################') 
@@ -5452,8 +5484,6 @@ def run_pipeline(path_main_dir):
     frames_to_remove, \
     annulus_star, \
     annulus_background, \
-    combination_method_polarization, \
-    combination_method_intensity, \
     normalized_polarization_images, \
     center_subtract_object, \
     center_param_centering, \
@@ -5465,8 +5495,6 @@ def run_pipeline(path_main_dir):
     flux_annulus_background, \
     flux_aperture, \
     double_difference_type, \
-    trimmed_mean_prop_to_cut_polar, \
-    trimmed_mean_prop_to_cut_intens, \
     single_posang_north_up, adi, \
     convert_in_contrast_per_arcsec2     = read_config_file(path_config_file)
     
@@ -5474,7 +5502,11 @@ def run_pipeline(path_main_dir):
     save_preprocessed_data = True
     show_images_center_coordinates = True
     remove_vertical_band_detector_artefact = True
-
+    combination_method_polarization = 'least squares'
+    combination_method_intensity = 'mean'
+    trimmed_mean_prop_to_cut_polar = 0.1
+    trimmed_mean_prop_to_cut_intens = 0.1
+    
     # Check validity of input of skip_preprocessing
     if skip_preprocessing not in [True, False]:
         raise ValueError('\n\n\'skip_preprocessing\' should be either True or False. Before starting another reduction, please delete the log file ' + path_log_file + '.')   
@@ -5500,7 +5532,7 @@ def run_pipeline(path_main_dir):
     # Define path of new copy of configuration file
     path_config_file_copy_new = os.path.join(path_main_dir, name_file_root + \
                                              os.path.splitext(os.path.basename(path_config_file))[0] + \
-                                             '_' + time_now + os.path.splitext(path_config_file)[1])
+                                             '_' + str(config_file_copy_old_number + 1) + os.path.splitext(path_config_file)[1])
 
     if skip_preprocessing == True:
         if len(path_config_file_copy_old) == 0:
@@ -5561,8 +5593,12 @@ def run_pipeline(path_main_dir):
             raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
         if any([len(x) != 2 for x in frames_to_remove if type(x) is tuple]):
             raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
-        elif any([type(y) is not int for x in frames_to_remove if type(x) is tuple for y in x]):
+        if any([type(y) is not int for x in frames_to_remove if type(x) is tuple for y in x]):
             raise TypeError('\n\n\'frames_to_remove\' should be an empty list or a list of integers and/or length-2-tuples of integers.')
+        if any([x < 1 for x in frames_to_remove if type(x) is int]):
+            raise ValueError('\n\nThe file indices in \'frames_to_remove\' are 1-based and therefore should be larger than zero.')    
+        if any([y < 1 for x in frames_to_remove if type(x) is tuple for y in x]):
+            raise ValueError('\n\nThe file indices in \'frames_to_remove\' are 1-based and therefore should be larger than zero.')    
     
     # sigma_filtering 
     if sigma_filtering not in [True, False]:
@@ -5706,8 +5742,8 @@ def run_pipeline(path_main_dir):
         raise ValueError('\n\n\'save_preprocessed_data\' should be either True or False.')   
     
     # double_difference_type
-    if double_difference_type not in ['standard', 'normalized']:
-        raise ValueError('\n\n\'double_difference_type\' should be either \'standard\' or \'normalized\'.')
+    if double_difference_type not in ['conventional', 'normalized']:
+        raise ValueError('\n\n\'double_difference_type\' should be either \'conventional\' or \'normalized\'.')
     
     # remove_vertical_band_detector_artefact    
     if remove_vertical_band_detector_artefact not in [True, False]:
@@ -5762,10 +5798,32 @@ def run_pipeline(path_main_dir):
             raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
 
     #flux_aperture 
-    if type(flux_aperture) not in [int, float]:
-        raise TypeError('\n\n\'flux_aperture\' should be a float or int')
-    if flux_aperture>140:
-        printandlog('Warning, flux_aperture set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star'.format(flux_aperture))        
+    if type(flux_aperture) not in [str, tuple, list]:
+        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+    if flux_aperture == [] or flux_aperture == ():
+        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+    if type(flux_aperture) is str and flux_aperture not in ['automatic']:
+        raise ValueError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(flux_aperture) is tuple and len(flux_aperture) != 6:
+        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(flux_aperture) is tuple and any([type(x) not in [int, float] for x in flux_aperture]):
+        raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        
+    if type(flux_aperture) is list:        
+        if any([type(x) is not tuple for x in flux_aperture]):
+            raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([len(x) != 6 for x in flux_aperture]):
+            raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([type(y) not in [int, float] for x in flux_aperture for y in x]):
+            raise TypeError('\n\n\'flux_aperture\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif flux_aperture[2] != 0:
+            printandlog('Warning, the aperture inner radius for the star photometry (3rd element of flux_aperture) is set to {0:.1f}. It should be set to 0 to encompass the star flux unless very specific circumstances'.format(flux_aperture[2]))        
+        elif flux_aperture[3] >140:
+            printandlog('Warning, the aperture outer radius for the star photometry (4th element of flux_aperture) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star'.format(flux_aperture[3]))        
         
     # combination_method_polarization
     if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
@@ -5859,7 +5917,8 @@ def run_pipeline(path_main_dir):
                                 flux_annulus_background=flux_annulus_background, 
                                 save_preprocessed_data=save_preprocessed_data, 
                                 combination_method_polarization=combination_method_polarization,\
-                                flux_aperture = flux_aperture)
+                                flux_aperture = flux_aperture,\
+                                convert_in_contrast_per_arcsec2=convert_in_contrast_per_arcsec2)
     
         # Print that post-processing starts
         printandlog('\n###############################################################################')

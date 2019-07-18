@@ -93,7 +93,7 @@ html_theme = 'sphinx_rtd_theme'
 # documentation.
 
 html_theme_options = {                      
-                      'titles_only': True,
+                      'titles_only': False,
                       }
 
 
@@ -112,6 +112,7 @@ html_static_path = ['_static']
 #
 html_sidebars = {'**':['globaltoc.html', 'relations.html','searchbox.html'],
 }
+
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

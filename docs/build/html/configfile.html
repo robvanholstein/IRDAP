@@ -1,0 +1,492 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Configuration file &mdash; IRDAP 0.2.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Citing IRDAP" href="citing.html" />
+    <link rel="prev" title="Usage instructions" href="instructions.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> IRDAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example.html">Example reduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instructions.html">Usage instructions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration file</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-pre-processing-options">Basic pre-processing options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-post-processing-options">Basic post-processing options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-pre-processing-options">Advanced pre-processing options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-post-processing-options">Advanced post-processing options</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing &amp; issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog &amp; to-do</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IRDAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Configuration file</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/configfile.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="configuration-file">
+<h1>Configuration file<a class="headerlink" href="#configuration-file" title="Permalink to this headline">¶</a></h1>
+<p>The configuration file with the input parameters for IRDAP is shown below:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Basic</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
+
+<span class="n">sigma_filtering</span>                 <span class="o">=</span> <span class="kc">True</span>
+<span class="n">object_collapse_ndit</span>            <span class="o">=</span> <span class="kc">False</span>
+<span class="n">object_centering_method</span>         <span class="o">=</span> <span class="n">automatic</span>
+<span class="n">skip_preprocessing</span>              <span class="o">=</span> <span class="kc">False</span>
+<span class="n">frames_to_remove</span>                <span class="o">=</span> <span class="p">[]</span>
+
+<span class="p">[</span><span class="n">Basic</span> <span class="n">post</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
+
+<span class="n">annulus_star</span>                    <span class="o">=</span> <span class="n">automatic</span>
+<span class="n">annulus_background</span>              <span class="o">=</span> <span class="n">large</span> <span class="n">annulus</span>
+<span class="n">normalized_polarization_images</span>  <span class="o">=</span> <span class="kc">False</span>
+
+<span class="p">[</span><span class="n">Advanced</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
+<span class="c1"># Generally do not need to be changed</span>
+
+<span class="n">center_subtract_object</span>          <span class="o">=</span> <span class="kc">True</span>
+<span class="n">center_param_centering</span>          <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">30000</span><span class="p">)</span>
+<span class="n">object_center_coordinates</span>       <span class="o">=</span> <span class="n">automatic</span>
+<span class="n">object_param_centering</span>          <span class="o">=</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">30000</span><span class="p">)</span>
+<span class="n">flux_centering_method</span>           <span class="o">=</span> <span class="n">gaussian</span>
+<span class="n">flux_center_coordinates</span>         <span class="o">=</span> <span class="p">(</span><span class="mi">478</span><span class="p">,</span> <span class="mi">522</span><span class="p">,</span> <span class="mi">1504</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
+<span class="n">flux_param_centering</span>            <span class="o">=</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">30000</span><span class="p">)</span>
+<span class="n">flux_annulus_background</span>         <span class="o">=</span> <span class="n">large</span> <span class="n">annulus</span>
+
+<span class="p">[</span><span class="n">Advanced</span> <span class="n">post</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
+<span class="c1"># Generally do not need to be changed</span>
+
+<span class="n">double_difference_type</span>          <span class="o">=</span> <span class="n">conventional</span>
+<span class="n">single_posang_north_up</span>          <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p>The input parameters are divided into four groups:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#basic-pre-processing-options"><span class="std std-ref">Basic pre-processing options</span></a></li>
+<li><a class="reference internal" href="#basic-post-processing-options"><span class="std std-ref">Basic post-processing options</span></a></li>
+<li><a class="reference internal" href="#advanced-pre-processing-options"><span class="std std-ref">Advanced pre-processing options</span></a></li>
+<li><a class="reference internal" href="#advanced-post-processing-options"><span class="std std-ref">Advanced post-processing options</span></a></li>
+</ul>
+<p>Below we discuss for each parameter of the configuration file what it does and what the valid input options are.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">While the user will quite frequently have to adapt the basic options, the advanced options generally do not need to be changed.</p>
+</div>
+<div class="section" id="basic-pre-processing-options">
+<h2>Basic pre-processing options<a class="headerlink" href="#basic-pre-processing-options" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt>
+<code class="descname">sigma_filtering:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, use sigma-filtering to remove bad pixels that are still in the OBJECT-, CENTER- and FLUX-frames after applying the master bad pixel map. After the sigma-filtering the frames should have no bad pixels. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, only use the master bad pixel map to speed up the reduction. The latter is not recommended for a final reduction however, because a signficant number of bad pixels will remain in the frames.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descname">object_collapse_ndit:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, compute the mean over the (NDIT) frames of the OBJECT-files before sky (or background) subtraction, flat-fielding, bad pixel removal and centering to speed up the pre-processing. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, perform the above steps for each frame and then compute the mean over the frames. The latter will result in the most accurate reduction and is recommended for a final reduction.</p>
+</dd></dl>
+
+<span class="target" id="object-centering-method"></span><dl class="function">
+<dt>
+<code class="descname">object_centering_method:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">automatic</span></code>, <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">frames</span></code>, <code class="docutils literal notranslate"><span class="pre">gaussian</span></code>, <code class="docutils literal notranslate"><span class="pre">cross-correlation</span></code>, <code class="docutils literal notranslate"><span class="pre">manual</span></code> (default = <code class="docutils literal notranslate"><span class="pre">automatic</span></code>)</p>
+<p>Method to center the OBJECT-frames. If <code class="docutils literal notranslate"><span class="pre">center</span> <span class="pre">frames</span></code>, center the OBJECT-frames with the center coordinates determined from the CENTER-frames. If <code class="docutils literal notranslate"><span class="pre">gaussian</span></code>, center the OBJECT-frames by fitting a 2D Gaussian to each frame. If <code class="docutils literal notranslate"><span class="pre">cross-correlation</span></code>, perform the centering by fitting a 2D Gaussian to the first frame and then using cross-correlation to align (register) the other frames onto the centered first frame. Generally <code class="docutils literal notranslate"><span class="pre">gaussian</span></code> yields more accurate results than <code class="docutils literal notranslate"><span class="pre">cross-correlation</span></code>. For <code class="docutils literal notranslate"><span class="pre">gaussian</span></code> and <code class="docutils literal notranslate"><span class="pre">cross-correlation</span></code> the determined center coordinates are plotted for each image. If <code class="docutils literal notranslate"><span class="pre">manual</span></code>, use fixed coordinates as defined with <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a> to center the OBJECT-frames. If <code class="docutils literal notranslate"><span class="pre">automatic</span></code>, center the OBJECT-frames using the CENTER-files if they exist, and fit a 2D Gaussian to each OBJECT-frame if there are no CENTER-files.</p>
+<p>In case the centering is not accurate, the advanced parameters <a class="reference internal" href="#center-subtract-object">center_subtract_object</a>, <a class="reference internal" href="#center-param-centering">center_param_centering</a>, <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a> and <a class="reference internal" href="#object-param-centering">object_param_centering</a> can be adapted.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descname">skip_preprocessing:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, skip the pre-processing and only perform the post-processing of the data. This way time can be saved when tweaking the input parameters of the post-processing. Skipping the pre-processing is only possible if the data has been pre-processed before. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not skip the pre-processing.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descname">frames_to_remove:</code></dt>
+<dd><p><cite>list</cite> (default = <code class="docutils literal notranslate"><span class="pre">[]</span></code>)</p>
+<p>List of integers and length-2-tuples of integers indicating which files and frames not to use for the data reduction. This parameter allows the user to remove frames of bad quality and to exclude complete files from the reduction without (re)moving them from the raw subdirectory. A complete file can be removed by specifying its integer index, while a frame of a specific file can be removed by specifying a tuple <code class="docutils literal notranslate"><span class="pre">(file_index,</span> <span class="pre">frame_index)</span></code>. For example <code class="docutils literal notranslate"><span class="pre">[2,</span> <span class="pre">4,</span> <span class="pre">(5,</span> <span class="pre">3)]</span></code> will exclude files 2 and 4 from the reduction and will remove frame 3 of file 5. If no files or frames should be removed, use an empty list <code class="docutils literal notranslate"><span class="pre">[]</span></code>. The files are sorted in chronological order from oldest to newest. The file indices of each file are shown in the header overview that is created when you run IRDAP.</p>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p class="last">The indices of the files and frames are 1-based, i.e. the first file or frame has index 1.</p>
+</div>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">To check for frames of bad quality or frames that are not centered correctly, the user can examine the sub-images of the (pre-)processed OBJECT- and FLUX-frames that IRDAP writes to the <code class="docutils literal notranslate"><span class="pre">preprocessed</span></code> and <code class="docutils literal notranslate"><span class="pre">calibration/flux</span></code> subdirectories. Because the file and frame indices are displayed next to the sub-images, the bad frames can straightforwardly be removed by inserting the corresponding indices in the list of <cite>frames_to_remove</cite>.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="basic-post-processing-options">
+<h2>Basic post-processing options<a class="headerlink" href="#basic-post-processing-options" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="annulus-star"></span><dl class="function">
+<dt>
+<code class="descname">annulus_star:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">automatic</span></code>, <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>, <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>, <cite>list</cite>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">automatic</span></code>)</p>
+<p>Annulus used to measure the polarization of the central star (or any other source in the field of view) from the <em>Q</em>-, <em>I</em><sub>Q</sub>-, <em>U</em>-, and <em>I</em><sub>U</sub>-images. This measured polarization signal is subtracted from the polarization images written to the subdirectory <code class="docutils literal notranslate"><span class="pre">reduced_star_pol_subtr</span></code>. For the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. The measured polarization signal is affected by the subtraction of the background in the images (see <a class="reference internal" href="#annulus-background">annulus_background</a>).</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>, the annulus will be centered on the central star and be located over the AO residuals. The inner and outer radius of the annulus will automatically be adapted to the filter used. If <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>, the star polarization will be determined from a small aperture with a radius of 11 pixels located at the position of the central star. If <code class="docutils literal notranslate"><span class="pre">automatic</span></code>, an annulus over the AO residuals (as for <code class="docutils literal notranslate"><span class="pre">ao</span> <span class="pre">residuals</span></code>) will be used in case of coronagraphic data, and a small aperture at the position of the central star (as for <code class="docutils literal notranslate"><span class="pre">star</span> <span class="pre">aperture</span></code>) in case of non-coronagraphic data.</p>
+<p>Generally the user would do a first data reduction using <code class="docutils literal notranslate"><span class="pre">automatic</span></code>. If after this first reduction it appears that more control over the exact shape of the annulus is required, the user can define the annulus with a tuple of 6 parameters:</p>
+<ul class="simple">
+<li><em>coord_center_x</em>: x-coordinate of center (pixels)</li>
+<li><em>coord_center_y</em>: y-coordinate of center (pixels)</li>
+<li><em>inner_radius</em>: Inner radius (pixels)</li>
+<li><em>outer_radius</em>: Outer radius (pixels)</li>
+<li><em>start_angle</em>: Start angle of annulus sector (deg)</li>
+<li><em>end_angle</em>: End angle of annulus sector (deg)</li>
+</ul>
+<p>For example <code class="docutils literal notranslate"><span class="pre">(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">95,</span> <span class="pre">0,</span> <span class="pre">360)</span></code> will create an annulus that is centered on the central star and is located over the AO residuals in H-band.</p>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p>IRDAP uses the same 1-based indexed coordinates as <a class="reference external" href="http://ds9.si.edu/">DS9</a>. Therefore coordinates read from DS9 can be used for the configuration file without applying any conversion.</p>
+<p class="last">IRDAP centers the frames at the coordinates (x, y) = (512.5, 512.5). Therefore a centered annulus will have <em>coord_center_x</em> and <em>coord_center_y</em> equal to 512.5.</p>
+</div>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p><em>start_angle</em> and <em>end_angle</em> are defined with respect to the orientation of the final images with 0 deg oriented to the right and positive angles rotating counterclockwise. Therefore an angle of 0 deg points to the West, except when <a class="reference internal" href="#single-posang-north-up">single_posang_north_up</a> is set to <code class="docutils literal notranslate"><span class="pre">False</span></code> for observations taken in field-tracking mode with a single derotator position angle.</p>
+<p class="last">The definition of the angles is the same as used in <a class="reference external" href="http://ds9.si.edu/">DS9</a>. When using DS9 to draw a line starting at the center coordinates, the angle indicated can be used for the configuration file without applying any conversion.</p>
+</div>
+<p>If even more control over the shape of the annulus is required, the user can define a list of length-6-tuples. This is for instance useful to exclude signal of a circumstellar disk from the annulus. <code class="docutils literal notranslate"><span class="pre">[(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">95,</span> <span class="pre">105,</span> <span class="pre">255),</span> <span class="pre">(512.5,</span> <span class="pre">512.5,</span> <span class="pre">60,</span> <span class="pre">95,</span> <span class="pre">285,</span> <span class="pre">75)]</span></code> will for example create an annulus with a gap at the top and bottom each spanning 30 deg.</p>
+</dd></dl>
+
+<span class="target" id="annulus-background"></span><dl class="function">
+<dt>
+<code class="descname">annulus_background:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, <cite>list</cite>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>)</p>
+<p>Annulus used to measure and remove the background in the <em>Q</em>-, <em>I</em><sub>Q</sub>-, <em>U</em>-, and <em>I</em><sub>U</sub>-images. This background subtraction also affects the computation of the polarization of the central star (see <a class="reference internal" href="#annulus-star">annulus_star</a>). For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, the annulus will be centered on the central star and be located far away from the star with an inner radius of 360 pixels and an outer radius of 420 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<code class="descname">normalized_polarization_images:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, create final images of degree of linear polarization, normalized Stokes <em>q</em> and <em>u</em> (see <a class="reference external" href="ADSlink">van Holstein et al. 2019</a>) and degree and angle of linear polarization computed from <em>q</em> and <em>u</em>:</p>
+<ul class="simple">
+<li><em>DoLP</em> = sqrt(<em>Q</em><sup>2</sup>+ <em>U</em><sup>2</sup>) / [0.5 (<em>I</em><sub>Q</sub> + <em>I</em><sub>U</sub>)]</li>
+<li><em>q</em> = <em>Q</em> / <em>I</em><sub>Q</sub></li>
+<li><em>u</em> = <em>U</em> / <em>I</em><sub>U</sub></li>
+<li><em>AoLP_norm</em> = 0.5 arctan(<em>u</em> / <em>q</em>)</li>
+<li><em>DoLP_norm</em> = sqrt(<em>q</em><sup>2</sup>+ <em>u</em><sup>2</sup>)</li>
+</ul>
+<p>These additional final images are only valid if all flux in the images originates from the source of interest. This is generally the case for observations of for example solar system objects or galaxies. The images are generally not valid for observations of circumstellar disks or companions because in that case a large part of the flux in the total intensity images originates from the central star.</p>
+<p><em>DoLP_norm</em> and <em>AoLP_norm</em> are potentially more accurate than <em>DoLP</em> (above) and <em>AoLP</em> = 0.5 arctan(<em>U</em> / <em>Q</em>) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not create these images.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="advanced-pre-processing-options">
+<h2>Advanced pre-processing options<a class="headerlink" href="#advanced-pre-processing-options" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="center-subtract-object"></span><dl class="function">
+<dt>
+<code class="descname">center_subtract_object:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, subtract the OBJECT-file(s) taken closest in time from the CENTER-file(s) before determining the center coordinates from the satellite spots. This results in a more accurate determination of the center coordinates because the background and any other sources in the field of view are suppressed. When the difference between the image orientations of the CENTER- and OBJECT-frames is large (i.e. difference in derotator position angle for field-tracking and difference in parallactic angle for pupil-tracking), the OBJECT-frame will be rotated around the initial guess of the centers as defined by <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a> before subtracting it from the CENTER-frame. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not subtract the OBJECT-file(s). Parameter is ignored if no CENTER-files are used for the centering (see <a class="reference internal" href="#object-centering-method">object_centering_method</a>).</p>
+</dd></dl>
+
+<span class="target" id="center-param-centering"></span><dl class="function">
+<dt>
+<code class="descname">center_param_centering:</code></dt>
+<dd><p><cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">(12,</span> <span class="pre">None,</span> <span class="pre">30000)</span></code>)</p>
+<p>Tuple of 3 parameters pertaining to the fitting of the satellite spots of the the CENTER-frames with 2D Gaussians to determine the center coordinates. In case the center coordinates are not accurately determined, the 3 parameters can be adapted in addition to <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a>:</p>
+<ul class="simple">
+<li><em>crop_radius</em>: Half the length of the sides of the square cropped sub-images that should each contain a satellite spot and are used to fit the 2D Gaussians to (pixels). Must be integer. <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a> gives the initial guess of the center coordinates to place the sub-images approximately at the locations of the satellite spots. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the complete frame is used for the fitting and <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a> is ignored.</li>
+<li><em>sigfactor</em>: All sub-image pixels with values smaller than sigfactor*standard deviation are replaced by random Gaussian noise to mask them for fitting the 2D Gaussian. This can be useful when there is a lot of noise in the background. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, no pixels are replaced by Gaussian noise.</li>
+<li><em>saturation_level</em>: All pixels within the smallest circle encompassing the pixels with a value equal to or higher than saturation_level are ignored when fitting the 2D Gaussian. Ignoring the saturated pixels improves the accuracy of the fit. We use a circle because strongly saturated pixels in the peak of the PSF often have values lower than saturation_level. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, no pixels are ignored.</li>
+</ul>
+<p><cite>center_param_centering</cite> is ignored if no CENTER-files are used for the centering (see <a class="reference internal" href="#object-centering-method">object_centering_method</a>).</p>
+</dd></dl>
+
+<span class="target" id="object-center-coordinates"></span><dl class="function">
+<dt>
+<code class="descname">object_center_coordinates:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">automatic</span></code>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">automatic</span></code>)</p>
+<p>Tuple of 4 floats with (initial guess of) center coordinates of OBJECT-frames:</p>
+<ul class="simple">
+<li><em>x_left</em>: x-coordinate of center of left frame half (pixels)</li>
+<li><em>y_left</em>: y-coordinate of center of left frame half (pixels)</li>
+<li><em>x_right</em>: x-coordinate of center of right frame half (pixels)</li>
+<li><em>y_right</em>: y-coordinate of center of right frame half (pixels)</li>
+</ul>
+<p>If <code class="docutils literal notranslate"><span class="pre">automatic</span></code>, <cite>object_center_coordinates</cite> is set to <code class="docutils literal notranslate"><span class="pre">(478,</span> <span class="pre">535,</span> <span class="pre">1504,</span> <span class="pre">524)</span></code> when the coronagraph <cite>N_ALC_Ks</cite> is used and to <code class="docutils literal notranslate"><span class="pre">(478,</span> <span class="pre">522,</span> <span class="pre">1504,</span> <span class="pre">512)</span></code> otherwise.</p>
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p>IRDAP uses the same 1-based indexed coordinates as <a class="reference external" href="http://ds9.si.edu/">DS9</a>. Therefore coordinates read from DS9 can be used for the configuration file without applying any conversion.</p>
+<p class="last">The center coordinates are defined in the complete frame, i.e. with both detector halves. Therefore <em>x_right</em> has a value larger than 1024 pixels.</p>
+</div>
+<p>The center coordinates of <cite>object_center_coordinates</cite> are used at various steps of the pre-processing:</p>
+<ul class="simple">
+<li>During the processing of the CENTER-files, they give the coordinates to rotate the OBJECT-frame around before subtracting it from the CENTER-frame (see <a class="reference internal" href="#center-subtract-object">center_subtract_object</a>).</li>
+<li>When determining the center coordinates from the CENTER-frames, they give the initial guess of the center coordinates to place the sub-images approximately on the location of the satellite spots (see <a class="reference internal" href="#center-param-centering">center_param_centering</a>).</li>
+<li>They give the initial guess of the center coordinates when centering the OBJECT-frames by fitting 2D Gaussians or using cross-correlation (see <a class="reference internal" href="#object-centering-method">object_centering_method</a> and <a class="reference internal" href="#object-param-centering">object_param_centering</a>).</li>
+<li>In case <a class="reference internal" href="#object-centering-method">object_centering_method</a> is <code class="docutils literal notranslate"><span class="pre">manual</span></code>, they are the actual center coordinates used to center the OBJECT-frames.</li>
+</ul>
+</dd></dl>
+
+<span class="target" id="object-param-centering"></span><dl class="function">
+<dt>
+<code class="descname">object_param_centering:</code></dt>
+<dd><p><cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">(60,</span> <span class="pre">None,</span> <span class="pre">30000)</span></code>)</p>
+<p>Tuple of 3 parameters pertaining to the centering of the OBJECT-frames by fitting a 2D Gaussian to each frame or using cross-correlation. In case the centering is not performed accurately, the 3 parameters can be adapted in addition to <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a> (especially useful for non-coronagraphic data of multiple stars):</p>
+<ul class="simple">
+<li><em>crop_radius</em>: Half the length of the sides of the square cropped sub-images used to fit the 2D Gaussians to and used for cross-correlating the images (pixels). Must be integer. The sub-image is centered on the coordinates as provided by <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the complete frame is used and <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a> is ignored.</li>
+<li><em>sigfactor</em>: see <a class="reference internal" href="#center-param-centering">center_param_centering</a>.</li>
+<li><em>saturation_level</em>: see <a class="reference internal" href="#center-param-centering">center_param_centering</a>.</li>
+</ul>
+<p><cite>object_param_centering</cite> is only used when <a class="reference internal" href="#object-centering-method">object_centering_method</a> is <code class="docutils literal notranslate"><span class="pre">gaussian</span></code> or <code class="docutils literal notranslate"><span class="pre">cross-correlation</span></code>.</p>
+</dd></dl>
+
+<span class="target" id="flux-centering-method"></span><dl class="function">
+<dt>
+<code class="descname">flux_centering_method:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">gaussian</span></code>, <code class="docutils literal notranslate"><span class="pre">manual</span></code> (default = <code class="docutils literal notranslate"><span class="pre">gaussian</span></code>)</p>
+<p>Method to center the FLUX-frames. If <code class="docutils literal notranslate"><span class="pre">gaussian</span></code>, fit a 2D Gaussian to each frame. The determined center coordinates are plotted for each image. If <code class="docutils literal notranslate"><span class="pre">manual</span></code>, use fixed coordinates as defined with <a class="reference internal" href="#flux-center-coordinates">flux_center_coordinates</a>. In case the centering is not accurate, the parameters <a class="reference internal" href="#flux-center-coordinates">flux_center_coordinates</a> and <a class="reference internal" href="#flux-param-centering">flux_param_centering</a> can be adapted.</p>
+</dd></dl>
+
+<span class="target" id="flux-center-coordinates"></span><dl class="function">
+<dt>
+<code class="descname">flux_center_coordinates:</code></dt>
+<dd><p><cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">(478,</span> <span class="pre">522,</span> <span class="pre">1504,</span> <span class="pre">512)</span></code>)</p>
+<p>(Initial guess of) center coordinates of FLUX-frames, defined in the same way as <a class="reference internal" href="#object-center-coordinates">object_center_coordinates</a>. The center coordinates are the initial guess when centering the FLUX-frames by fitting 2D Gaussians (see <a class="reference internal" href="#flux-centering-method">flux_centering_method</a> and <a class="reference internal" href="#flux-param-centering">flux_param_centering</a>). In addition, in case <a class="reference internal" href="#flux-centering-method">flux_centering_method</a> is <code class="docutils literal notranslate"><span class="pre">manual</span></code>, the center coordinates are the actual center coordinates used to center the FLUX-frames.</p>
+</dd></dl>
+
+<span class="target" id="flux-param-centering"></span><dl class="function">
+<dt>
+<code class="descname">flux_param_centering:</code></dt>
+<dd><p><cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">(60,</span> <span class="pre">None,</span> <span class="pre">30000)</span></code>)</p>
+<p>Tuple of 3 parameters pertaining to the centering of the FLUX-frames by fitting a 2D Gaussian to each frame. In case the centering is not performed accurately, the 3 parameters can be adapted in addition to <a class="reference internal" href="#flux-center-coordinates">flux_center_coordinates</a> (especially useful in case of multiple stars):</p>
+<ul class="simple">
+<li><em>crop_radius</em>: Half the length of the sides of the square cropped sub-images used to fit the 2D Gaussians to (pixels). Must be integer. The sub-image is centered on the coordinates as provided by <a class="reference internal" href="#flux-center-coordinates">flux_center_coordinates</a>. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, the complete frame is used and <a class="reference internal" href="#flux-center-coordinates">flux_center_coordinates</a> is ignored.</li>
+<li><em>sigfactor</em>: see <a class="reference internal" href="#center-param-centering">center_param_centering</a>.</li>
+<li><em>saturation_level</em>: see <a class="reference internal" href="#center-param-centering">center_param_centering</a>.</li>
+</ul>
+<p><cite>flux_param_centering</cite> is only used when <a class="reference internal" href="#flux-centering-method">flux_centering_method</a> is <code class="docutils literal notranslate"><span class="pre">gaussian</span></code>.</p>
+</dd></dl>
+
+<span class="target" id="flux-annulus-background"></span><dl class="function">
+<dt>
+<code class="descname">flux_annulus_background:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, <cite>list</cite>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>)</p>
+<p>Annulus used to remove the background in the FLUX-frames. For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. If <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, the annulus will be centered on the central star and be located far away from the star with an inner radius of 320 pixels and an outer radius of 380 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="advanced-post-processing-options">
+<h2>Advanced post-processing options<a class="headerlink" href="#advanced-post-processing-options" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt>
+<code class="descname">double_difference_type:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">conventional</span></code>, <code class="docutils literal notranslate"><span class="pre">normalized</span></code> (default = <code class="docutils literal notranslate"><span class="pre">conventional</span></code>)</p>
+<p>Type of double difference to be computed. In almost all cases one would use <code class="docutils literal notranslate"><span class="pre">conventional</span></code>. When there are large variations in atmospheric seeing and sky transparency among the measurements, using <code class="docutils literal notranslate"><span class="pre">normalized</span></code> can suppress spurious polarization signals and improve the quality of the final images (see <a class="reference external" href="ADSlink">van Holstein et al. 2019</a>).</p>
+</dd></dl>
+
+<span class="target" id="single-posang-north-up"></span><dl class="function">
+<dt>
+<code class="descname">single_posang_north_up:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
+<p>For observations taken in field-tracking mode with a single derotator position angle (header keyword <code class="docutils literal notranslate"><span class="pre">INS4.DROT2.POSANG</span></code> either 0 or with a fixed offset), the final images are rotated with North up if <code class="docutils literal notranslate"><span class="pre">True</span></code>, and kept in the orientation of the raw frames if <code class="docutils literal notranslate"><span class="pre">False</span></code>. In the latter case, the images are more accurate as they suffer less from interpolation errors caused by image rotation. This is useful when for example extracting the polarized surface brightness distribution of a circumstellar disk. Parameter is ignored for field-tracking observations with more than one derotator position angle or observations taken in pupil-tracking mode. In these cases the final images produced are always oriented with North up.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="citing.html" class="btn btn-neutral float-right" title="Citing IRDAP" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="instructions.html" class="btn btn-neutral" title="Usage instructions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, R.G. van Holstein
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

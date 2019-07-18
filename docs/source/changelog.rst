@@ -1,185 +1,61 @@
-.. _changelog:
 
-.. |last-commit| image:: https://img.shields.io/github/last-commit/fpavogt/fcmaker.svg?colorB=e6c000
-   :target: https://github.com/fpavogt/fcmaker
-
-.. |issues| image:: https://img.shields.io/github/issues/fpavogt/fcmaker.svg?colorB=b4001e  
-   :target: https://github.com/fpavogt/fcmaker/issues
-
-Changelog |last-commit| |issues|
-================================
-
-.. todo:: 
-   - (!) for XSHOOTER, always place the slit horizontal (i.e. do not put the chart North)
-   - (!) formally validate the parallactic function
-   - (?) check connection to the online servers ahead of time, and issue a nice error if needed 
-   - (?) include an instrument-free mode
-   - (?) add metadata to .jpg 
-   - (?) add support for jitter in HAWKI (showing the max jitter area with a circle) 
-   - (?) find a better way to display the allowed TT area for MUSE, e.g. shaded area with 
-     ``shapley``
-   - (?) make the obsdate an ``fc_params`` entry rather than a global variable
-   - (?) for time critical OBs, get the time from the OB
-
-v103.1.1 October 2018, F.P.A. Vogt
-   - fixed `#10 <https://github.com/fpavogt/fcmaker/issues/10>`_: added 180deg to the parallactic 
-     angle derived by the ``UT2.parallactic_angle()`` routine, to match the screen orientation at UT2. 
-
-v103.1.0 October 2018, F.P.A. Vogt
-   - fixed a bug in the calculation of ESPRESSO left chart radius.
-   - fixed the axis of the nodding for XSHOOTER AutoNod templates.
-   - properly fixed issue `#7 <https://github.com/fpavogt/fcmaker/issues/7>`_ 
-   - draw the XSHOOTER slits in full lines to improve clarity
-   - rotated the slit "P.A." name by 180deg for XSHOOTER to match the UT2 screen
-
-v103.0.0 October 2018, F.P.A. Vogt
-   - changed versioning scheme to highlight the supported Period.
-   - renamed 'O' and 'S' to 'Obj.' and 'Sky' in the legend, for clarity.
-   - for XSHOOTER, show the footprint of the Acq. camera also at the ``Target`` position.
-   - suppressed all VOTableSpecWarning (they're not my fault!)
-   - added support for ESPRESSO
-   - set astropy logging level to "WARNING" to clean up the prompt
-   - fixed the scalebar fontsize warning from aplpy
-   - added new blind-offset example for XSHOOTER in the doc
-   - fixed tiny bug in calculation of right-plot radius for XSHOOTER and MUSE, in case of blind offsets
-
-v0.4.0 August 2018, F.P.A. Vogt
-   - deal with multiple spaces in the local files, e.g. [O  S O]
-   - added test OBs on p2demo, reachable via ``--demo`` mode in fcmaker
-   - minor tweaks to the docs 
-
-v0.3.8 July 2018, F.P.A. Vogt
- - fixed issue `#6 <https://github.com/fpavogt/fcmaker/issues/6>`_ 
- - fixed issue `#7 <https://github.com/fpavogt/fcmaker/issues/7>`_ 
- - added a N-E arrow to the left plot (useful for custom FITS files not aligned NORTH)
- - added a scale to the right plot
-
-v0.3.7 July 2018, F.P.A. Vogt
- - fixed issue `#4 <https://github.com/fpavogt/fcmaker/issues/4>`_
- - By default, if there are no finding charts associated with an OB, just use the first slot to store the fcmaker one.
- - for MUSE WFM, only show a purple cross-hair during the acquisition for the "movetopixel" template
- 
-v0.3.6 July 2018, F.P.A. Vogt
- - fixed `#3 <https://github.com/fpavogt/fcmaker/issues/3>`_ for HAWKI and XSHOOTER OBs on p2
- - for MUSE OBs on local mode, tries to display the TTS only if WFM-AO, or NFM.
-
-v0.3.5 June 2018, F.P.A. Vogt
- - fixed bad bug when feeding no ``obid``
-
-v0.3.4 June 2018, F.P.A. Vogt
- - fixed missing relsize package in mplstyle
- - added a check to make sure the user provides the wavelength of custom fits files
- - added section about custom FITS file to the doc.
- - fixed lack of `ins_mode` in new NFM OBs
- - added new keywords for command line option, including ``--p2uid``, ``--obsid``, 
-   ``--plot-loc``, ``--data-loc``, ``--bk-image`` and ``--bk-lam``.
-
-v0.3.3 June 2018, F.P.A. Vogt:
- - corrected the orientation of the MUSE WFM field (180 flip required)
- - added correct Cassegrain field-of-view of 7.4 arcmin in radius
- - formalized support for MUSE NFM, including ... 
- - the creation of mock bk_images from all the Gaia entries in the area.
- - fixed bug in radius of allowed GS displayed
- - fixed bug with chart tags (now displayed only when required)
- - used telescope coordinates from ESO website
- - added clear mark for slit PA in X-shooter charts
-
-v0.3.2 May 2018, F.P.A. Vogt:
- - added \*.fits to .gitignore
- - added Pillow to the list of required packages (for direct jpg exports)
- - added a few more Exceptions to fool-proof stuff
- - bumped p2api version request to 0.92, to have the fix for ephemeris files
- - added do_parang keyword: by-default, hide the instrument field-of-view if a parallactic angle is required
- - updated Gaia DR2 article link in doc
- - added symbols for OBs with moving targets or parallactic angles
- - added \*.pdf and \*.jpg to .gitignore
- - added AO support for HAWKI
- - added RRM templates to MUSE and HAWKI
-
-v0.3.1 May 2018, F.P.A. Vogt:
- - added XSHOOTER to the list of supported instruments
- - gave up on using the OBS-DATE keywords to draw the proper motion tracks for stars in
-   the field. Always use fcm_m.pm_track_time instead.
-    
-v0.3.0 May 2018, F.P.A. Vogt:
- - added 2 functions to run fcmaker from within a script (make_fc and make fc_local)
- - restructured _main_.py and fcmaker.py as a result
- - replaced 'propagate_pm' with new 'SkyCoord.apply_space_motion()' function from Astropy 3.0
- - draw the proper motion vectors of the fastest stars in the field of view, using GAIA DR2.
- - for these, if OBS-DATE is in the fits header, then plot the pm line between obstime and 
-   then. Else, plot as long as fcm_m.pm_track_time
- - started working on support for XSHOOTER
- - when DSS2 Red is not used for the zoomed-in view, still use it for the right-hand-side 
-   plot
- - when reading a local file, only read the keywords that matter
- - made the use of Python-Latex and No-montage the default (safer for new users)
- - added support for moving targets with ephemeris files (on P2)
-
-v0.2.1 January 2018, F.P.A. Vogt:
- - fixed a bad bug with the p2api import
-
-v0.2.00 January 2018, F.P.A. Vogt:
- - remove local version of p2api in favor of pip one
- - initial Github+pypi release
- - fixed bug when no upload required (reply '0')
-     
-v0.1.48 November 2017, F.P.A. Vogt:
- - added Gallery page to docs, to show all local setup files, and some plots
- - fixed LaTeX bug when flagging bad telluric stars
- - added validity check of user Guide Stars (too close/far away ?)
- - added ability to export to png directly (helps with direct inclusion in docs)
-
-v0.1.47 November 2017, F.P.A. Vogt:
- - added basic support for HAWKI, incl. Fast Phot acquisitions
- - added query to UCAC2 via Vizier, to show which Guide Stars are suitable
- - added check of TTS validity for MUSE AO (distance-wise), flagging the bad ones
- - added variable size of the right-hand-side plot, to show all offsets, even the very 
-   large ones
- - add pypi badge to main page
-
-v0.1.46 November 2017, F.P.A. Vogt:
- - fixed a bug when the length of offsets in smaller than ``noff``
- - fixed a bug when there is only one AO TTS defined.
- - added support for ``MUSE_wfm_cal_astrom`` and ``MUSE_wfm_cal_specphot``
-
-v0.1.45 November 2017, F.P.A. Vogt:
- - updated doc with correct example chart
-
-v0.1.43 November 2017, F.P.A. Vogt:
- - added ``Intended audience``, ``Topic`` and ``License`` flags to pypi release
- - implemented support for DETECTOR offsets in MUSE
- - added the ``--obsdate`` flag, to feed the date of the observation to fcmaker
- - added the ``--obsdate`` and ``__version__`` to the finding charts
- - added support of target proper motion of 1st order (assuming flat sky)
- - updated doc
+.. |last-commit| image:: https://img.shields.io/github/last-commit/robvanholstein/IRDAP.svg?colorB=e6c000
+   :target: https://github.com/robvanholstein/IRDAP/
    
-v0.1.42 November 2017, F.P.A. Vogt:
- - in case of large blind offset, have a flexible zoom level in the left plot panel
- - added option to save to PDF in fcmaker_plots.make_fc() and __main__.py
- - fixed all docstrings in p2api.py
- - handle the orientation of custom background images by rotating the N-E arrows.
- - added a default "target" field for all MUSE WFM (AO) observations, because this is where
-   the system first closes the AO loop (before applying any of the offset in the observing
-   sequence). This allows the observer to check that the TTS are also valid in this position.
- - added legend to the charts
- - restructured the plotting to better separate instrument-specific elements from generic 
-   ones. Created fcmaker_instrument_dispatch.py to that effect.
- - added support for OBs with multiple science templates
- - added the obId to chart
+.. |issues| image:: https://img.shields.io/github/issues/robvanholstein/IRDAP.svg?color=b4001e
+   :target: https://github.com/robvanholstein/IRDAP/issues
 
-v0.1.41 November 2017, F.P.A. Vogt:
- - propagated the PA of the acquisition frame to the Science sequence (MUSE)
- - allowed to specify only 1 bk_image and bk_lams in automated mode
+..
+   |last-commit| |issues|
 
-v0.1.40 October 2017, F.P.A. Vogt:
- - included doc in pypi package
- - updated doc
+Changelog & to-do
+=================
 
-v0.1.26 October 2017, F.P.A. Vogt:
- - pre-release
- - initial doc assembled
+Changelog
+---------
+
+v0.2.1 June 2019, R.G. van Holstein:
+ - Added the possibility to reduce data taken with the narrowband filters using the existing model of the broadband filters
+
+v0.2.0 June 2019, R.G. van Holstein:
+ - Changed the definition of the tuple of the input parameters *annulus_star*, *annulus_background* and *flux_annulus_background*: *width* is replaced by *outer_radius* and the definition of *start_angle* and *end_angle* is now the same as in DS9
+ - Replaced static flat in Ks by one with P0-90 inserted
+	
+v0.1.2 June 2019, R.G. van Holstein:
+ - Release of IRDAP package on PyPI and GitHub
+ - Documentation put online
  
+To-do high priority
+-------------------
 
- 
-  
- 
+   - Combine data of different OB's with automatic selection of correct center, sky and flux images
+   - Add ADI (including PCA) of total intensity images for pupil-tracking observations
+   - Change config file option skip_preprocessing to perform_preprocessing: True/False, perform_polarimetry: True/False and perform_adi: True/False
+   - Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2
+   - Add plot of center coordinates of center frames vs time
+   - Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)
+   - Add accurate (calibrated) model correction for narrowband filters
+   - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)	
+   - Add detection limits (e.g. contrast curves)
+   
+To-do low priority
+------------------
+     
+   - Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)	
+   - Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)
+   - Add option for 'stupid ADI' for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset
+   - Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number
+   - Add optional ADI (including PCA) for polarization images
+   - Make figures with sub-images horizontal, or make multiple lines of left and right images in a single figure   
+   - Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)
+   - When rotating images, make complete frame still visible to not cut out any parts of the data
+   - Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images)
+   - Test finding of satellite spots of center files when waffle pattern is '+'
+   - Add weighted least-squares as option for model correction (depending on image quality or polarimetric efficiency)	
+   - Add multiprocessing for sigma filtering and centering of frames
+   - Make IRDAP runable from a script by importing it and calling main function
+   - Add option to scale the master sky frame to subtract from the object frames (especially for Ks; see also Gallicher et al. 2011)
+   - Exclude saturated pixels in aperture to determine star polarization (same way as used in function fit_2d_gaussian)
+   - Determine star polarization as a function of aperture radius	
+   - Add optional RDI for total intensity images	
+   - Make docstrings compliant with accepted conventions and create API doc on website

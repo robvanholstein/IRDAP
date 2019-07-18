@@ -1,0 +1,253 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Example reduction &mdash; IRDAP 0.2.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Usage instructions" href="instructions.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> IRDAP
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.2.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Example reduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instructions.html">Usage instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing &amp; issues</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog &amp; to-do</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mailinglist.html">Mailing list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgements.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/robvanholstein/IRDAP">GitHub</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">IRDAP</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Example reduction</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/example.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="example-reduction">
+<h1>Example reduction<a class="headerlink" href="#example-reduction" title="Permalink to this headline">¶</a></h1>
+<p>As an introduction to the user, but also to check if IRDAP is installed correctly, a quick
+end-to-end example reduction can be performed. This demo uses a small portion of the H-band
+polarimetric data of the circumstellar disk of T Cha from ESO Program 096.C-0248(C). This
+data set was the first to be reduced with IRDAP’s correction method and is published in
+<a class="reference external" href="http://adsabs.harvard.edu/abs/2017A%26A...605A..34P">Pohl et al. (2017)</a>. It is also
+used in <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a> to exemplify the correction method.</p>
+<p>To run the demo, change the current directory of the terminal to a directory of your choice and type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">demo</span>
+</pre></div>
+</div>
+<p>IRDAP then performs a complete data reduction and writes the resulting files
+to the terminal’s current directory.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">An internet connection is required to run the demo, because 56.6 MB of raw data needs to be downloaded from the
+<a class="reference external" href="https://github.com/robvanholstein/IRDAP/tree/master/irdap/example_data">GitHub repository</a>.</p>
+</div>
+<p>After running the demo, you can navigate to the <code class="file docutils literal notranslate"><span class="pre">reduced</span></code> subdirectory and open the
+files <code class="file docutils literal notranslate"><span class="pre">T_Cha_2016-02-20_Q_phi.fits</span></code> and <code class="file docutils literal notranslate"><span class="pre">T_Cha_2016-02-20_U_phi.fits</span></code> that
+show the final <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>- and <em>U</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images.
+Opening these files with <a class="reference external" href="http://ds9.si.edu/">DS9</a>, setting color to cool, scale to linear
+and the limits to -500 to 1500 and -300 to 150, respectively, you will see the following:</p>
+<div class="figure align-center">
+<a class="reference internal image-reference" href="_images/t_cha_quphi_combined.svg"><img alt="_images/t_cha_quphi_combined.svg" src="_images/t_cha_quphi_combined.svg" width="750px" /></a>
+</div>
+<p>These images correspond to Figure 14 (left column) of <a class="reference external" href="ADSlink">van Holstein et al. (2019)</a>,
+but with lower signal-to-noise because for the demo the data of only 1 instead of 30 HWP cycles
+was used.</p>
+<p>To start reducing your own data with IRDAP, continue to the <a class="reference internal" href="instructions.html#usage-instructions"><span class="std std-ref">usage instructions</span></a>.</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="instructions.html" class="btn btn-neutral float-right" title="Usage instructions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, R.G. van Holstein
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
