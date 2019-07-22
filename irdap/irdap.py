@@ -4195,6 +4195,10 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     # Subtract intrumental polarization from Q- and U-images
     cube_Q_IP_subtracted = cube_Q_double_difference - IP_Q[:, np.newaxis, np.newaxis]*cube_I_Q_double_sum
     cube_U_IP_subtracted = cube_U_double_difference - IP_U[:, np.newaxis, np.newaxis]*cube_I_U_double_sum
+
+#TODO: remove simple cADI below
+#    cube_Q_IP_subtracted -= np.median(cube_Q_IP_subtracted, axis=0)
+#    cube_U_IP_subtracted -= np.median(cube_U_IP_subtracted, axis=0)
     
     # Derotate IP-subtracted Q- and U-images
     cube_Q_derotated = np.zeros(cube_Q_IP_subtracted.shape)
@@ -4254,6 +4258,10 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     # Compute incident I_Q- and I_U-images
     ###############################################################################
 
+#TODO: remove simple cADI below
+#    cube_I_Q_double_sum -= np.median(cube_I_Q_double_sum, axis=0)
+#    cube_I_U_double_sum -= np.median(cube_I_U_double_sum, axis=0)
+    
     # Derotate I_Q- and I_U-images
     cube_I_Q_incident = np.zeros(cube_I_Q_double_sum.shape)
     cube_I_U_incident = np.zeros(cube_I_U_double_sum.shape)
