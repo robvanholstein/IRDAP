@@ -4361,7 +4361,7 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
         frame_I_U: I_U-image
         frame_Q: Q-image
         frame_U: U-image
-        header: list of headers of raw science frames    
+        header: list of headers of raw science frames; if None, no Q_phi- and U_phi-images are created and they are set to None in the output     
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
@@ -4369,8 +4369,8 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
         
     Output:
         frame_I_tot: total-intensity image
-        frame_Q_phi: image of Q_phi
-        frame_U_phi: image of U_phi
+        frame_Q_phi: image of Q_phi (None if header is set to None)
+        frame_U_phi: image of U_phi (None if header is set to None)
         frame_I_pol: polarized-intensity image
         frame_AoLP: image of angle of linear polarization computed from Q- and U-images
         frame_DoLP: image of degree of linear polarization computed from Q-, U-, I_Q- and I-U-images
@@ -4386,20 +4386,24 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
     # Compute total intensity image  
     frame_I_tot = 0.5*(frame_I_Q + frame_I_U)
     
-    # Determine tracking mode used
-    tracking_mode_used = header[0]['ESO INS4 COMB ROT']
+    if header != None:
+        # Determine tracking mode used
+        tracking_mode_used = header[0]['ESO INS4 COMB ROT']
+        
+        # Determine number of unique derotator position angles
+        derotator_position_angle = [x['ESO INS4 DROT2 POSANG'] for x in header]
+        number_derotator_position_angles = len(np.unique(derotator_position_angle))
     
-    # Determine number of unique derotator position angles
-    derotator_position_angle = [x['ESO INS4 DROT2 POSANG'] for x in header]
-    number_derotator_position_angles = len(np.unique(derotator_position_angle))
-
-    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and single_posang_north_up == False:
-        # Compute image position angle
-        rotation_angle = -derotator_position_angle[0] - true_north_correction
+        if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and single_posang_north_up == False:
+            # Compute image position angle
+            rotation_angle = -derotator_position_angle[0] - true_north_correction
+        else:
+            rotation_angle = 0.0
+        
+        frame_Q_phi, frame_U_phi, frame_azimuthal_angle = compute_azimuthal_stokes_parameters(frame_Q, frame_U, rotation_angle=-rotation_angle)   
     else:
-        rotation_angle = 0.0
-    
-    frame_Q_phi, frame_U_phi, frame_azimuthal_angle = compute_azimuthal_stokes_parameters(frame_Q, frame_U, rotation_angle=-rotation_angle)
+        frame_Q_phi = None
+        frame_U_phi = None
 
     # Compute polarized intensity image
     frame_I_pol = np.sqrt(frame_Q**2 + frame_U**2)
@@ -5022,7 +5026,148 @@ def make_config(path_main_dir):
         # Copy default configuration file to main directory
         shutil.copyfile(path_default_config_file, path_config_file_write)
         print_wrap('\nCreated a default configuration file ' + path_config_file_write + '.')
+
+###############################################################################
+# mean_combine_images
+###############################################################################  
+
+def mean_combine_images(path_main_dir, path_read_dirs):
+    '''
+    Mean-combine the images of two or more reductions
+    
+    Input:
+        path_main_dir: string specifying path to main directory
+        path_read_dirs: list of strings specifying paths to directories to read data from
         
+    File written by Rob van Holstein
+    Function status: verified    
+    '''
+
+    for reduced_dir in ['reduced', 'reduced_star_pol_subtr']:    
+        # Define path of directory to write combined images to
+        path_write_dir_sel = os.path.join(path_main_dir, reduced_dir + '_combined')
+        
+        if not os.path.exists(path_write_dir_sel):
+            # Create directory if it does not exist yet
+            os.makedirs(path_write_dir_sel)
+        
+        # Create empty lists to store path of files in and whether or not normalized polarization images are present      
+        paths_I_Q = []    
+        paths_I_U = []    
+        paths_Q = []    
+        paths_U = []    
+        paths_Q_phi = []    
+        paths_U_phi = []    
+        normalized_polarization_images = []  
+        
+        for path_sel in path_read_dirs:
+            # Define path of directory containing files to be read and check if it exists
+            path_reduced_dir_sel = os.path.join(path_sel, reduced_dir)
+            
+            if not os.path.exists(path_reduced_dir_sel):
+                raise IOError('\n\nThe directory ' + path_reduced_dir_sel + ' does not exist.')
+            
+            # Retrieve paths of files to be read
+            path_I_Q = glob.glob(os.path.join(path_reduced_dir_sel, '*_I_Q*.fits'))
+            if len(path_I_Q) != 1:
+                raise IOError('\n\nThere are no or multiple I_Q-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_I_Q.append(path_I_Q[0])
+            
+            path_I_U = glob.glob(os.path.join(path_reduced_dir_sel, '*_I_U*.fits'))
+            if len(path_I_U) != 1:
+                raise IOError('\n\nThere are no or multiple I_U-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_I_U.append(path_I_U[0])
+    
+            path_Q = [x for x in glob.glob(os.path.join(path_reduced_dir_sel, '*_Q*.fits')) if '_I_Q' not in x and '_Q_phi' not in x and '_q_norm' not in x]
+            if len(path_Q) != 1:
+                raise IOError('\n\nThere are no or multiple Q-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_Q.append(path_Q[0])
+            
+            path_U = [x for x in glob.glob(os.path.join(path_reduced_dir_sel, '*_U*.fits')) if '_I_U' not in x and '_U_phi' not in x and '_u_norm' not in x]
+            if len(path_U) != 1:
+                raise IOError('\n\nThere are no or multiple U-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_U.append(path_U[0])
+            
+            path_Q_phi = glob.glob(os.path.join(path_reduced_dir_sel, '*_Q_phi*.fits'))
+            if len(path_Q_phi) != 1:
+                raise IOError('\n\nThere are no or multiple Q_phi-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_Q_phi.append(path_Q_phi[0])
+            
+            path_U_phi = glob.glob(os.path.join(path_reduced_dir_sel, '*_U_phi*.fits'))
+            if len(path_U_phi) != 1:
+                raise IOError('\n\nThere are no or multiple U_phi-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_U_phi.append(path_U_phi[0])       
+    
+            # Check if normalized polarization images are present
+            path_list =" ".join(glob.glob(os.path.join(os.path.join(path_sel, reduced_dir), '*.fits')))  
+            normalized_polarization_images.append(all([x in path_list for x in ['DoLP', 'q_norm', 'u_norm', 'AoLP_norm', 'DoLP_norm']]))   
+        
+        if reduced_dir == 'reduced':
+            # Define name_file_root based on names of files in each read directory
+            name_file_roots = [os.path.basename(x)[:os.path.basename(x).index('_I_Q')] for x in paths_I_Q]
+            target_name = [x[:-10] for x in name_file_roots][0]
+            dates = [x[-10:] for x in name_file_roots]
+            dates_sorted = sorted(dates, key=lambda d: tuple(map(int, d.split('-'))))
+            date_first = dates_sorted[0]
+            date_last = dates_sorted[-1]
+            if date_first[:4] != date_last[:4]:
+                date_root = date_first + '_' + date_last
+            elif date_first[5:7] != date_last[5:7]:
+                date_root = date_first[:5] + date_first[5:] + '_' + date_last[5:]
+            elif date_first[8:] != date_last[8:]:
+                date_root = date_first[:8] + date_first[8:] + '_' + date_last[8:]
+            else:
+                date_root = date_first
+            name_file_root = target_name + date_root + '_'
+        
+        # Read files and mean-combine them
+        frame_I_Q = np.mean(np.vstack(read_fits_files(paths_I_Q, silent=True)[0]), axis=0)      
+        frame_I_U = np.mean(np.vstack(read_fits_files(paths_I_U, silent=True)[0]), axis=0)      
+        frame_Q = np.mean(np.vstack(read_fits_files(paths_Q, silent=True)[0]), axis=0)      
+        frame_U = np.mean(np.vstack(read_fits_files(paths_U, silent=True)[0]), axis=0)      
+        frame_Q_phi = np.mean(np.vstack(read_fits_files(paths_Q_phi, silent=True)[0]), axis=0)      
+        frame_U_phi = np.mean(np.vstack(read_fits_files(paths_U_phi, silent=True)[0]), axis=0)      
+            
+        # Compute final images
+        frame_I_tot, _, _, frame_I_pol, frame_AoLP, frame_DoLP, frame_q, frame_u, frame_AoLP_norm, frame_DoLP_norm \
+        = compute_final_images(frame_I_Q=frame_I_Q, 
+                               frame_I_U=frame_I_U, 
+                               frame_Q=frame_Q, 
+                               frame_U=frame_U, 
+                               header=None, 
+                               single_posang_north_up=True)
+       
+        # List files of the images and define their (base) file names
+        frames_to_write = [frame_I_Q, frame_I_U, frame_I_tot, frame_Q, frame_U, 
+                           frame_Q_phi, frame_U_phi, frame_I_pol, frame_AoLP]
+        file_names = ['I_Q', 'I_U', 'I_tot', 'Q', 'U', 'Q_phi', 'U_phi', 'I_pol', 'AoLP']
+            
+        if all(normalized_polarization_images):
+            # Add images of DoLP, normalized Stokes q and u and AoLP and DoLP created using q- and u-images
+            frames_to_write += [frame_DoLP, frame_q, frame_u, frame_AoLP_norm, frame_DoLP_norm]       
+            file_names += ['DoLP', 'q_norm', 'u_norm', 'AoLP_norm', 'DoLP_norm']
+        
+        # Add substring '_star_pol_subtr' to appropriate files
+        if reduced_dir == 'reduced_star_pol_subtr':
+            for i in range(len(file_names)):
+                if file_names[i] not in ['I_Q', 'I_U', 'I_tot']:
+                    file_names[i] += '_star_pol_subtr'
+
+        # Write files of the combined images 
+        for frame, file_name in zip(frames_to_write, file_names):
+            write_fits_files(data=frame, path=os.path.join(path_write_dir_sel, name_file_root + file_name + '.fits'), header=False, silent=True)
+    
+    # Write TXT-file with directories from which the original images come        
+    f = open(os.path.join(path_main_dir, 'images_mean_combined.txt'), 'w+')
+    f.write('The combined images are computed as the mean of the corresponding images in the following directories:')
+    for path_sel in path_read_dirs:
+        f.write('\n' + path_sel)
+    f.close()
+    
+    print('\nSuccessfully mean-combined the images located in:')
+    for path_sel in path_read_dirs: 
+        print(path_sel)
+       
 ###############################################################################
 # create_overview_headers_main
 ###############################################################################    
@@ -5725,3 +5870,15 @@ def run_pipeline(path_main_dir):
     time_end = time.time()
     d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
     printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
+    
+    # Print request to cite IRDAP
+    printandlog('\n###############################################################################')
+    printandlog('# Important notice')
+    printandlog('###############################################################################')
+    printandlog('\nWhen publishing data reduced with IRDAP, please cite van Holstein et al.')
+    printandlog('(2019): <ADS link>.')
+    printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
+    printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
+    printandlog('\nFull documentation: https://robvanholstein.github.io/IRDAP')
+    printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl')
+    printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein')

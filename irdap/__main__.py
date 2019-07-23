@@ -36,6 +36,7 @@ from .irdap import run_demo
 from .irdap import create_overview_headers_main
 from .irdap import make_config
 from .irdap import run_pipeline
+from .irdap import mean_combine_images
 
 ###############################################################################
 # main
@@ -70,6 +71,12 @@ def main(args=None):
                                                  'this directory. You can then adjust the parameters in the configuration file\n' +
                                                  'with a text editor. Finally in the terminal type "irdap --run" to perform the\n' +
                                                  'data reduction.\n\n' +
+                                                 'The reduced images of two or more reductions can be mean-combined by typing\n' +
+                                                 '"irdap --meancombine path1 path2 ... pathx", where the space-separated paths\n' +
+                                                 'are absolute paths to the main directories of the reductions,\n' +
+                                                 'e.g. "irdap --meancombine /home/T_Cha_2016-02-20 /home/T_Cha_2016-02-21".\n' +
+                                                 'The mean-combined images will be written to the current working directory\n' + 
+                                                 'of the terminal.\n\n' +
                                                  'If this is the first time you use IRDAP, it is recommended to run the demo\n' + 
                                                  'first by using the terminal to navigate to a directory of your choice and\n' +
                                                  'typing irdap --demo. Note that an internet connection is required as a small\n' +
@@ -94,13 +101,18 @@ def main(args=None):
                         help='create default configuration file in current working\ndirectory')                    
     parser.add_argument('-r', '--run', action='store_true',
                         help='run pipeline using configuration file in current working\ndirectory') 
-    
+    parser.add_argument('-m', '--meancombine', nargs='+', type=str, metavar='path',
+                        help='mean-combine images of two or more reductions. The\n' \
+                             'absolute paths to the main directories of the reductions\n' \
+                             'should be supplied as arguments and be separated by\n' \
+                             'spaces.')
+       
     # Use current working directory (of terminal) as path of main directory of reduction    
     path_main_dir = os.getcwd()
     
     # Evaluate and act upon user arguments
     args = parser.parse_args()   
-    
+   
     if args.version:
         # Print the current version 
         print('\nIRDAP version %s' % __version__)
@@ -119,7 +131,16 @@ def main(args=None):
         
     elif args.run:
         # Run the pipeline 
-        run_pipeline(path_main_dir)       
+        run_pipeline(path_main_dir)   
+    
+    elif args.meancombine:
+        # Mean-combine the images of two or more reductions
+        path_read_dirs = args.meancombine
+               
+        if len(path_read_dirs) == 1:
+            print('\nPlease provide at least two absolute paths to directories containing reduced data to be combined.')
+        else:
+            mean_combine_images(path_main_dir, path_read_dirs)
 
 ###############################################################################
 # Run the function main

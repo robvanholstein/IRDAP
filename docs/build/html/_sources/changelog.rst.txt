@@ -14,6 +14,9 @@ Changelog & to-do
 Changelog
 ---------
 
+v0.3.0 July 2019, R.G. van Holstein:
+ - Added command-line option to mean-combine final images of different observation blocks
+
 v0.2.1 June 2019, R.G. van Holstein:
  - Added the possibility to reduce data taken with the narrowband filters using the existing model of the broadband filters
 
@@ -28,7 +31,6 @@ v0.1.2 June 2019, R.G. van Holstein:
 To-do high priority
 -------------------
 
-   - Combine data of different OB's with automatic selection of correct center, sky and flux images
    - Add ADI (including PCA) of total intensity images for pupil-tracking observations
    - Change config file option skip_preprocessing to perform_preprocessing: True/False, perform_polarimetry: True/False and perform_adi: True/False
    - Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2
@@ -40,7 +42,7 @@ To-do high priority
    
 To-do low priority
 ------------------
-     
+
    - Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)	
    - Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)
    - Add option for 'stupid ADI' for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset
