@@ -1540,9 +1540,6 @@ def compute_fwhm_separation(filter_used):
     # Define diameter of telescope primary mirror M1 (m)
     D_telescope = 8.2
     
-    # Define pixel scale of IRDIS detector ("/px)
-    pixel_scale = 12.25e-3
-
     # Define approximate separation of satellite spots (pixels) and filter central wavelength and bandwidth (m)
     if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
         separation = 31.0
@@ -4961,6 +4958,13 @@ def perform_postprocessing(cube_left_frames,
     for frame, file_name in zip(frames_to_write, file_names):
         write_fits_files(data=frame, path=os.path.join(path_reduced_dir, name_file_root + file_name + '.fits'), header=False)
 
+    # Convert in contrast per arcsec^2 and write the files of the images with the star polarization present to contrast per arcsec 
+    if convert_in_contrast_per_arcsec2 == True:      
+        for frame, file_name in zip(frames_to_write, file_names):
+            write_fits_files(data=frame/reference_flux/pixel_scale**2,\
+                             path=os.path.join(path_reduced_dir, \
+                             name_file_root + file_name + '_contrast_per_arcsec2.fits'), header=False)
+
     # Write frames that show annuli used to retrieve star and background signals in reduced directory
     write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_dir, name_file_root + 'annulus_star.fits'), header=False)
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_dir, name_file_root + 'annulus_background.fits'), header=False)    
@@ -4990,7 +4994,7 @@ def perform_postprocessing(cube_left_frames,
     ########################################################################################
 
     if convert_in_contrast_per_arcsec2 == True:  
-        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to contrast per arcsec    
+        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization subtracted to contrast per arcsec    
         for frame, file_name in zip(frames_to_write, file_names):
             write_fits_files(data=frame/reference_flux/pixel_scale**2, \
                     path=os.path.join(path_reduced_star_pol_subtr_dir, \
@@ -5363,6 +5367,7 @@ def run_pipeline(path_main_dir):
     # Define which variables should be global
     global pupil_offset
     global true_north_correction
+    global pixel_scale
     global msd
     global path_raw_dir
     global path_calib_dir
@@ -5386,6 +5391,9 @@ def run_pipeline(path_main_dir):
         
     # Define true North correction (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     true_north_correction = -1.75
+
+    # Define pixel scale in arcsec/px from Maire et al. 2016 (average value valid between all filters)
+    pixel_scale = 0.01225
         
     # Define mean solar day (s)
     msd = 86400
