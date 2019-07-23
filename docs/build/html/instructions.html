@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Usage instructions &mdash; IRDAP 0.2.1 documentation</title>
+  <title>Usage instructions &mdash; IRDAP 0.3.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                0.2.1
+                0.3.0
               </div>
             
           
@@ -239,6 +239,15 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="first admonition-title">Note</p>
 <p class="last">The units of the <em>I</em><sub>Q</sub>-, <em>I</em><sub>U</sub>- and <em>I</em><sub>tot</sub>-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the <em>Q</em>-, <em>U</em>-, <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>- and <em>U</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images are the number of counts when substracting the right from the left frame half of a single exposure.</p>
 </div>
+<p>If a target was observed using multiple observation blocks (OBs), it is recommended to first reduce each OB separately. After that, the final images can be mean-combined by navigating to a directory of your choice in the terminal and typing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">meancombine</span> <span class="n">path1</span> <span class="n">path2</span> <span class="o">...</span> <span class="n">pathx</span>
+</pre></div>
+</div>
+<p>The space-separated <code class="docutils literal notranslate"><span class="pre">paths</span></code> are absolute paths to the main directories of the reductions, e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">meancombine</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">T_Cha_2016</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">20</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">T_Cha_2016</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">21</span>
+</pre></div>
+</div>
+<p>The mean-combined images will then be written to the current working directory of the terminal.</p>
 <p>To understand the input parameters, continue with the <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">configuration file</span></a>.</p>
 </div>
 </div>

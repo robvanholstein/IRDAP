@@ -49,17 +49,13 @@ from scipy.ndimage.interpolation import rotate
 from scipy import interpolate
 from scipy import optimize
 from scipy import ndimage
+from scipy.interpolate import interp1d
 from scipy.stats import trim_mean
 from scipy.stats import sigmaclip
 from astropy.modeling import models, fitting
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
-from astropy import coordinates as coords
-from astropy import units as u
-from astropy.time import Time
-from scipy.interpolate import interp1d
-from astropy.io import ascii
 from .version import __version__
 
 ###############################################################################
@@ -123,14 +119,13 @@ def read_config_file(path_config_file):
     flux_center_coordinates   = literal_eval(config.get('Advanced pre-processing options', 'flux_center_coordinates'))
     flux_param_centering      = literal_eval(config.get('Advanced pre-processing options', 'flux_param_centering'))
     flux_annulus_background   = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_background'))
-    flux_annulus_star             = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_star'))
+    flux_annulus_star         = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_star'))
     
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
     single_posang_north_up          = config_true_false(config.get('Advanced post-processing options', 'single_posang_north_up'))
-    adi                             = config_true_false(config.get('Advanced post-processing options', 'adi'))
     convert_in_contrast_per_arcsec2 = config_true_false(config.get('Advanced post-processing options', 'convert_in_contrast_per_arcsec2'))
- 
+
     return sigma_filtering, \
            object_collapse_ndit, \
            object_centering_method, \
@@ -149,7 +144,8 @@ def read_config_file(path_config_file):
            flux_annulus_background, \
            flux_annulus_star, \
            double_difference_type, \
-           single_posang_north_up,adi,convert_in_contrast_per_arcsec2
+           single_posang_north_up, \
+           convert_in_contrast_per_arcsec2
 
 ###############################################################################
 # wrapstr
@@ -419,8 +415,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
                                        combination_method_polarization='least squares', 
                                        object_centering_method='automatic', 
                                        save_preprocessed_data=True, 
-                                       show_images_center_coordinates=True,\
-                                       convert_in_contrast_per_arcsec2=False):
+                                       show_images_center_coordinates=True):
     '''
     Check the FITS-headers of the data in the raw directory, remove files and 
     frames as specified by the user, sort the data and create directories to 
@@ -457,8 +452,6 @@ def check_sort_data_create_directories(frames_to_remove=[],
             center coordinates for each frame. The plots allow for checking
             whether the centering is correct and to scan the data for frames 
             with bad quality (default = True). 
-        convert_in_contrast_per_arcsec2: 
-            TODO:h 
     
     Note that combination_method_polarization, object_centering_method, 
     save_preprocessed_data and show_images_center_coordinates are input to this 
@@ -991,10 +984,6 @@ def check_sort_data_create_directories(frames_to_remove=[],
     if object_centering_method == 'center frames' and not any(path_center_files):
         raise IOError('\n\nobject_centering_method = \'{0:s}\' (or \'automatic\'), but there are no CENTER-files provided.'.format(object_centering_method))
 
-    # Raise error if the user request the conversion to contrast per arcsec^2 but there is no FLUX
-    if convert_in_contrast_per_arcsec2 and not any(path_flux_files):
-        raise IOError("\n\n'convert_in_contrast_per_arcsec2' is True while there is no FLUX frames supplied.")    
-    
     # Raise warning when there are no center files, but the data is coronagraphic
     coronagraph_used = header_object[0]['ESO INS COMB ICOR']
     
@@ -2165,7 +2154,7 @@ def process_object_frames(path_object_files,
                           center_coordinates=(477, 521, 1503, 511), 
                           param_centering=(60, None, 30000), 
                           collapse_ndit=False, 
-                          show_images_center_coordinates=True,adi=False):
+                          show_images_center_coordinates=True):
     '''
     Process the OBJECT frames by subtracting the background, flat-fielding, 
     removing bad pixels, centering, computing the mean over the NDIT's and
@@ -2269,9 +2258,6 @@ def process_object_frames(path_object_files,
     list_shift_y = [[], []]
     list_left_frames = []
     list_right_frames = []
-    list_cube_left =  []
-    list_cube_right = []
-    list_parangle = []
     header = []
 
     if centering_method in ['gaussian', 'cross-correlation']:
@@ -2415,28 +2401,11 @@ def process_object_frames(path_object_files,
         # Compute mean images of left and right image cubes
         frame_left_centered = np.mean(cube_left_centered, axis=0)
         frame_right_centered = np.mean(cube_right_centered, axis=0)
-        
+
         # Append single sum and difference images and header
         list_left_frames.append(frame_left_centered)
         list_right_frames.append(frame_right_centered)
         header.append(header_sel)
-
-        # For ADI processing, the cubes need to be saved along with the parallactic
-        # angles for each individual frame
-        list_cube_left.append(cube_left_centered)
-        list_cube_right.append(cube_right_centered)
-        
-        ndit = header_sel['HIERARCH ESO DET NDIT']
-        t_start = Time(header_sel['DATE-OBS'],location=location)
-        t_end = Time(header_sel['DATE'],location=location)        
-        t_array = t_start+(t_end-t_start)*(np.arange(0,1.,1./ndit)+1./ndit/2.)
-        lst = t_array.sidereal_time('mean')
-        hour_angle = lst - Jcurrent_pointing_coords.ra
-        hour_angle[hour_angle<-12*u.hourangle] += 24*u.hourangle
-        hour_angle[hour_angle>12*u.hourangle] -= 24*u.hourangle
-        parangle = parangle_from_time(t_array,Jcurrent_pointing_coords)
-        parangle = np.delete(parangle,indices_sel)
-        list_parangle.append(parangle)
         
         # Print which file has been processed
         printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(os.path.basename(path_sel)))
@@ -2444,34 +2413,13 @@ def process_object_frames(path_object_files,
     # Convert lists of single sum and difference images to image cubes
     cube_left_frames = np.stack(list_left_frames)
     cube_right_frames = np.stack(list_right_frames)    
-
-    # Convert lists of parallactic angle in a 1D array.
-    array_parangle = np.rad2deg(np.unwrap(np.deg2rad(np.concatenate(list_parangle).value)))
-    array_derotation_angle = np.rad2deg(np.unwrap(np.deg2rad(\
-                np.mod(array_parangle+true_north_correction+pupil_offset,360))))                                                                                              
-    cube_left_uncollapsed = np.ndarray((len(array_derotation_angle),cube_left_frames.shape[1],cube_left_frames.shape[2]))
-    cube_right_uncollapsed = np.ndarray((len(array_derotation_angle),cube_left_frames.shape[1],cube_left_frames.shape[2]))
-    counter=0
-    for i,cube in enumerate(list_cube_left):
-        nframes_cube = cube.shape[0]
-        cube_left_uncollapsed[counter:counter+nframes_cube,:,:] = cube
-        cube_right_uncollapsed[counter:counter+nframes_cube,:,:] = list_cube_right[i]
-        counter += nframes_cube
-    
+        
     # Determine type of observations and assign directory to save plots in
     observation_type = header_sel['ESO DPR TYPE']
     if observation_type == 'OBJECT':
         path_plots_dir = path_preprocessed_dir
     elif observation_type == 'OBJECT,FLUX':
          path_plots_dir = path_flux_dir
-         
-    # We save the cubes with individual DITs (to be used for ADI processing)
-    if adi:
-        write_fits_files(data=cube_left_uncollapsed, path=os.path.join(path_plots_dir,\
-                        name_file_root + 'cube_left_ndit.fits'), header=header_sel)    
-        write_fits_files(data=cube_right_uncollapsed, path=os.path.join(path_plots_dir,\
-                        name_file_root + 'cube_right_ndit.fits'), header=header_sel)    
-
        
     if centering_method in ['gaussian', 'cross-correlation']:
         # Convert lists of shifts to arrays of center coordinates
@@ -2593,31 +2541,7 @@ def process_object_frames(path_object_files,
             plt.savefig(path_plot, dpi=300, bbox_inches='tight')
             plt.close(fig)
 
-    return cube_left_frames, cube_right_frames, header, array_parangle, array_derotation_angle   
-    
-###############################################################################
-# parangle_from_time
-###############################################################################    
-            
-def parangle_from_time(time,coords):
-    '''
-    Computes the parallactic angle
-    Input:
-        time: an instance of the Time class (astropy.time.Time) with a correct
-            location for the sideral time computation
-        coords: an instance of the coordinates class (astropy.coordinates.SkyCoord)
-    Output:
-        Parallactic angle in degrees
-    
-    File written by Julien Milli
-    Function status: verified
-    '''
-    sideral_time = time.sidereal_time('mean')
-    hour_angle = sideral_time - coords.ra
-    y = np.sin(hour_angle)
-    x = np.tan(time.location.latitude) * np.cos(coords.dec ) - np.sin(coords.dec) * np.cos(hour_angle)
-    parangle = np.rad2deg(np.arctan2( y, x ))
-    return np.mod(parangle,360*u.degree)
+    return cube_left_frames, cube_right_frames, header
 
 ###############################################################################
 # compute_annulus_values
@@ -2823,7 +2747,7 @@ def process_flux_frames(path_flux_files,
     '''
 
     # Perform dark-subtraction, flat-fielding, bad pixel removal and centering
-    cube_left_frames, cube_right_frames,_,_,_ = process_object_frames(path_object_files=path_flux_files, 
+    cube_left_frames, cube_right_frames = process_object_frames(path_object_files=path_flux_files, 
                                                                 file_index_object=file_index_flux, 
                                                                 indices_to_remove_object=indices_to_remove_flux, 
                                                                 frame_master_flat=frame_master_flat, 
@@ -2834,9 +2758,7 @@ def process_flux_frames(path_flux_files,
                                                                 center_coordinates=center_coordinates, 
                                                                 param_centering=param_centering, 
                                                                 collapse_ndit=collapse_ndit, 
-                                                                show_images_center_coordinates=show_images_center_coordinates,\
-                                                                adi=True)
-    # We leave adi=True above to get the cube of individual DITs for the PSF
+                                                                show_images_center_coordinates=show_images_center_coordinates)[:2]
 
     # Compute flux frame as mean of single sum cube
     cube_single_sum = cube_left_frames + cube_right_frames
@@ -3068,17 +2990,17 @@ def perform_preprocessing(frames_to_remove=[],
                 used for the fitting and center_coordinates is ignored. The
                 value of crop_radius is also used to create the sub-images when
                 show_images_center_coordinates = True.
-        sigfactor: all sub-image pixels with values smaller than 
+            sigfactor: all sub-image pixels with values smaller than 
                 sigfactor*standard deviation are replaced by random Gaussian noise 
                 to mask them for fitting the 2D Gaussian. If None, no pixels are
                 replaced by Gaussian noise.
-        saturation_level: all pixels within the smallest circle encompassing 
+            saturation_level: all pixels within the smallest circle encompassing 
                 the pixels with a value equal to or higher than saturation_level 
                 are ignored when fitting the 2D Gaussian. We use a circle because
                 strongly saturated pixels in the peak of the PSF often have values 
                 lower than saturation_level. If None, no pixels are ignored.
-                The default value of flux_param_centering is (60, None, 30000).
-                flux_param_centering is only used when flux_centering_method is 'gaussian'.  
+            The default value of flux_param_centering is (60, None, 30000).
+            flux_param_centering is only used when flux_centering_method is 'gaussian'.  
         flux_annulus_background: (list of) length-6-tuple(s) with parameters 
             to generate annulus to measure and subtract background in master flux frame:
             coord_center_x: x-coordinate of center (pixels; 0-based)
@@ -3126,8 +3048,7 @@ def perform_preprocessing(frames_to_remove=[],
             defined by the flux_annulus_star tuple, in ADU, corrected by the DIT ratio
             between FLUX and OBJECT frames and the potential use of ND filters
             
-    File written by Rob van Holstein; based on function by Christian Ginski; 
-    complemented by Julien Milli
+    File written by Rob van Holstein; based on function by Christian Ginski
     Function status: verified
     '''
 
@@ -3151,8 +3072,7 @@ def perform_preprocessing(frames_to_remove=[],
                                          combination_method_polarization=combination_method_polarization, 
                                          object_centering_method=object_centering_method, 
                                          save_preprocessed_data=save_preprocessed_data, 
-                                         show_images_center_coordinates=show_images_center_coordinates,\
-                                         convert_in_contrast_per_arcsec2=convert_in_contrast_per_arcsec2)
+                                         show_images_center_coordinates=show_images_center_coordinates)
 
     ###############################################################################
     # Computing master flat and bad pixel map or reading static ones
@@ -3284,8 +3204,7 @@ def perform_preprocessing(frames_to_remove=[],
             object_center_coordinates = (477, 521, 1503, 511)
             printandlog('\nobject_center_coordinates is \'automatic\': setting it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is not N_ALC_Ks.')
         
-    cube_left_frames, cube_right_frames, header, parangle,derotation_angle = process_object_frames(\
-                                                                        path_object_files=path_object_files, 
+    cube_left_frames, cube_right_frames, header = process_object_frames(path_object_files=path_object_files, 
                                                                         file_index_object=file_index_object, 
                                                                         indices_to_remove_object=indices_to_remove_object, 
                                                                         frame_master_flat=frame_master_flat, 
@@ -3296,8 +3215,7 @@ def perform_preprocessing(frames_to_remove=[],
                                                                         center_coordinates=object_center_coordinates, 
                                                                         param_centering=object_param_centering, 
                                                                         collapse_ndit=object_collapse_ndit, 
-                                                                        show_images_center_coordinates=show_images_center_coordinates,\
-                                                                        adi=adi)
+                                                                        show_images_center_coordinates=show_images_center_coordinates)
     
     if save_preprocessed_data == True:
         # Write preprocessed cubes of single-sum and single-difference images 
@@ -3305,14 +3223,6 @@ def perform_preprocessing(frames_to_remove=[],
         printandlog('')
         write_fits_files(data=cube_left_frames, path=os.path.join(path_preprocessed_dir, 'cube_left_frames.fits'), header=False, silent=False)
         write_fits_files(data=cube_right_frames, path=os.path.join(path_preprocessed_dir, 'cube_right_frames.fits'), header=False, silent=False)
-
-        if adi:
-            # Write parallactic angles and derotation angles
-            write_fits_files(data=parangle, path=os.path.join(path_preprocessed_dir, \
-                name_file_root+'array_parallactic_angles.fits'), header=False, silent=False)
-            write_fits_files(data=derotation_angle, path=os.path.join(path_preprocessed_dir, \
-                name_file_root+'array_derotation_angles.fits'), header=False, silent=False)
-
 
         # Write path of object files to a .txt-file to be able to read headers
         with open(os.path.join(path_preprocessed_dir, 'path_object_files.txt'), 'w') as fh:
@@ -3389,7 +3299,6 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=frame_master_flux, path=os.path.join(path_flux_dir, name_file_root + 'master_flux.fits'), header=False, silent=False)
         write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
-
         if flux_annulus_star == 'automatic':
             flux_annulus_star = (511.5, 511.5, 0, 140, 0, 360)
             printandlog('\nflux_annulus_star is \'automatic\': setting it to ' + str(tuple(x + 1 for x in flux_annulus_star)))
@@ -3410,7 +3319,6 @@ def perform_preprocessing(frames_to_remove=[],
 
     return cube_left_frames, cube_right_frames, header, file_index_object, \
             combination_method_polarization,reference_flux
-
 
 ################################################################################
 ## determine_star_flux
@@ -3450,10 +3358,6 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flu
     Function status: 
     '''
     # We first perform aperture photometry on the master FLUX frame    
-#    aper = photutils.aperture.CircularAperture(\
-#            (frame_master_flux.shape[0]/2.-0.5,frame_master_flux.shape[0]/2.-0.5),r=radius)
-#    aper_phot = photutils.aperture_photometry(frame_master_flux,aper)
-#    star_total_flux = aper_phot['aperture_sum'][0]
     star_total_flux = np.sum(compute_annulus_values(cube=frame_master_flux, param=flux_annulus_star)[0])
     printandlog('The star reference flux encircled in the annulus ({0:s}) is {1:.1f} ADU'.format(\
                 ', '.join(['{0:3.1f}'.format(f) for f in flux_annulus_star]),star_total_flux))
@@ -3482,7 +3386,7 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flu
     elif 'J' in filter_used:
         BB_filter='B_J'
     
-    # utility function to retrieve the neutral density number 0.0, 1.0, 2.0 or 3.5
+    # utility function to retriev the neutral density number 0.0, 1.0, 2.0 or 3.5
     def get_ND_value(ND_filter_name):
         if 'OPEN' in ND_filter_name:
             return 0
@@ -4392,8 +4296,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     cube_Q_IP_subtracted = cube_Q_double_difference - IP_Q[:, np.newaxis, np.newaxis]*cube_I_Q_double_sum
     cube_U_IP_subtracted = cube_U_double_difference - IP_U[:, np.newaxis, np.newaxis]*cube_I_U_double_sum
 
-    # added for a test by JM
-    write_fits_files(data=cube_Q_IP_subtracted, path=os.path.join(path_preprocessed_dir, 'cube_Q_IP_subtracted.fits'), header=False)
+#TODO: remove simple cADI below
+#    cube_Q_IP_subtracted -= np.median(cube_Q_IP_subtracted, axis=0)
+#    cube_U_IP_subtracted -= np.median(cube_U_IP_subtracted, axis=0)
     
     # Derotate IP-subtracted Q- and U-images
     cube_Q_derotated = np.zeros(cube_Q_IP_subtracted.shape)
@@ -4404,9 +4309,6 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     
     for i, (frame_U, rotation_angle_U) in enumerate(zip(cube_U_IP_subtracted, rotation_angles_U)):
         cube_U_derotated[i, :, :] = rotate(frame_U, rotation_angle_U, reshape=False)
-
-    # added for a test by JM
-    write_fits_files(data=cube_Q_derotated, path=os.path.join(path_preprocessed_dir, 'cube_Q_derotated.fits'), header=False)
          
     # Calculate Q- and U-images incident on telescope by solving system of equations per HWP cycle
     number_frames_min = min(len(cube_Q_derotated), len(cube_U_derotated))
@@ -4422,9 +4324,6 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         cube_QU_incident = cube_QU_incident_stretched.reshape(cube_QU_incident_stretched.shape[0], Y.shape[1], Y.shape[2]) 
         cube_Q_incident[i, :, :] = cube_QU_incident[0, :, :]
         cube_U_incident[i, :, :] = cube_QU_incident[1, :, :]
-
-    # added for a test by JM
-    write_fits_files(data=cube_Q_incident, path=os.path.join(path_preprocessed_dir, 'cube_Q_incident.fits'), header=False)
         
     # Create incident Q- and U-images
     if combination_method_polarization == 'least squares':
@@ -4459,6 +4358,10 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     # Compute incident I_Q- and I_U-images
     ###############################################################################
 
+#TODO: remove simple cADI below
+#    cube_I_Q_double_sum -= np.median(cube_I_Q_double_sum, axis=0)
+#    cube_I_U_double_sum -= np.median(cube_I_U_double_sum, axis=0)
+    
     # Derotate I_Q- and I_U-images
     cube_I_Q_incident = np.zeros(cube_I_Q_double_sum.shape)
     cube_I_U_incident = np.zeros(cube_I_U_double_sum.shape)
@@ -4558,7 +4461,7 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
         frame_I_U: I_U-image
         frame_Q: Q-image
         frame_U: U-image
-        header: list of headers of raw science frames    
+        header: list of headers of raw science frames; if None, no Q_phi- and U_phi-images are created and they are set to None in the output     
         single_posang_north_up: if True the images produced are oriented with North up; if False the images have the image orientation of the
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator 
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more 
@@ -4566,8 +4469,8 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
         
     Output:
         frame_I_tot: total-intensity image
-        frame_Q_phi: image of Q_phi
-        frame_U_phi: image of U_phi
+        frame_Q_phi: image of Q_phi (None if header is set to None)
+        frame_U_phi: image of U_phi (None if header is set to None)
         frame_I_pol: polarized-intensity image
         frame_AoLP: image of angle of linear polarization computed from Q- and U-images
         frame_DoLP: image of degree of linear polarization computed from Q-, U-, I_Q- and I-U-images
@@ -4583,20 +4486,24 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
     # Compute total intensity image  
     frame_I_tot = 0.5*(frame_I_Q + frame_I_U)
     
-    # Determine tracking mode used
-    tracking_mode_used = header[0]['ESO INS4 COMB ROT']
+    if header != None:
+        # Determine tracking mode used
+        tracking_mode_used = header[0]['ESO INS4 COMB ROT']
+        
+        # Determine number of unique derotator position angles
+        derotator_position_angle = [x['ESO INS4 DROT2 POSANG'] for x in header]
+        number_derotator_position_angles = len(np.unique(derotator_position_angle))
     
-    # Determine number of unique derotator position angles
-    derotator_position_angle = [x['ESO INS4 DROT2 POSANG'] for x in header]
-    number_derotator_position_angles = len(np.unique(derotator_position_angle))
-
-    if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and single_posang_north_up == False:
-        # Compute image position angle
-        rotation_angle = -derotator_position_angle[0] - true_north_correction
+        if tracking_mode_used == 'FIELD' and number_derotator_position_angles == 1 and single_posang_north_up == False:
+            # Compute image position angle
+            rotation_angle = -derotator_position_angle[0] - true_north_correction
+        else:
+            rotation_angle = 0.0
+        
+        frame_Q_phi, frame_U_phi, frame_azimuthal_angle = compute_azimuthal_stokes_parameters(frame_Q, frame_U, rotation_angle=-rotation_angle)   
     else:
-        rotation_angle = 0.0
-    
-    frame_Q_phi, frame_U_phi, frame_azimuthal_angle = compute_azimuthal_stokes_parameters(frame_Q, frame_U, rotation_angle=-rotation_angle)
+        frame_Q_phi = None
+        frame_U_phi = None
 
     # Compute polarized intensity image
     frame_I_pol = np.sqrt(frame_Q**2 + frame_U**2)
@@ -4632,7 +4539,7 @@ def perform_postprocessing(cube_left_frames,
                            combination_method_intensity='mean', 
                            trimmed_mean_prop_to_cut_intens=0.1, 
                            single_posang_north_up=True, 
-                           normalized_polarization_images=False,\
+                           normalized_polarization_images=False, \
                            reference_flux=None):
     '''
     Perform post-processing of data, including applying the model-based correction
@@ -4738,7 +4645,7 @@ def perform_postprocessing(cube_left_frames,
             printandlog('\nWARNING, the data is non-coronagraphic so there might be little flux at the AO residuals. Determining the star polarization using an aperture at the position of the central star (\'star aperture\') will probably yield better results.')
     elif annulus_star == 'star aperture':
         annulus_star = (511.5, 511.5, 0, 11, 0, 360)
-        printandlog('\nThe star polarization will be determined with an aperture located at the position of the central star:')
+        printandlog('\nThe star polarization will be determined with an aparture located at the position of the central star:')
         printandlog(annulus_0_to_1_based(annulus_star))
     
     # Define and print annulus to determine the background from
@@ -4997,6 +4904,18 @@ def perform_postprocessing(cube_left_frames,
     frame_annulus_star = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_star)[1]
     frame_annulus_background = compute_annulus_values(cube=frame_I_Q_background_subtracted, param=annulus_background)[1]
 
+##TODO: Convert images to mJansky/". Perhaps it is best to give this as extra output and retain the original ones in counts too. What do you think?
+## If so, just give the new images new clear names and add them to the section # Write .fits-files just below here. Note that you need to convert
+## the images with and without star polarization.
+#    
+#    ###############################################################################
+#    # Optionally convert final Q-, U-, Qphi-, Uphi- and Ipol-images to mJansky/"
+#    ###############################################################################
+#
+#    if bla == True:  
+#        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
+#        dummy = 5
+#        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization to mJansky/"
         
     ###############################################################################
     # Print image orientation of final images
@@ -5025,7 +4944,7 @@ def perform_postprocessing(cube_left_frames,
     ###############################################################################
     # Write .fits-files
     ###############################################################################
-    
+            
     # List files of the images with the star polarization present and define their file names
     frames_to_write = [frame_I_Q_background_subtracted, frame_I_U_background_subtracted, frame_I_tot, frame_Q_background_subtracted, 
                        frame_U_background_subtracted, frame_Q_phi, frame_U_phi, frame_I_pol, frame_AoLP]
@@ -5041,13 +4960,6 @@ def perform_postprocessing(cube_left_frames,
     printandlog('')
     for frame, file_name in zip(frames_to_write, file_names):
         write_fits_files(data=frame, path=os.path.join(path_reduced_dir, name_file_root + file_name + '.fits'), header=False)
-
-    # Convert in contrast per arcsec^2 and write the files of the images with the star polarization present
-    if convert_in_contrast_per_arcsec2 == True:      
-        for frame, file_name in zip(frames_to_write, file_names):
-            write_fits_files(data=frame/reference_flux/pixel_scale**2,\
-                             path=os.path.join(path_reduced_dir, \
-                             name_file_root + file_name + '_contrast_per_arcsec2.fits'), header=False)
 
     # Write frames that show annuli used to retrieve star and background signals in reduced directory
     write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_dir, name_file_root + 'annulus_star.fits'), header=False)
@@ -5067,7 +4979,12 @@ def perform_postprocessing(cube_left_frames,
     # Write files of the images with the star polarization subtracted
     for frame, file_name in zip(frames_to_write, file_names):
         write_fits_files(data=frame, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + file_name + '.fits'), header=False)
-    
+
+    # Write frames that show annuli used to retrieve star and background signals in reduced_star_pol_subtr directory
+    write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
+    write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)    
+
+
     ########################################################################################
     # Optionally convert final Q-, U-, Qphi-, Uphi- and Ipol-images to contrast per arcsec^2
     ########################################################################################
@@ -5082,6 +4999,8 @@ def perform_postprocessing(cube_left_frames,
     # Write frames that show annuli used to retrieve star and background signals in reduced_star_pol_subtr directory
     write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)    
+
+
 
 
 
@@ -5223,7 +5142,148 @@ def make_config(path_main_dir):
         # Copy default configuration file to main directory
         shutil.copyfile(path_default_config_file, path_config_file_write)
         print_wrap('\nCreated a default configuration file ' + path_config_file_write + '.')
+
+###############################################################################
+# mean_combine_images
+###############################################################################  
+
+def mean_combine_images(path_main_dir, path_read_dirs):
+    '''
+    Mean-combine the images of two or more reductions
+    
+    Input:
+        path_main_dir: string specifying path to main directory
+        path_read_dirs: list of strings specifying paths to directories to read data from
         
+    File written by Rob van Holstein
+    Function status: verified    
+    '''
+
+    for reduced_dir in ['reduced', 'reduced_star_pol_subtr']:    
+        # Define path of directory to write combined images to
+        path_write_dir_sel = os.path.join(path_main_dir, reduced_dir + '_combined')
+        
+        if not os.path.exists(path_write_dir_sel):
+            # Create directory if it does not exist yet
+            os.makedirs(path_write_dir_sel)
+        
+        # Create empty lists to store path of files in and whether or not normalized polarization images are present      
+        paths_I_Q = []    
+        paths_I_U = []    
+        paths_Q = []    
+        paths_U = []    
+        paths_Q_phi = []    
+        paths_U_phi = []    
+        normalized_polarization_images = []  
+        
+        for path_sel in path_read_dirs:
+            # Define path of directory containing files to be read and check if it exists
+            path_reduced_dir_sel = os.path.join(path_sel, reduced_dir)
+            
+            if not os.path.exists(path_reduced_dir_sel):
+                raise IOError('\n\nThe directory ' + path_reduced_dir_sel + ' does not exist.')
+            
+            # Retrieve paths of files to be read
+            path_I_Q = glob.glob(os.path.join(path_reduced_dir_sel, '*_I_Q*.fits'))
+            if len(path_I_Q) != 1:
+                raise IOError('\n\nThere are no or multiple I_Q-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_I_Q.append(path_I_Q[0])
+            
+            path_I_U = glob.glob(os.path.join(path_reduced_dir_sel, '*_I_U*.fits'))
+            if len(path_I_U) != 1:
+                raise IOError('\n\nThere are no or multiple I_U-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_I_U.append(path_I_U[0])
+    
+            path_Q = [x for x in glob.glob(os.path.join(path_reduced_dir_sel, '*_Q*.fits')) if '_I_Q' not in x and '_Q_phi' not in x and '_q_norm' not in x]
+            if len(path_Q) != 1:
+                raise IOError('\n\nThere are no or multiple Q-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_Q.append(path_Q[0])
+            
+            path_U = [x for x in glob.glob(os.path.join(path_reduced_dir_sel, '*_U*.fits')) if '_I_U' not in x and '_U_phi' not in x and '_u_norm' not in x]
+            if len(path_U) != 1:
+                raise IOError('\n\nThere are no or multiple U-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_U.append(path_U[0])
+            
+            path_Q_phi = glob.glob(os.path.join(path_reduced_dir_sel, '*_Q_phi*.fits'))
+            if len(path_Q_phi) != 1:
+                raise IOError('\n\nThere are no or multiple Q_phi-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_Q_phi.append(path_Q_phi[0])
+            
+            path_U_phi = glob.glob(os.path.join(path_reduced_dir_sel, '*_U_phi*.fits'))
+            if len(path_U_phi) != 1:
+                raise IOError('\n\nThere are no or multiple U_phi-images in the directory ' + path_reduced_dir_sel + '.')            
+            paths_U_phi.append(path_U_phi[0])       
+    
+            # Check if normalized polarization images are present
+            path_list =" ".join(glob.glob(os.path.join(os.path.join(path_sel, reduced_dir), '*.fits')))  
+            normalized_polarization_images.append(all([x in path_list for x in ['DoLP', 'q_norm', 'u_norm', 'AoLP_norm', 'DoLP_norm']]))   
+        
+        if reduced_dir == 'reduced':
+            # Define name_file_root based on names of files in each read directory
+            name_file_roots = [os.path.basename(x)[:os.path.basename(x).index('_I_Q')] for x in paths_I_Q]
+            target_name = [x[:-10] for x in name_file_roots][0]
+            dates = [x[-10:] for x in name_file_roots]
+            dates_sorted = sorted(dates, key=lambda d: tuple(map(int, d.split('-'))))
+            date_first = dates_sorted[0]
+            date_last = dates_sorted[-1]
+            if date_first[:4] != date_last[:4]:
+                date_root = date_first + '_' + date_last
+            elif date_first[5:7] != date_last[5:7]:
+                date_root = date_first[:5] + date_first[5:] + '_' + date_last[5:]
+            elif date_first[8:] != date_last[8:]:
+                date_root = date_first[:8] + date_first[8:] + '_' + date_last[8:]
+            else:
+                date_root = date_first
+            name_file_root = target_name + date_root + '_'
+        
+        # Read files and mean-combine them
+        frame_I_Q = np.mean(np.vstack(read_fits_files(paths_I_Q, silent=True)[0]), axis=0)      
+        frame_I_U = np.mean(np.vstack(read_fits_files(paths_I_U, silent=True)[0]), axis=0)      
+        frame_Q = np.mean(np.vstack(read_fits_files(paths_Q, silent=True)[0]), axis=0)      
+        frame_U = np.mean(np.vstack(read_fits_files(paths_U, silent=True)[0]), axis=0)      
+        frame_Q_phi = np.mean(np.vstack(read_fits_files(paths_Q_phi, silent=True)[0]), axis=0)      
+        frame_U_phi = np.mean(np.vstack(read_fits_files(paths_U_phi, silent=True)[0]), axis=0)      
+            
+        # Compute final images
+        frame_I_tot, _, _, frame_I_pol, frame_AoLP, frame_DoLP, frame_q, frame_u, frame_AoLP_norm, frame_DoLP_norm \
+        = compute_final_images(frame_I_Q=frame_I_Q, 
+                               frame_I_U=frame_I_U, 
+                               frame_Q=frame_Q, 
+                               frame_U=frame_U, 
+                               header=None, 
+                               single_posang_north_up=True)
+       
+        # List files of the images and define their (base) file names
+        frames_to_write = [frame_I_Q, frame_I_U, frame_I_tot, frame_Q, frame_U, 
+                           frame_Q_phi, frame_U_phi, frame_I_pol, frame_AoLP]
+        file_names = ['I_Q', 'I_U', 'I_tot', 'Q', 'U', 'Q_phi', 'U_phi', 'I_pol', 'AoLP']
+            
+        if all(normalized_polarization_images):
+            # Add images of DoLP, normalized Stokes q and u and AoLP and DoLP created using q- and u-images
+            frames_to_write += [frame_DoLP, frame_q, frame_u, frame_AoLP_norm, frame_DoLP_norm]       
+            file_names += ['DoLP', 'q_norm', 'u_norm', 'AoLP_norm', 'DoLP_norm']
+        
+        # Add substring '_star_pol_subtr' to appropriate files
+        if reduced_dir == 'reduced_star_pol_subtr':
+            for i in range(len(file_names)):
+                if file_names[i] not in ['I_Q', 'I_U', 'I_tot']:
+                    file_names[i] += '_star_pol_subtr'
+
+        # Write files of the combined images 
+        for frame, file_name in zip(frames_to_write, file_names):
+            write_fits_files(data=frame, path=os.path.join(path_write_dir_sel, name_file_root + file_name + '.fits'), header=False, silent=True)
+    
+    # Write TXT-file with directories from which the original images come        
+    f = open(os.path.join(path_main_dir, 'images_mean_combined.txt'), 'w+')
+    f.write('The combined images are computed as the mean of the corresponding images in the following directories:')
+    for path_sel in path_read_dirs:
+        f.write('\n' + path_sel)
+    f.close()
+    
+    print('\nSuccessfully mean-combined the images located in:')
+    for path_sel in path_read_dirs: 
+        print(path_sel)
+       
 ###############################################################################
 # create_overview_headers_main
 ###############################################################################    
@@ -5303,7 +5363,6 @@ def run_pipeline(path_main_dir):
     # Define which variables should be global
     global pupil_offset
     global true_north_correction
-    global pixel_scale
     global msd
     global path_raw_dir
     global path_calib_dir
@@ -5320,19 +5379,13 @@ def run_pipeline(path_main_dir):
     global path_log_file
     global path_overview
     global path_static_calib_dir
-    global location
-    global Jcurrent_pointing_coords
-    global adi
     global convert_in_contrast_per_arcsec2
     
     # Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
-    pupil_offset = 135.99 
+    pupil_offset = 135.99
         
     # Define true North correction (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     true_north_correction = -1.75
-
-    # Define pixel scale in arcsec/px from Maire et al. 2016 (average value valid between all filters)
-    pixel_scale = 0.01225
         
     # Define mean solar day (s)
     msd = 86400
@@ -5370,18 +5423,7 @@ def run_pipeline(path_main_dir):
     else:
         target_name = header_target_name[0]['ESO OBS TARG NAME']
         date_obs = header_target_name[0]['DATE-OBS']
-        pointing_alpha = header_target_name[0]['RA']*u.degree
-        pointing_delta = header_target_name[0]['DEC']*u.degree
-        J2000_pointing_coords = coords.SkyCoord(pointing_alpha,pointing_delta,frame='fk5')
-        latitude = header_target_name[0]['HIERARCH ESO TEL GEOLAT']*u.degree
-        longitude = header_target_name[0]['HIERARCH ESO TEL GEOLON']*u.degree  
-        altitude = header_target_name[0]['HIERARCH ESO TEL GEOELEV']*u.meter 
-        location = (longitude, latitude, altitude)
-        time_obs = Time(header_target_name[0]['DATE-OBS'],location=(longitude, latitude, altitude))
-        fk5_timeOfObservation = coords.FK5(equinox=time_obs.jyear_str)
-        Jcurrent_pointing_coords = J2000_pointing_coords.transform_to(fk5_timeOfObservation)
-        
-
+    
     name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
     # Find path of log file from previous reduction
@@ -5495,8 +5537,9 @@ def run_pipeline(path_main_dir):
     flux_annulus_background, \
     flux_annulus_star, \
     double_difference_type, \
-    single_posang_north_up, adi, \
-    convert_in_contrast_per_arcsec2     = read_config_file(path_config_file)
+    single_posang_north_up, \
+    convert_in_contrast_per_arcsec2 \
+    = read_config_file(path_config_file)
     
     # Define some fixed input parameters
     save_preprocessed_data = True
@@ -5517,10 +5560,6 @@ def run_pipeline(path_main_dir):
             raise IOError('\n\nThere is no log file from a previous reduction. Remove the log file that has been created for the current reduction attempt and then run IRDAP with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
         elif log_file_lines is None:
             raise IOError('\n\nThe pre-processing part of the reduction is not complete in the previous log file. Remove the log file that has been created last and then run IRDAP with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
-
-    print('The coordinates (and parallactic angles) are computed based on the pointing of',\
-          'the telescope in the FK5 frame (ep=J{0:7.2f} eq={0:7.2f}): (RA/DEC) {1:s}'.format(\
-          time_obs.jyear,Jcurrent_pointing_coords.to_string('hmsdms')))
         
     ###############################################################################
     # Make a copy of configuration file
@@ -5735,7 +5774,7 @@ def run_pipeline(path_main_dir):
         elif any([len(x) != 6 for x in flux_annulus_background]):
             raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
         elif any([type(y) not in [int, float] for x in flux_annulus_background for y in x]):
-            raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')    
+            raise TypeError('\n\n\'flux_annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
     # save_preprocessed_data
     if save_preprocessed_data not in [True, False]:
@@ -5824,7 +5863,7 @@ def run_pipeline(path_main_dir):
             printandlog('Warning, the aperture inner radius for the star photometry (3rd element of flux_annulus_star) is set to {0:.1f}. It should be set to 0 to encompass the star flux unless very specific circumstances'.format(flux_annulus_star[2]))        
         elif flux_annulus_star[3] >140:
             printandlog('Warning, the aperture outer radius for the star photometry (4th element of flux_annulus_star) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star'.format(flux_annulus_star[3]))        
-        
+
     # combination_method_polarization
     if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
         raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
@@ -5851,14 +5890,14 @@ def run_pipeline(path_main_dir):
     if single_posang_north_up not in [True, False]:
         raise ValueError('\n\n\'single_posang_north_up\' should be either True or False.')   
     
-    # normalized_polarization_images
-    if normalized_polarization_images not in [True, False]:
-        raise ValueError('\n\n\'normalized_polarization_images\' should be either True or False.')   
-
     # convert_in_contrast_per_arcsec2
     if convert_in_contrast_per_arcsec2 not in [True, False]:
         raise ValueError('\n\n\'convert_in_contrast_per_arcsec2\' should be either True or False.')   
     
+    # normalized_polarization_images
+    if normalized_polarization_images not in [True, False]:
+        raise ValueError('\n\n\'normalized_polarization_images\' should be either True or False.')   
+
     printandlog('\nThe input parameters have passed all checks.')
 
     ###############################################################################
@@ -5900,7 +5939,7 @@ def run_pipeline(path_main_dir):
         printandlog('###############################################################################')
         printandlog('\nStarting pre-processing of raw data.')
         
-        cube_left_frames, cube_right_frames, header, file_index_object, \
+        cube_left_frames, cube_right_frames, header, file_index_object,\
         combination_method_polarization, reference_flux \
         = perform_preprocessing(frames_to_remove=frames_to_remove, 
                                 sigma_filtering=sigma_filtering, 
@@ -5936,10 +5975,6 @@ def run_pipeline(path_main_dir):
         path_cube_right_frames = os.path.join(path_preprocessed_dir, 'cube_right_frames.fits')
         path_object_files_text = os.path.join(path_preprocessed_dir, 'path_object_files.txt')
         path_file_index_object = os.path.join(path_preprocessed_dir, 'file_index_object.txt')
-
-        # read the reference flux for the contrast conversion
-        table_star_flux = pd.read_csv(os.path.join(path_flux_dir, name_file_root + 'reference_flux.csv'))
-        reference_flux = table_star_flux['reference flux (ADU)'][0]
         
         if os.path.exists(path_cube_left_frames) and os.path.exists(path_cube_right_frames) and os.path.exists(path_object_files_text) and os.path.exists(path_file_index_object):
             # Print that post-processing starts
@@ -5980,11 +6015,7 @@ def run_pipeline(path_main_dir):
                            combination_method_intensity=combination_method_intensity, 
                            trimmed_mean_prop_to_cut_intens=trimmed_mean_prop_to_cut_intens,
                            single_posang_north_up=single_posang_north_up, 
-                           normalized_polarization_images=normalized_polarization_images,\
-                           reference_flux=reference_flux)
-
-
- 
+                           normalized_polarization_images=normalized_polarization_images)
 
 #TODO: Add main ADI function
 #    perform_adi()
@@ -5993,3 +6024,15 @@ def run_pipeline(path_main_dir):
     time_end = time.time()
     d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
     printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second)) 
+    
+    # Print request to cite IRDAP
+    printandlog('\n###############################################################################')
+    printandlog('# Important notice')
+    printandlog('###############################################################################')
+    printandlog('\nWhen publishing data reduced with IRDAP, please cite van Holstein et al.')
+    printandlog('(2019): <ADS link>.')
+    printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
+    printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
+    printandlog('\nFull documentation: https://robvanholstein.github.io/IRDAP')
+    printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl')
+    printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein')
