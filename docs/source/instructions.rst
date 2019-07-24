@@ -73,7 +73,7 @@ For the post-processing part, IRDAP computes the double sum and double differenc
    For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory ``reduced``, i.e. those without the polarization subtracted.
 
 .. note::
-   The units of the *I*\ :sub:`Q`-, *I*\ :sub:`U`- and *I*\ :sub:`tot`-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the *Q*-, *U*-, *Q*:math:`_\phi`- and *U*:math:`_\phi`-images are the number of counts when substracting the right from the left frame half of a single exposure. 
+   The units of the *I*\ :sub:`Q`-, *I*\ :sub:`U`- and *I*\ :sub:`tot`-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the *Q*-, *U*-, *Q*:math:`_\phi`- and *U*:math:`_\phi`-images are the number of counts when subtracting the right from the left frame half of a single exposure. 
 
 If a target was observed using multiple observation blocks (OBs), it is recommended to first reduce each OB separately. After that, the final images can be mean-combined by using the terminal to navigate to a directory of your choice and typing:
 ::
