@@ -49,6 +49,7 @@ from scipy.ndimage.interpolation import rotate
 from scipy import interpolate
 from scipy import optimize
 from scipy import ndimage
+from scipy.interpolate import interp1d
 from scipy.stats import trim_mean
 from scipy.stats import sigmaclip
 from astropy.modeling import models, fitting
@@ -118,10 +119,12 @@ def read_config_file(path_config_file):
     flux_center_coordinates   = literal_eval(config.get('Advanced pre-processing options', 'flux_center_coordinates'))
     flux_param_centering      = literal_eval(config.get('Advanced pre-processing options', 'flux_param_centering'))
     flux_annulus_background   = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_background'))
+    flux_annulus_star         = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_star'))
     
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
     single_posang_north_up          = config_true_false(config.get('Advanced post-processing options', 'single_posang_north_up'))
+    convert_in_contrast_per_arcsec2 = config_true_false(config.get('Advanced post-processing options', 'convert_in_contrast_per_arcsec2'))
 
     return sigma_filtering, \
            object_collapse_ndit, \
@@ -139,8 +142,10 @@ def read_config_file(path_config_file):
            flux_center_coordinates, \
            flux_param_centering, \
            flux_annulus_background, \
+           flux_annulus_star, \
            double_difference_type, \
-           single_posang_north_up
+           single_posang_north_up, \
+           convert_in_contrast_per_arcsec2
 
 ###############################################################################
 # wrapstr
@@ -1535,9 +1540,6 @@ def compute_fwhm_separation(filter_used):
     # Define diameter of telescope primary mirror M1 (m)
     D_telescope = 8.2
     
-    # Define pixel scale of IRDIS detector ("/px)
-    pixel_scale = 12.25e-3
-
     # Define approximate separation of satellite spots (pixels) and filter central wavelength and bandwidth (m)
     if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
         separation = 31.0
@@ -2864,7 +2866,9 @@ def perform_preprocessing(frames_to_remove=[],
                           flux_param_centering=(60, None, 30000), 
                           flux_annulus_background='large annulus',
                           save_preprocessed_data=True, 
-                          combination_method_polarization='least squares'):
+                          combination_method_polarization='least squares',\
+                          flux_annulus_star='automatic',\
+                          convert_in_contrast_per_arcsec2=False):
     '''
     Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data, 
     background subtraction, flat-fielding, bad pixel removal, centering and compution
@@ -3014,6 +3018,21 @@ def perform_preprocessing(frames_to_remove=[],
         combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median' 
             (default = 'least squares')
+        flux_annulus_star: (list of) length-6-tuple(s) with parameters 
+            to generate an annulus (normally a full circular aperture but we let 
+            the option to exclude an inner circle or a wedge in special circumstances like 
+            a binary system) to measure the star total flux in master flux frame:
+            coord_center_x: x-coordinate of center (pixels; 0-based; by default 255.5)
+            coord_center_y: y-coordinate of center (pixels; 0-based; by default 255.5)
+            inner_radius: inner radius (pixels; by default 0)
+            outer_radius: outer_radius (pixels; by default 140)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise; by default 0)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise; by default 360)        
+        convert_in_contrast_per_arcsec2: if True, performs aperture photometry 
+            on the master flux frame, and convert all the output frames in contrast 
+            per arcsec^2.
         
     Output:
         cube_left_frames: cube of pre-processed left frames 
@@ -3022,6 +3041,9 @@ def perform_preprocessing(frames_to_remove=[],
         file_index_object: list of file indices of OBJECT-files (0-based)
         combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
+        star_flux: float with the total star flux as computed using the parameters 
+            defined by the flux_annulus_star tuple, in ADU, corrected by the DIT ratio
+            between FLUX and OBJECT frames and the potential use of ND filters
             
     File written by Rob van Holstein; based on function by Christian Ginski
     Function status: verified
@@ -3274,78 +3296,153 @@ def perform_preprocessing(frames_to_remove=[],
         write_fits_files(data=frame_master_flux, path=os.path.join(path_flux_dir, name_file_root + 'master_flux.fits'), header=False, silent=False)
         write_fits_files(data=frame_annulus_background_flux, path=os.path.join(path_flux_dir, name_file_root + 'annulus_background_flux.fits'), header=False)    
 
-#TODO:  # Compute flux of star and conversion factor to mJansky/arcsec^2
-#        star_flux, = determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y)
+        if flux_annulus_star == 'automatic':
+            flux_annulus_star = (511.5, 511.5, 0, 140, 0, 360)
+            printandlog('\nflux_annulus_star is \'automatic\': setting it to ' + str(tuple(x + 1 for x in flux_annulus_star)))
+        printandlog('\nThe star total flux will be determined from the master flux image with an aperture located on:')
+        printandlog(annulus_0_to_1_based(flux_annulus_star))
+                        
+        star_flux, dit_ratio,nd_ratio = determine_star_flux(\
+                                            frame_master_flux,path_flux_files, \
+                                            path_object_files, flux_annulus_star)
+        reference_flux = star_flux*nd_ratio*dit_ratio
+        table_star_flux = pd.DataFrame({'aperture parameters':[flux_annulus_star],\
+                                        'encircled_flux (ADU)':[star_flux],\
+                                        'DIT ratio (OBJECT/FLUX)':[dit_ratio],\
+                                        'ND filter ratio (OBJECT/FLUX)':[nd_ratio],\
+                                        'reference flux (ADU)':[reference_flux]})
+        table_star_flux.to_csv(os.path.join(path_flux_dir, name_file_root + 'reference_flux.csv'),\
+                               index=False)
 
-    return cube_left_frames, cube_right_frames, header, file_index_object, combination_method_polarization
+    return cube_left_frames, cube_right_frames, header, file_index_object, \
+            combination_method_polarization,reference_flux
 
-
-
-
-
-#TODO: Any values of this function should be returned by the function perform_preprocessing and be input to the function perform_postprocessing. Then within that function
-# the conversion should take place (there are more TODO:'s there)
-
-#TODO: conversion of final images to mJansky/arcsec^2 should be part of post-processing part and optional. Also add possibility to express as contrast wrt central star? 
-
-# TODO: function to be placed somewhere above the perform_preprocessing function:
 ################################################################################
 ## determine_star_flux
 ################################################################################
-#
-#def determine_star_flux(frame_master_flux, path_flux_files, path_object_files, annulus_X, annulus_Y):   
-#    '''
-#    Determine flux of star in master flux frame using aperture photometry ......
-#     
-#    Input:
-#        frame_master_flux: master flux frame 
-#        path_flux_files: list of paths to raw FLUX-files
-#        path_object_files: list of paths to raw OBJECT-files
-#        annulus_X: (list of) length-6-tuple(s) with parameters to generate annulus to ......................... :
-#            coord_center_x: x-coordinate of center (pixels; 0-based)
-#            coord_center_y: y-coordinate of center (pixels; 0-based)
-#            inner_radius: inner radius (pixels)
-#            outer_radius: outer_radius (pixels)
-#            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
-#            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)#            coord_center_x: x-coordinate of center (pixels; 0-based)
-         
-#    Output:
-#        flux_star: ?
-#        
-#    File written by Julien Milli
-#    Function status: 
-#    '''
-#
-##TODO: To compute the flux in an aperture minus the background around it, use 2 lines below For annulus star can use (511.5, 511.5, 0, 11, 0, 360), which gives a star centered aperture of radius 11.
-## Do you want a fixed value for the aperture? Note that annulus_X in the code itself is 0-based for the x and y coordinates (511.5) while in the config file it is 1-based.
-## For the background can use something like (511.5, 511.5, 11, 10, 0, 360). Do these annuli need to be in the config file? I can image the case of a close binary where the user
-## wants full control.
-##        I_Q = np.mean(compute_annulus_values(cube=frame, param=annulus_star)[0]) - \
-##              np.median(compute_annulus_values(cube=frame, param=annulus_background)[0])       
-#
-#    # To get the headers for the DIT, NDIT etc. read the headers from path_flux_files with pyfits.getheader(path_flux_files[]). For object from path_object_files
-#
-#        
-#    return flux_star, 
+def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flux_annulus_star):   
+    '''
+    Determine flux of star in the master flux frame using aperture photometry 
+     
+    Input:
+        frame_master_flux: master flux frame 
+        path_flux_files: list of paths to raw FLUX-files
+        path_object_files: list of paths to raw OBJECT-files
+        flux_annulus_star: (list of) length-6-tuple(s) with parameters 
+            to generate an annulus (normally a full circular aperture but we let 
+            the option to exclude an inner circle or a wedge in special circumstances like 
+            a binary system) to measure the star total flux in master flux frame:
+            coord_center_x: x-coordinate of center (pixels; 0-based; by default 255.5)
+            coord_center_y: y-coordinate of center (pixels; 0-based; by default 255.5)
+            inner_radius: inner radius (pixels; by default 0)
+            outer_radius: outer_radius (pixels; by default 140)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right
+                and positive rotation counterclockwise; by default 0)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and
+                positive rotation counterclockwise; by default 360)        
+    Output:
+        star_total_flux: flux of the star in ADU encircled in the region defined
+                        by the parameters flux_annulus_star.
+                        The reference flux to use to convert from ADU to contrast 
+                        is the product star_total_flux *  dit_ratio * nd_ratio
+        dit_ratio: ratio between the DIT of OBJECT frames over FLUX frames
+        nd_ratio: ratio between the transmission of the neutral density used for
+                    OBJECT frames over FLUX frames
+        corrected by the transmission
+                    of the neutral density filter used with the FLUX frame.
         
+    File written by Julien Milli
+    Function status: 
+    '''
+    # We first perform aperture photometry on the master FLUX frame    
+    star_total_flux = np.sum(compute_annulus_values(cube=frame_master_flux, param=flux_annulus_star)[0])
+    printandlog('The star reference flux encircled in the annulus ({0:s}) is {1:.1f} ADU'.format(\
+                ', '.join(['{0:3.1f}'.format(f) for f in flux_annulus_star]),star_total_flux))
 
+    # Determine filter used
+    filter_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+
+    # Determine the DIT of the OBJECT
+    dit_object = pyfits.getheader(path_object_files[0])['ESO DET SEQ1 DIT']
+
+    # Determine the DIT of the FLUX
+    dit_flux = pyfits.getheader(path_flux_files[0])['ESO DET SEQ1 DIT']
+
+    # Determine the ND filter used for the OBJECT files
+    nd_object_used = pyfits.getheader(path_object_files[0])['ESO INS4 FILT2 NAME']
+
+    # Determine the ND filter used for the FLUX files
+    nd_flux_used = pyfits.getheader(path_flux_files[0])['ESO INS4 FILT2 NAME']
+
+    if 'K' in filter_used:
+        BB_filter='B_Ks'
+    elif 'H' in filter_used:
+        BB_filter='B_H'
+    elif 'Y' in filter_used:
+        BB_filter='B_Y'
+    elif 'J' in filter_used:
+        BB_filter='B_J'
     
+    # utility function to retriev the neutral density number 0.0, 1.0, 2.0 or 3.5
+    def get_ND_value(ND_filter_name):
+        if 'OPEN' in ND_filter_name:
+            return 0
+        else:
+            return float(ND_filter_name[-3:])
+    
+    tr_object = sphere_transmission(BB_filter=BB_filter, NDset=get_ND_value(nd_object_used))
+    tr_flux = sphere_transmission(BB_filter=BB_filter, NDset=get_ND_value(nd_flux_used))
 
+    nd_ratio = tr_object/tr_flux
+    dit_ratio = dit_object/dit_flux  
 
+    return star_total_flux, dit_ratio,nd_ratio     
 
+def sphere_transmission(BB_filter='B_H', NDset=0.):
+    '''
+    
+    Input:
+        - BB_filter: name of the broad band filter (among 'B_H',
+                    'B_Hcmp2', 'B_J', 'B_Ks', 'B_ND-H', 'B_Y'). By default, assumes 'B_H'
+        - NDset: ND filter (float) among 0., 1., 2. or 3.5. By default 0.
+    Output:
+        - transmission of the neutral density filter (between 0 and 1)
+    File written by Julien Milli based on transmission curves by Arthur Vigan
+    Function status: 
+    '''
+    # BB filter
+    data_bb = ascii.read(os.path.join(path_static_calib_dir,'SPHERE_IRDIS_'+BB_filter+'.txt'))
+    w_bb = data_bb['col1']
+    t_bb = data_bb['col2']
+    # ND CPI
+    data_nd = ascii.read(os.path.join(path_static_calib_dir,'SPHERE_CPI_ND.txt'))
+    w_nd = data_nd['col1']
+    if float(NDset) == 0.:
+        t_nd = data_nd['col2']
+    elif float(NDset) == 1.:
+        t_nd = data_nd['col3']
+    elif float(NDset) == 2.:
+        t_nd = data_nd['col4']
+    elif float(NDset) == 3.5:
+        t_nd = data_nd['col5']
+    else:
+        print('I did not understand your choice of ND filter: {0:3.2f}'.format(NDset))
+        return
+    # interpolation
+    lambdainterp  = np.arange(900,2401,1)
 
+    interp_function_bb = interp1d(w_bb,t_bb)
+    t_bb_interp = interp_function_bb(lambdainterp)
+    t_bb_interp[t_bb_interp<0.]=0.
 
+    interp_function_nd = interp1d(w_nd,t_nd)
+    t_nd_interp = interp_function_nd(lambdainterp)
+    t_nd_interp[t_nd_interp<0.]=0.
 
-
-
-
-
-
-
-
-
-
-
+    t_final = np.sum(t_bb_interp)
+    t_final_nd = np.sum(t_bb_interp *t_nd_interp)
+    
+    return t_final_nd / t_final
 
 ###############################################################################
 # compute_double_sum_double_difference
@@ -4439,7 +4536,8 @@ def perform_postprocessing(cube_left_frames,
                            combination_method_intensity='mean', 
                            trimmed_mean_prop_to_cut_intens=0.1, 
                            single_posang_north_up=True, 
-                           normalized_polarization_images=False):
+                           normalized_polarization_images=False, \
+                           reference_flux=None):
     '''
     Perform post-processing of data, including applying the model-based correction
     for the instrumental polarization effects, and save final images to FITS-files
@@ -4492,6 +4590,9 @@ def perform_postprocessing(cube_left_frames,
         normalized_polarization_images: if True create final images of degree of linear polarization, normalized Stokes q and u
             and degree and angle of linear polarization computed from q and u; such images only have meaning if all flux in the images
             originates from the astrophysical source of interest (default = False)
+        reference_flux: if the option convert_in_contrast_per_arcsec2 is set to True,
+            then the image is converted in contrast by using the number of counts 
+            for the star specified by this value.
         
     File written by Rob van Holstein
     Function status: verified      
@@ -4857,6 +4958,13 @@ def perform_postprocessing(cube_left_frames,
     for frame, file_name in zip(frames_to_write, file_names):
         write_fits_files(data=frame, path=os.path.join(path_reduced_dir, name_file_root + file_name + '.fits'), header=False)
 
+    # Convert in contrast per arcsec^2 and write the files of the images with the star polarization present to contrast per arcsec 
+    if convert_in_contrast_per_arcsec2 == True:      
+        for frame, file_name in zip(frames_to_write, file_names):
+            write_fits_files(data=frame/reference_flux/pixel_scale**2,\
+                             path=os.path.join(path_reduced_dir, \
+                             name_file_root + file_name + '_contrast_per_arcsec2.fits'), header=False)
+
     # Write frames that show annuli used to retrieve star and background signals in reduced directory
     write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_dir, name_file_root + 'annulus_star.fits'), header=False)
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_dir, name_file_root + 'annulus_background.fits'), header=False)    
@@ -4881,8 +4989,20 @@ def perform_postprocessing(cube_left_frames,
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)    
 
 
+    ########################################################################################
+    # Optionally convert final Q-, U-, Qphi-, Uphi- and Ipol-images to contrast per arcsec^2
+    ########################################################################################
 
+    if convert_in_contrast_per_arcsec2 == True:  
+        # Convert final Q-, U-, Qphi-, Uphi- and Ipol-images with star polarization subtracted to contrast per arcsec    
+        for frame, file_name in zip(frames_to_write, file_names):
+            write_fits_files(data=frame/reference_flux/pixel_scale**2, \
+                    path=os.path.join(path_reduced_star_pol_subtr_dir, \
+                    name_file_root + file_name + '_contrast_per_arcsec2.fits'), header=False)
 
+    # Write frames that show annuli used to retrieve star and background signals in reduced_star_pol_subtr directory
+    write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
+    write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)    
 
 
 
@@ -5247,6 +5367,7 @@ def run_pipeline(path_main_dir):
     # Define which variables should be global
     global pupil_offset
     global true_north_correction
+    global pixel_scale
     global msd
     global path_raw_dir
     global path_calib_dir
@@ -5263,12 +5384,16 @@ def run_pipeline(path_main_dir):
     global path_log_file
     global path_overview
     global path_static_calib_dir
-
+    global convert_in_contrast_per_arcsec2
+    
     # Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     pupil_offset = 135.99
         
     # Define true North correction (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     true_north_correction = -1.75
+
+    # Define pixel scale in arcsec/px from Maire et al. 2016 (average value valid between all filters)
+    pixel_scale = 0.01225
         
     # Define mean solar day (s)
     msd = 86400
@@ -5418,8 +5543,10 @@ def run_pipeline(path_main_dir):
     flux_center_coordinates, \
     flux_param_centering, \
     flux_annulus_background, \
+    flux_annulus_star, \
     double_difference_type, \
-    single_posang_north_up \
+    single_posang_north_up, \
+    convert_in_contrast_per_arcsec2 \
     = read_config_file(path_config_file)
     
     # Define some fixed input parameters
@@ -5716,7 +5843,35 @@ def run_pipeline(path_main_dir):
             raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
         elif any([type(y) not in [int, float] for x in annulus_background for y in x]):
             raise TypeError('\n\n\'annulus_background\' should be \'large annulus\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+    #flux_annulus_star 
+    if type(flux_annulus_star) not in [str, tuple, list]:
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+    if flux_annulus_star == [] or flux_annulus_star == ():
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+
+    if type(flux_annulus_star) is str and flux_annulus_star not in ['automatic']:
+        raise ValueError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
     
+    if type(flux_annulus_star) is tuple and len(flux_annulus_star) != 6:
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+    
+    if type(flux_annulus_star) is tuple and any([type(x) not in [int, float] for x in flux_annulus_star]):
+        raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        
+    if type(flux_annulus_star) is list:        
+        if any([type(x) is not tuple for x in flux_annulus_star]):
+            raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([len(x) != 6 for x in flux_annulus_star]):
+            raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif any([type(y) not in [int, float] for x in flux_annulus_star for y in x]):
+            raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
+        elif flux_annulus_star[2] != 0:
+            printandlog('Warning, the aperture inner radius for the star photometry (3rd element of flux_annulus_star) is set to {0:.1f}. It should be set to 0 to encompass the star flux unless very specific circumstances'.format(flux_annulus_star[2]))        
+        elif flux_annulus_star[3] >140:
+            printandlog('Warning, the aperture outer radius for the star photometry (4th element of flux_annulus_star) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star'.format(flux_annulus_star[3]))        
+
     # combination_method_polarization
     if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
         raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
@@ -5743,10 +5898,14 @@ def run_pipeline(path_main_dir):
     if single_posang_north_up not in [True, False]:
         raise ValueError('\n\n\'single_posang_north_up\' should be either True or False.')   
     
+    # convert_in_contrast_per_arcsec2
+    if convert_in_contrast_per_arcsec2 not in [True, False]:
+        raise ValueError('\n\n\'convert_in_contrast_per_arcsec2\' should be either True or False.')   
+    
     # normalized_polarization_images
     if normalized_polarization_images not in [True, False]:
         raise ValueError('\n\n\'normalized_polarization_images\' should be either True or False.')   
-    
+
     printandlog('\nThe input parameters have passed all checks.')
 
     ###############################################################################
@@ -5788,7 +5947,8 @@ def run_pipeline(path_main_dir):
         printandlog('###############################################################################')
         printandlog('\nStarting pre-processing of raw data.')
         
-        cube_left_frames, cube_right_frames, header, file_index_object, combination_method_polarization \
+        cube_left_frames, cube_right_frames, header, file_index_object,\
+        combination_method_polarization, reference_flux \
         = perform_preprocessing(frames_to_remove=frames_to_remove, 
                                 sigma_filtering=sigma_filtering, 
                                 object_collapse_ndit=object_collapse_ndit, 
@@ -5803,7 +5963,9 @@ def run_pipeline(path_main_dir):
                                 flux_param_centering=flux_param_centering, 
                                 flux_annulus_background=flux_annulus_background, 
                                 save_preprocessed_data=save_preprocessed_data, 
-                                combination_method_polarization=combination_method_polarization)
+                                combination_method_polarization=combination_method_polarization,\
+                                flux_annulus_star = flux_annulus_star,\
+                                convert_in_contrast_per_arcsec2=convert_in_contrast_per_arcsec2)
     
         # Print that post-processing starts
         printandlog('\n###############################################################################')
