@@ -53,6 +53,7 @@ from scipy.interpolate import interp1d
 from scipy.stats import trim_mean
 from scipy.stats import sigmaclip
 from astropy.modeling import models, fitting
+from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
@@ -124,6 +125,7 @@ def read_config_file(path_config_file):
     # Get parameters from [Advanced post-processing options] section
     double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
     single_posang_north_up          = config_true_false(config.get('Advanced post-processing options', 'single_posang_north_up'))
+    adi                             = config_true_false(config.get('Advanced post-processing options', 'adi'))
     convert_in_contrast_per_arcsec2 = config_true_false(config.get('Advanced post-processing options', 'convert_in_contrast_per_arcsec2'))
 
     return sigma_filtering, \
@@ -145,6 +147,7 @@ def read_config_file(path_config_file):
            flux_annulus_star, \
            double_difference_type, \
            single_posang_north_up, \
+           adi,\
            convert_in_contrast_per_arcsec2
 
 ###############################################################################
@@ -3041,7 +3044,7 @@ def perform_preprocessing(frames_to_remove=[],
         file_index_object: list of file indices of OBJECT-files (0-based)
         combination_method_polarization: method to be used to produce the 
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
-        star_flux: float with the total star flux as computed using the parameters 
+        reference_flux: float with the total star flux as computed using the parameters 
             defined by the flux_annulus_star tuple, in ADU, corrected by the DIT ratio
             between FLUX and OBJECT frames and the potential use of ND filters
             
@@ -3299,8 +3302,6 @@ def perform_preprocessing(frames_to_remove=[],
         if flux_annulus_star == 'automatic':
             flux_annulus_star = (511.5, 511.5, 0, 140, 0, 360)
             printandlog('\nflux_annulus_star is \'automatic\': setting it to ' + str(tuple(x + 1 for x in flux_annulus_star)))
-        printandlog('\nThe star total flux will be determined from the master flux image with an aperture located on:')
-        printandlog(annulus_0_to_1_based(flux_annulus_star))
                         
         star_flux, dit_ratio,nd_ratio = determine_star_flux(\
                                             frame_master_flux,path_flux_files, \
@@ -3313,6 +3314,10 @@ def perform_preprocessing(frames_to_remove=[],
                                         'reference flux (ADU)':[reference_flux]})
         table_star_flux.to_csv(os.path.join(path_flux_dir, name_file_root + 'reference_flux.csv'),\
                                index=False)
+        printandlog('\nAdditional information in the conversion factors can be found in {0:s}'.format(\
+                    os.path.join(path_flux_dir, name_file_root + 'reference_flux.csv')))
+        if convert_in_contrast_per_arcsec2:
+            printandlog('\nYou chose to convert the images in contrast per arcsec^2. Just multiply the reduced files *_contrast_per_arcsec2.fits by the star flux in Jy in the corresponding filter to get calibrated data in Jy/arcsec^2.')
 
     return cube_left_frames, cube_right_frames, header, file_index_object, \
             combination_method_polarization,reference_flux
@@ -3356,7 +3361,7 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flu
     '''
     # We first perform aperture photometry on the master FLUX frame    
     star_total_flux = np.sum(compute_annulus_values(cube=frame_master_flux, param=flux_annulus_star)[0])
-    printandlog('The star reference flux encircled in the annulus ({0:s}) is {1:.1f} ADU'.format(\
+    printandlog('The star reference flux encircled in the annulus ({0:s}) is {1:.2e} ADU'.format(\
                 ', '.join(['{0:3.1f}'.format(f) for f in flux_annulus_star]),star_total_flux))
 
     # Determine filter used
@@ -3395,6 +3400,8 @@ def determine_star_flux(frame_master_flux,path_flux_files,path_object_files, flu
 
     nd_ratio = tr_object/tr_flux
     dit_ratio = dit_object/dit_flux  
+    printandlog('The star reference flux converted to the DIT/ND filter used in the OBJECT frames is {0:.2e} ADU'.format(\
+                star_total_flux*dit_ratio*nd_ratio))
 
     return star_total_flux, dit_ratio,nd_ratio     
 
@@ -4537,6 +4544,7 @@ def perform_postprocessing(cube_left_frames,
                            trimmed_mean_prop_to_cut_intens=0.1, 
                            single_posang_north_up=True, 
                            normalized_polarization_images=False, \
+                           adi=False,\
                            reference_flux=None):
     '''
     Perform post-processing of data, including applying the model-based correction
@@ -4590,6 +4598,7 @@ def perform_postprocessing(cube_left_frames,
         normalized_polarization_images: if True create final images of degree of linear polarization, normalized Stokes q and u
             and degree and angle of linear polarization computed from q and u; such images only have meaning if all flux in the images
             originates from the astrophysical source of interest (default = False)
+        adi: if True performs Angular Differential Imaging in the post-processing
         reference_flux: if the option convert_in_contrast_per_arcsec2 is set to True,
             then the image is converted in contrast by using the number of counts 
             for the star specified by this value.
@@ -5006,13 +5015,14 @@ def perform_postprocessing(cube_left_frames,
 
 
 
+    if adi:
+        ## TODO: I suggest you write the main function to perform ADI here (with sub functions above), and that gets
+        ## the input cube_left_frames, cube_right_frames all the way at the bottom of the script, below the call
+        ## of perform_postprocessing. That way the ADI part shares the pre-processed data, but is totally 
+        ## separate from the polarimetry part. Should make the implementation much easier.
+        printandlog('The ADI part of the code is not yet available. No ADI reduction was done.')
+        
 
-
-## TODO: I suggest you write the main function to perform ADI here (with sub functions above), and that gets
-## the input cube_left_frames, cube_right_frames all the way at the bottom of the script, below the call
-## of perform_postprocessing. That way the ADI part shares the pre-processed data, but is totally 
-## separate from the polarimetry part. Should make the implementation much easier.
-#
 ################################################################################
 ## perform_adi
 ################################################################################
@@ -5546,6 +5556,7 @@ def run_pipeline(path_main_dir):
     flux_annulus_star, \
     double_difference_type, \
     single_posang_north_up, \
+    adi,\
     convert_in_contrast_per_arcsec2 \
     = read_config_file(path_config_file)
     
@@ -5897,6 +5908,10 @@ def run_pipeline(path_main_dir):
     # single_posang_north_up
     if single_posang_north_up not in [True, False]:
         raise ValueError('\n\n\'single_posang_north_up\' should be either True or False.')   
+
+    # adi
+    if adi not in [True, False]:
+        raise ValueError('\n\n\'adi\' should be either True or False.')   
     
     # convert_in_contrast_per_arcsec2
     if convert_in_contrast_per_arcsec2 not in [True, False]:
@@ -6023,7 +6038,8 @@ def run_pipeline(path_main_dir):
                            combination_method_intensity=combination_method_intensity, 
                            trimmed_mean_prop_to_cut_intens=trimmed_mean_prop_to_cut_intens,
                            single_posang_north_up=single_posang_north_up, 
-                           normalized_polarization_images=normalized_polarization_images)
+                           normalized_polarization_images=normalized_polarization_images,\
+                           reference_flux=reference_flux,adi=adi)
 
 #TODO: Add main ADI function
 #    perform_adi()
