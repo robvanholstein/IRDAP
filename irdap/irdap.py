@@ -44,6 +44,7 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
+import astropy.time
 from ast import literal_eval
 from scipy.ndimage.interpolation import rotate
 from scipy import interpolate
@@ -1936,7 +1937,10 @@ def find_center_coordinates(list_frame_center_processed,
     # Create zero arrays to save fitted center coordinates in
     x_center_fit = np.zeros((len(list_frame_center_processed), 2))
     y_center_fit = np.copy(x_center_fit)  
-            
+    
+    # list of dates for the plot
+    dateobs_list = []
+    
     # For each frame
     for i, (frame_sel, header_sel, path_sel) in enumerate(zip(list_frame_center_processed, header, path_processed_center_files)):       
         # Cut frame into a left and right half
@@ -1953,6 +1957,9 @@ def find_center_coordinates(list_frame_center_processed,
             printandlog('\nWARNING, waffle pattern is \'+\'. Correct functioning of centering not tested.')
             position_angle = np.deg2rad(np.array([0., 90., 180., 270.]))
             titles_sub_image = ['right', 'top', 'left', 'bottom']
+        
+        #Store the DATE-OBS
+        dateobs_list.append(header_sel['DATE-OBS'])
         
         # Initiate plot to show sub-images used to fit coordinates of satellite spots
         path_plot_sub_images = os.path.splitext(path_sel)[0] + '.png'
@@ -2074,9 +2081,37 @@ def find_center_coordinates(list_frame_center_processed,
         printandlog('x_left    y_left    x_right    y_right')
         printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center[0] + 1, y_center[0] + 1, x_center[1] + 1, y_center[1] + 1))    
 
-    #TODO: plot fitted center coordinates vs time
-    #TODO: please rename the function
-    # Define function to plot determined center coordinates
+
+
+    # We plot the determined center coordinates as a function of UT time
+    # if there is more than on center file
+    if len(dateobs_list)>1:
+        path_plot_centers = os.path.join(path_center_dir,'center_positions_vs_time.png')
+        printandlog('\nCreating plot ' + path_plot_centers + ' showing the center position as a function of UT time.')
+        dates_list = astropy.time.Time(dateobs_list).to_datetime()
+        majorFormatter = mpl.dates.DateFormatter('%H:%M')    
+        x_center_truncated = [int(t) for t in np.mean(x_center_fit, axis=0)]
+        y_center_truncated = [int(t) for t in np.mean(y_center_fit, axis=0)]
+        
+        fig, ax = plt.subplots()
+        ax.plot(dates_list, x_center_fit[:,0]-x_center_truncated[0],color='red',\
+                linestyle='-',label='x_left - {0:d}'.format(x_center_truncated[0]))
+        ax.plot(dates_list, x_center_fit[:,1]-x_center_truncated[1],color='red',\
+                linestyle='--',label='x_right - {0:d}'.format(x_center_truncated[1]))
+        ax.plot(dates_list, y_center_fit[:,0]-y_center_truncated[0],color='blue',\
+                linestyle='-',label='y_left - {0:d}'.format(y_center_truncated[0]))
+        ax.plot(dates_list, y_center_fit[:,1]-y_center_truncated[1],color='blue',\
+                linestyle='--',label='y_right - {0:d}'.format(y_center_truncated[1]))
+        ax.xaxis.set_major_formatter(majorFormatter)
+        for tick in ax.get_xticklabels():
+            tick.set_rotation(45)
+        ax.grid()
+        ax.legend(frameon=False,loc='best')
+        ax.set_ylabel('Shift in pixel')
+        plt.savefig(path_plot_centers, dpi = 300, bbox_inches = 'tight')
+        plt.close(fig)
+        
+    
     def plot_center_coordinates(data, x_y, left_right):
         font_size = 10
         width_figure = 4.7 / 20 * len(data)
