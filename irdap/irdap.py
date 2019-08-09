@@ -4040,7 +4040,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     for i, header_sel in enumerate(header):
         p[i] = compute_mean_angle([header_sel['ESO TEL PARANG START'], header_sel['ESO TEL PARANG END']])
         a_start[i] = header_sel['ESO TEL ALT']
-        theta_hwp[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT3 BEGIN'], header_sel['ESO INS4 DROT3 END']]) - 152.15, 360)
+        theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 BEGIN'], 180), np.mod(header_sel['ESO INS4 DROT3 END'], 180)]) - 152.15, 180)
         if tracking_mode_used == 'FIELD':
             theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 BEGIN'], header_sel['ESO INS4 DROT2 END']]), 360)
         elif tracking_mode_used == 'PUPIL':
@@ -4098,7 +4098,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     
     # Plot header values as a function of time
     plot_name = name_file_root + 'header_angles.png'
-    printandlog('\nCreating plot ' + plot_name + ' showing the parallactic, altitude, HWP and derotator angles of the observations.')
+    printandlog('\nCreating plot showing the parallactic, altitude, HWP and derotator angles of the observations.')
     angles = np.hstack([p1, p2, a1, a2, theta_hwp1, theta_hwp2, theta_der1, theta_der2])
     font_size = 10
     plt.figure(figsize = (12, 8))
@@ -4122,6 +4122,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.close()
+    printandlog(os.path.join(path_reduced_dir, plot_name), wrap=False)
+    printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), wrap=False)
 
     ###############################################################################
     # Compute model coefficient matrix, IP and cross-talk elements
@@ -4269,7 +4271,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
 
     # Plot model, measured and fitted normalized Stokes parameter vs HWP cycle number 
     plot_name = name_file_root + 'model_ip_star_pol.png'
-    printandlog('\nCreating plot ' + plot_name + ' showing the model-predicted IP, measured polarization signal and model-predicted IP + fitted star polarization vs. HWP cycle number.')
+    printandlog('\nCreating plot showing the model-predicted IP, measured polarization signal and model-predicted IP + fitted star polarization vs. HWP cycle number.')
     font_size = 10  
     marker_size = 4
     x_max = max([len(IP_Q), len(IP_U)])
@@ -4301,10 +4303,12 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.close()
+    printandlog(os.path.join(path_reduced_dir, plot_name), wrap=False)
+    printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), wrap=False)
 
     # Plot elements Q->Q and U->Q from model as a function of HWP cycle number
     plot_name = name_file_root + 'model_crosstalk_transmission.png'
-    printandlog('\nCreating plot ' + plot_name + ' showing the model-predicted polarized transmission and crosstalk/rotation elements vs. HWP cycle number.')
+    printandlog('\nCreating plot showing the model-predicted polarized transmission and crosstalk/rotation elements vs. HWP cycle number.')
     font_size = 10
     x_max = max([len(QQ_Q), len(QQ_U)])
     plt.figure(figsize = (5.9, 3.8))
@@ -4326,6 +4330,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.close()
+    printandlog(os.path.join(path_reduced_dir, plot_name), wrap=False)
+    printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), wrap=False)
       
     ###############################################################################
     # Compute incident Q- and U-images by correcting for instrumental polarization effects
@@ -4861,7 +4867,7 @@ def perform_postprocessing(cube_left_frames,
         
         # Plot q, u and DoLP from annulus as function of HWP cycle number
         plot_name_star_quDoLP = name_file_root + 'star_pol_quDoLP.png'
-        printandlog('\nCreating plot ' + plot_name_star_quDoLP + ' showing the measured star polarization as a function of HWP cycle number.')          
+        printandlog('\nCreating plot showing the measured star polarization as a function of HWP cycle number.')          
         font_size = 10
         x_max = len(q_star_HWP_cycle) + 1
         plt.figure(figsize = (4.7, 3.0))
@@ -4885,10 +4891,12 @@ def perform_postprocessing(cube_left_frames,
         plt.savefig(os.path.join(path_reduced_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
         plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
         plt.close()
+        printandlog(os.path.join(path_reduced_dir, plot_name_star_quDoLP), wrap=False)
+        printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_quDoLP), wrap=False)
         
         # Plot AoLP from annulus as function of HWP cycle number
         plot_name_star_AoLP = name_file_root + 'star_pol_AoLP.png'
-        printandlog('\nCreating plot ' + plot_name_star_AoLP + ' showing the measured angle of linear polarization of the star as a function of HWP cycle number.')
+        printandlog('\nCreating plot showing the measured angle of linear polarization of the star as a function of HWP cycle number.')
         plt.figure(figsize = (4.7, 3.0))
         plt.plot([0, x_max],[0, 0], '-k')     
         plt.plot(np.arange(1, x_max), AoLP_star_HWP_cycle, 'ok', label = 'AoLP') 
@@ -4906,12 +4914,14 @@ def perform_postprocessing(cube_left_frames,
         plt.savefig(os.path.join(path_reduced_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
         plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
         plt.close()   
+        printandlog(os.path.join(path_reduced_dir, plot_name_star_AoLP), wrap=False)
+        printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_AoLP), wrap=False)
         
         printandlog('\nHorizontal trends in the data points of the plots ' + plot_name_star_quDoLP + ' and ' + plot_name_star_AoLP + ' indicate that the instrumental polarization effects have been removed successfully. However, this is only true provided that:')
         printandlog('\n1) the observations are taken with a sufficiently large range of parallactic and altitude angles,')
         printandlog('2) the observations are taken with a sufficiently high signal-to-noise ratio, and,')
         printandlog('3) the annulus for the star is placed in a region where there is only starlight.')
-        printandlog('\nA non-zero measured star polarization then indicates the star is truly polarized, which is often caused by the presence micron-sized particles in the line of sight. This star polarization can therefore indicate the presence of an unresolved (inner) circumstellar disk, starlight passing through a resolved (outer) part of a circumstellar disk or the presence of interstellar dust between the star and the Earth.')
+        printandlog('\nA non-zero measured star polarization (i.e. >0.1%) then indicates the star is truly polarized, which is often caused by the presence micron-sized particles in the line of sight. This star polarization can therefore indicate the presence of an unresolved (inner) circumstellar disk, starlight passing through a resolved (outer) part of a circumstellar disk or the presence of interstellar dust between the star and the Earth.')
 
     ###############################################################################
     # Compute final images
@@ -6058,7 +6068,7 @@ def run_pipeline(path_main_dir):
                         
         else:
             raise IOError('\n\nThe files ' + path_cube_left_frames + ', ' + path_cube_right_frames + ', ' + path_object_files_text + ' and/or ' + path_file_index_object + ' do not exist. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
-    
+
     # Perform post-processing of data           
     perform_postprocessing(cube_left_frames=cube_left_frames, 
                            cube_right_frames=cube_right_frames, 
