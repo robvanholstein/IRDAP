@@ -1718,7 +1718,7 @@ def process_center_frames(path_center_files,
         header.append(header_center)
         
         # Print which file has been processed
-        if i == 0:
+        if i == 0 and center_subtract_object == False:
             printandlog('')
         printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_center_files)) + ': {0:s}'.format(os.path.basename(path_center_sel)))
 
@@ -1875,7 +1875,8 @@ def find_center_coordinates(list_frame_center_processed,
     Find coordinates of star center from processed CENTER frames. The function
     shows the fitted coordinates of the satellite spots in an image and writes
     a REG-file that indicates the fitted centers and that can be loaded as a 
-    region in the FITS-files of the processed center frames.
+    region in the FITS-files of the processed center frames. In addition it 
+    creates a plot showing the fitted center coordinates versus time.
     
     Input:
         list_frame_center_processed: list of processed center frames
@@ -1938,8 +1939,8 @@ def find_center_coordinates(list_frame_center_processed,
     x_center_fit = np.zeros((len(list_frame_center_processed), 2))
     y_center_fit = np.copy(x_center_fit)  
     
-    # list of dates for the plot
-    dateobs_list = []
+    # Create empty list to save dates in for plot of center coordinates versus time
+    list_dateobs = []
     
     # For each frame
     for i, (frame_sel, header_sel, path_sel) in enumerate(zip(list_frame_center_processed, header, path_processed_center_files)):       
@@ -1958,8 +1959,8 @@ def find_center_coordinates(list_frame_center_processed,
             position_angle = np.deg2rad(np.array([0., 90., 180., 270.]))
             titles_sub_image = ['right', 'top', 'left', 'bottom']
         
-        #Store the DATE-OBS
-        dateobs_list.append(header_sel['DATE-OBS'])
+        # Store the DATE-OBS
+        list_dateobs.append(header_sel['DATE-OBS'])
         
         # Initiate plot to show sub-images used to fit coordinates of satellite spots
         path_plot_sub_images = os.path.splitext(path_sel)[0] + '.png'
@@ -2081,61 +2082,35 @@ def find_center_coordinates(list_frame_center_processed,
         printandlog('x_left    y_left    x_right    y_right')
         printandlog('%.2f    %.2f    %.2f    %.2f' % (x_center[0] + 1, y_center[0] + 1, x_center[1] + 1, y_center[1] + 1))    
 
-
-
-    # We plot the determined center coordinates as a function of UT time
-    # if there is more than on center file
-    if len(dateobs_list)>1:
-        path_plot_centers = os.path.join(path_center_dir,'center_positions_vs_time.png')
-        printandlog('\nCreating plot ' + path_plot_centers + ' showing the center position as a function of UT time.')
-        dates_list = astropy.time.Time(dateobs_list).to_datetime()
+    if len(list_dateobs) > 1:
+        # Create plot showing the determined center coordinates as a function of UT time
+        font_size = 10
+        path_plot_centers = os.path.join(path_center_dir, name_file_root + 'center_coordinates_vs_time.png')
+        printandlog('\nCreating plot ' + path_plot_centers + ' showing the measured center coordinates as a function of UT time.')
+        dates_list = astropy.time.Time(list_dateobs).to_datetime()
         majorFormatter = mpl.dates.DateFormatter('%H:%M')    
-        x_center_truncated = [int(t) for t in np.mean(x_center_fit, axis=0)]
-        y_center_truncated = [int(t) for t in np.mean(y_center_fit, axis=0)]
-        
-        fig, ax = plt.subplots()
-        ax.plot(dates_list, x_center_fit[:,0]-x_center_truncated[0],color='red',\
-                linestyle='-',label='x_left - {0:d}'.format(x_center_truncated[0]))
-        ax.plot(dates_list, x_center_fit[:,1]-x_center_truncated[1],color='red',\
-                linestyle='--',label='x_right - {0:d}'.format(x_center_truncated[1]))
-        ax.plot(dates_list, y_center_fit[:,0]-y_center_truncated[0],color='blue',\
-                linestyle='-',label='y_left - {0:d}'.format(y_center_truncated[0]))
-        ax.plot(dates_list, y_center_fit[:,1]-y_center_truncated[1],color='blue',\
-                linestyle='--',label='y_right - {0:d}'.format(y_center_truncated[1]))
+        x_center_truncated = [int(x) for x in x_center]
+        y_center_truncated = [int(x) for x in y_center]
+        plt.figure()
+        ax = plt.gca()
+        ax.plot(dates_list, x_center_fit[:, 0] - x_center_truncated[0], '-ob', \
+                label='x_left - {0:d}'.format(x_center_truncated[0] + 1))
+        ax.plot(dates_list, x_center_fit[:, 1] - x_center_truncated[1], '--ob', \
+                label='x_right - {0:d}'.format(x_center_truncated[1] + 1))
+        ax.plot(dates_list, y_center_fit[:, 0] - y_center_truncated[0], '-or', \
+                label='y_left - {0:d}'.format(y_center_truncated[0] + 1))
+        ax.plot(dates_list, y_center_fit[:, 1] - y_center_truncated[1], '--or', \
+                label='y_right - {0:d}'.format(y_center_truncated[1] + 1))
         ax.xaxis.set_major_formatter(majorFormatter)
         for tick in ax.get_xticklabels():
             tick.set_rotation(45)
-        ax.grid()
-        ax.legend(frameon=False,loc='best')
-        ax.set_ylabel('Shift in pixel')
-        plt.savefig(path_plot_centers, dpi = 300, bbox_inches = 'tight')
-        plt.close(fig)
-        
-    
-    def plot_center_coordinates(data, x_y, left_right):
-        font_size = 10
-        width_figure = 4.7 / 20 * len(data)
-        if width_figure < 4.7:
-            width_figure = 4.7   
-        elif width_figure > 30:
-            width_figure = 40                  
-        plot_name = name_file_root + 'center_coordinates_' + x_y + '_' + left_right + '.png'            
-        path_plot = os.path.join(path_center_dir, plot_name)
-        printandlog(path_plot, wrap=False)
-        image_number = np.arange(1, len(data)+1)
-        plt.figure(figsize = (width_figure, 3.0))
-        plt.plot(image_number, data, '-ok')
-        ax = plt.gca()
-        ax.set_xlabel(r'Image', fontsize=font_size)
+        ax.set_xlabel('UT time (hh:mm)', fontsize=font_size)
         ax.tick_params(axis = 'x', labelsize=font_size)
-        ax.set_xlim([0, max(image_number) + 1])
-        ax.xaxis.set_major_locator(mpl.ticker.MaxNLocator(integer=True))
-        ax.set_ylabel(x_y + ' ' + left_right + ' (pixels)', fontsize=font_size)
-        ax.tick_params(axis='y', labelsize=font_size)  
-        ax.ticklabel_format(useOffset=False, axis='y')
         ax.grid()
-        plt.tight_layout()
-        plt.savefig(path_plot, dpi=300, bbox_inches='tight')
+        ax.legend(loc='best')
+        ax.set_ylabel('Center coordinates (pixels)', fontsize=font_size)
+        ax.tick_params(axis='y', labelsize=font_size)  
+        plt.savefig(path_plot_centers, dpi=300, bbox_inches='tight')
         plt.close()
 
     # Assemble output
