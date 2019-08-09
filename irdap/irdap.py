@@ -3231,19 +3231,19 @@ def perform_preprocessing(frames_to_remove=[],
         # Write preprocessed cubes of single-sum and single-difference images 
         printandlog('\nSaving pre-processed data so that pre-processing can be skipped the next time.')
         printandlog('')
-        write_fits_files(data=cube_left_frames, path=os.path.join(path_preprocessed_dir, 'cube_left_frames.fits'), header=False, silent=False)
-        write_fits_files(data=cube_right_frames, path=os.path.join(path_preprocessed_dir, 'cube_right_frames.fits'), header=False, silent=False)
+        write_fits_files(data=cube_left_frames, path=os.path.join(path_preprocessed_dir, name_file_root + 'cube_left_frames.fits'), header=False, silent=False)
+        write_fits_files(data=cube_right_frames, path=os.path.join(path_preprocessed_dir, name_file_root + 'cube_right_frames.fits'), header=False, silent=False)
 
         # Write path of object files to a .txt-file to be able to read headers
-        with open(os.path.join(path_preprocessed_dir, 'path_object_files.txt'), 'w') as fh:
+        with open(os.path.join(path_preprocessed_dir, name_file_root + 'path_object_files.txt'), 'w') as fh:
             for path_sel in path_object_files:
                 fh.write('%s\n' % path_sel)
-        printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, 'path_object_files.txt') + '.', wrap=False)
+        printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, name_file_root + 'path_object_files.txt') + '.', wrap=False)
 
         # Write indices of OBJECT-files to a .txt-file to be able to read them later for plot of header angles
-        with open(os.path.join(path_preprocessed_dir, 'file_index_object.txt'), 'w') as fh:
+        with open(os.path.join(path_preprocessed_dir, name_file_root + 'file_index_object.txt'), 'w') as fh:
             fh.write('%s' % file_index_object)
-        printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, 'file_index_object.txt') + '.', wrap=False)
+        printandlog('Wrote file ' + os.path.join(path_preprocessed_dir, name_file_root + 'file_index_object.txt') + '.', wrap=False)
 
     ###############################################################################
     # Computing master sky for flux images
@@ -6014,10 +6014,10 @@ def run_pipeline(path_main_dir):
             print(line, file=open(path_log_file, 'a'))
         
         # Define paths to read pre-processed data and headers from
-        path_cube_left_frames = os.path.join(path_preprocessed_dir, 'cube_left_frames.fits')
-        path_cube_right_frames = os.path.join(path_preprocessed_dir, 'cube_right_frames.fits')
-        path_object_files_text = os.path.join(path_preprocessed_dir, 'path_object_files.txt')
-        path_file_index_object = os.path.join(path_preprocessed_dir, 'file_index_object.txt')
+        path_cube_left_frames = os.path.join(path_preprocessed_dir, name_file_root + 'cube_left_frames.fits')
+        path_cube_right_frames = os.path.join(path_preprocessed_dir, name_file_root + 'cube_right_frames.fits')
+        path_object_files_text = os.path.join(path_preprocessed_dir, name_file_root + 'path_object_files.txt')
+        path_file_index_object = os.path.join(path_preprocessed_dir, name_file_root + 'file_index_object.txt')
         
         if os.path.exists(path_cube_left_frames) and os.path.exists(path_cube_right_frames) and os.path.exists(path_object_files_text) and os.path.exists(path_file_index_object):
             # Print that post-processing starts
