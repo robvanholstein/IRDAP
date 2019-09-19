@@ -2882,12 +2882,12 @@ def sphere_irdis_transmission(color_filter_used, nd_filter_used):
     '''
 
     # Read wavelength (w) and transmission (t) of the color filter used
-    data_filter = ascii.read(os.path.join(path_static_calib_dir, 'SPHERE_IRDIS_' + color_filter_used[5:] + '.txt'))
+    data_filter = ascii.read(os.path.join(path_static_calib_dir, 'transmission_SPHERE_IRDIS_' + color_filter_used[5:] + '.txt'))
     w_filter = data_filter['col1']
     t_filter = data_filter['col2']
 
     # Read wavelength (w) and transmission (t) of the neutral density filter used
-    data_nd = ascii.read(os.path.join(path_static_calib_dir, 'SPHERE_CPI_ND.txt'))
+    data_nd = ascii.read(os.path.join(path_static_calib_dir, 'transmission_SPHERE_CPI_ND.txt'))
     w_nd = data_nd['col1']
     if nd_filter_used == 'OPEN':
         t_nd = data_nd['col2']
