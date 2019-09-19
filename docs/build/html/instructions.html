@@ -229,7 +229,11 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </ul>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
-<p class="last">The possibility to measure the polarization of the central star and the ability to create final images with and without this stellar polarization is a big advantage of IRDAP (see <a class="reference external" href="ADSlink">van Holstein et al. 2019</a>). For images of a star or circumstellar disk for example, the stellar polarization can indicate the presence of an unresolved (inner) disk if it can be proven (or reasonably expected) that the polarization does not originate from interstellar dust. In that case one would use the images with the star polarization still present when making a comparison with radiative transfer models. Measuring the polarization of the star is also vital when measuring the polarization of substellar companions.</p>
+<p class="last">By default, the polarization of the star is determined with an annulus over the AO residuals. However, for the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. Therefore the user often needs to adjust the input parameter <a class="reference internal" href="configfile.html#basic-post-processing-options"><span class="std std-ref">annulus_star</span></a> in the configuration file.</p>
+</div>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">The possibility to measure the polarization of the central star and the ability to create final images with and without this stellar polarization is a big advantage of IRDAP (see <a class="reference external" href="ADSlink">van Holstein et al. 2019</a>). For images of a star or circumstellar disk for example, the stellar polarization can indicate the presence of an unresolved (inner) disk if it can be proven (or reasonably expected) that the polarization does not originate from interstellar dust. In that case one would use the images with the star polarization still present when making a comparison with radiative transfer models (see e.g. <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2018A&amp;A...617A..44K">Keppler et al. 2018</a>). Measuring the polarization of the star is also vital when measuring the polarization of substellar companions.</p>
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
@@ -237,9 +241,9 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">The units of the <em>I</em><sub>Q</sub>-, <em>I</em><sub>U</sub>- and <em>I</em><sub>tot</sub>-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the <em>Q</em>-, <em>U</em>-, <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>- and <em>U</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images are the number of counts when substracting the right from the left frame half of a single exposure.</p>
+<p class="last">The units of the <em>I</em><sub>Q</sub>-, <em>I</em><sub>U</sub>- and <em>I</em><sub>tot</sub>-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the <em>Q</em>-, <em>U</em>-, <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>- and <em>U</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images are the number of counts when subtracting the right from the left frame half of a single exposure.</p>
 </div>
-<p>If a target was observed using multiple observation blocks (OBs), it is recommended to first reduce each OB separately. After that, the final images can be mean-combined by navigating to a directory of your choice in the terminal and typing:</p>
+<p>If a target was observed using multiple observation blocks (OBs), it is recommended to first reduce each OB separately. After that, the final images can be mean-combined by using the terminal to navigate to a directory of your choice and typing:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">meancombine</span> <span class="n">path1</span> <span class="n">path2</span> <span class="o">...</span> <span class="n">pathx</span>
 </pre></div>
 </div>
@@ -247,7 +251,7 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">meancombine</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">T_Cha_2016</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">20</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">T_Cha_2016</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">21</span>
 </pre></div>
 </div>
-<p>The mean-combined images will then be written to the current working directory of the terminal.</p>
+<p>The mean-combined images will be written to the current working directory of the terminal.</p>
 <p>To understand the input parameters, continue with the <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">configuration file</span></a>.</p>
 </div>
 </div>

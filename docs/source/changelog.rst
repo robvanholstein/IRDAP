@@ -37,7 +37,8 @@ To-do high priority
    - Add plot of center coordinates of center frames vs time
    - Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)
    - Add accurate (calibrated) model correction for narrowband filters
-   - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)	
+   - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)
+   - For pupil-tracking data mask bad pixel clusters when computing least squares solution to get rid off sectors of bad data  
    - Add detection limits (e.g. contrast curves)
    
 To-do low priority

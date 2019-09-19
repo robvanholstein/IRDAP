@@ -67,7 +67,10 @@ For the post-processing part, IRDAP computes the double sum and double differenc
 - ``reduced_star_pol_subtr``, containing the final images with the polarization of the star subtracted.
 
 .. important::
-   The possibility to measure the polarization of the central star and the ability to create final images with and without this stellar polarization is a big advantage of IRDAP (see `van Holstein et al. 2019 <ADS link>`_). For images of a star or circumstellar disk for example, the stellar polarization can indicate the presence of an unresolved (inner) disk if it can be proven (or reasonably expected) that the polarization does not originate from interstellar dust. In that case one would use the images with the star polarization still present when making a comparison with radiative transfer models. Measuring the polarization of the star is also vital when measuring the polarization of substellar companions.
+   By default, the polarization of the star is determined with an annulus over the AO residuals. However, for the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. Therefore the user often needs to adjust the input parameter :ref:`annulus_star <Basic post-processing options>` in the configuration file.
+
+.. important::
+   The possibility to measure the polarization of the central star and the ability to create final images with and without this stellar polarization is a big advantage of IRDAP (see `van Holstein et al. 2019 <ADS link>`_). For images of a star or circumstellar disk for example, the stellar polarization can indicate the presence of an unresolved (inner) disk if it can be proven (or reasonably expected) that the polarization does not originate from interstellar dust. In that case one would use the images with the star polarization still present when making a comparison with radiative transfer models (see e.g. `Keppler et al. 2018 <https://ui.adsabs.harvard.edu/abs/2018A&A...617A..44K>`_). Measuring the polarization of the star is also vital when measuring the polarization of substellar companions.
    
 .. warning::
    For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory ``reduced``, i.e. those without the polarization subtracted.

@@ -15,7 +15,7 @@ Changelog
 ---------
 
 v0.3.0 July 2019, R.G. van Holstein:
- - Added command-line option to mean-combine final images of different observation blocks
+ - Added command-line option to mean-combine final images of multiple observation blocks
 
 v0.2.1 June 2019, R.G. van Holstein:
  - Added the possibility to reduce data taken with the narrowband filters using the existing model of the broadband filters

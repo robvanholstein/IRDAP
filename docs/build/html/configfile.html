@@ -167,7 +167,11 @@
   <div class="section" id="configuration-file">
 <h1>Configuration file<a class="headerlink" href="#configuration-file" title="Permalink to this headline">¶</a></h1>
 <p>The configuration file with the input parameters for IRDAP is shown below:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Basic</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># For a detailed explanation of each input parameter and</span>
+<span class="c1"># the options of the configuration file, see:</span>
+<span class="c1"># https://irdap.readthedocs.io/en/latest/configfile.html</span>
+
+<span class="p">[</span><span class="n">Basic</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
 
 <span class="n">sigma_filtering</span>                 <span class="o">=</span> <span class="kc">True</span>
 <span class="n">object_collapse_ndit</span>            <span class="o">=</span> <span class="kc">False</span>
@@ -192,6 +196,7 @@
 <span class="n">flux_center_coordinates</span>         <span class="o">=</span> <span class="p">(</span><span class="mi">478</span><span class="p">,</span> <span class="mi">522</span><span class="p">,</span> <span class="mi">1504</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span>
 <span class="n">flux_param_centering</span>            <span class="o">=</span> <span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">30000</span><span class="p">)</span>
 <span class="n">flux_annulus_background</span>         <span class="o">=</span> <span class="n">large</span> <span class="n">annulus</span>
+<span class="n">flux_annulus_star</span>               <span class="o">=</span> <span class="n">automatic</span>
 
 <span class="p">[</span><span class="n">Advanced</span> <span class="n">post</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
 <span class="c1"># Generally do not need to be changed</span>
