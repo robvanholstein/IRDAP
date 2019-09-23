@@ -90,6 +90,12 @@ def read_config_file(path_config_file):
         else:
             return x
 
+    def config_float_int(x):
+        if all(character.isdigit() for character in x):
+            return literal_eval(x)
+        else:
+            return x
+
     # Create a configparser object
     config = configparser.ConfigParser()
 
@@ -101,16 +107,23 @@ def read_config_file(path_config_file):
         raise IOError('\n\nThere is no valid configuration file ' + path_config_file + '.')
 
     # Get parameters from [Basic pre-processing options] section
+    perform_preprocessing   = config_true_false(config.get('Basic pre-processing options', 'perform_preprocessing'))
     sigma_filtering         = config_true_false(config.get('Basic pre-processing options', 'sigma_filtering'))
     object_collapse_ndit    = config_true_false(config.get('Basic pre-processing options', 'object_collapse_ndit'))
     object_centering_method = config.get('Basic pre-processing options', 'object_centering_method')
-    skip_preprocessing      = config_true_false(config.get('Basic pre-processing options', 'skip_preprocessing'))
     frames_to_remove        = literal_eval(config.get('Basic pre-processing options', 'frames_to_remove'))
 
-    # Get parameters from [Basic post-processing options] section
-    annulus_star                    = config_list_tuple(config.get('Basic post-processing options', 'annulus_star'))
-    annulus_background              = config_list_tuple(config.get('Basic post-processing options', 'annulus_background'))
-    normalized_polarization_images  = config_true_false(config.get('Basic post-processing options', 'normalized_polarization_images'))
+    # Get parameters from [Basic PDI options] section
+    perform_pdi                    = config_true_false(config.get('Basic PDI options', 'perform_pdi'))
+    annulus_star                   = config_list_tuple(config.get('Basic PDI options', 'annulus_star'))
+    annulus_background             = config_list_tuple(config.get('Basic PDI options', 'annulus_background'))
+    normalized_polarization_images = config_true_false(config.get('Basic PDI options', 'normalized_polarization_images'))
+
+    # Get parameters from [Basic ADI options] section
+    perform_adi                  = config_true_false(config.get('Basic ADI options', 'perform_adi'))
+    adi_trimmed_mean_prop_to_cut = literal_eval(config.get('Basic ADI options', 'adi_trimmed_mean_prop_to_cut'))
+    number_principal_components  = config_float_int(config.get('Basic ADI options', 'number_principal_components'))
+    pca_radii                    = config_list_tuple(config.get('Basic ADI options', 'pca_radii'))
 
     # Get parameters from [Advanced pre-processing options] section
     center_subtract_object    = config_true_false(config.get('Advanced pre-processing options', 'center_subtract_object'))
@@ -123,18 +136,23 @@ def read_config_file(path_config_file):
     flux_annulus_background   = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_background'))
     flux_annulus_star         = config_list_tuple(config.get('Advanced pre-processing options', 'flux_annulus_star'))
 
-    # Get parameters from [Advanced post-processing options] section
-    double_difference_type          = config.get('Advanced post-processing options', 'double_difference_type')
-    single_posang_north_up          = config_true_false(config.get('Advanced post-processing options', 'single_posang_north_up'))
+    # Get parameters from [Advanced PDI options] section
+    double_difference_type          = config.get('Advanced PDI options', 'double_difference_type')
+    single_posang_north_up          = config_true_false(config.get('Advanced PDI options', 'single_posang_north_up'))
 
-    return sigma_filtering, \
+    return perform_preprocessing, \
+           sigma_filtering, \
            object_collapse_ndit, \
            object_centering_method, \
-           skip_preprocessing, \
            frames_to_remove, \
+           perform_pdi, \
            annulus_star, \
            annulus_background, \
            normalized_polarization_images, \
+           perform_adi, \
+           adi_trimmed_mean_prop_to_cut, \
+           number_principal_components, \
+           pca_radii, \
            center_subtract_object, \
            center_param_centering, \
            object_center_coordinates, \
@@ -414,7 +432,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
                                        combination_method_polarization='least squares',
                                        object_centering_method='automatic',
                                        save_preprocessed_data=True,
-                                       show_images_center_coordinates=True):
+                                       show_images_center_coordinates=True,
+                                       perform_adi=True):
     '''
     Check the FITS-headers of the data in the raw directory, remove files and
     frames as specified by the user, sort the data and create directories to
@@ -451,6 +470,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
             center coordinates for each frame. The plots allow for checking
             whether the centering is correct and to scan the data for frames
             with bad quality (default = True).
+        perform_adi: If True, perform angular differential imaging on pre-
+            processed data (default = True).
 
     Note that combination_method_polarization, object_centering_method,
     save_preprocessed_data and show_images_center_coordinates are input to this
@@ -459,7 +480,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     Note that path_raw_dir, path_flat_dir, path_bpm_dir, path_sky_dir,
     path_center_dir, path_flux_dir, path_sky_flux_dir, path_preprocessed_dir,
-    path_reduced_dir, path_reduced_star_pol_subtr_dir and path_overview are
+    path_pdi_no_subtr_dir, path_pdi_subtr_dir and path_overview are
     global variables to the function.
 
     Output:
@@ -496,6 +517,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
             'gaussian', cross-correlation' or 'manual'.
         combination_method_polarization: method to be used to produce the
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
+        perform_adi: If True, perform angular differential imaging on pre-
+            processed data (default = True).
 
     File written by Rob van Holstein; based on function by Christian Ginski
     Function status: verified
@@ -591,8 +614,14 @@ def check_sort_data_create_directories(frames_to_remove=[],
     if len(set([x['ESO INS4 COMB ROT'] for x in header_on_sky])) != 1:
         raise IOError('\n\nThe on-sky data provided use different tracking modes.')
 
-    if not header_on_sky[0]['ESO INS4 COMB ROT'] in ['FIELD', 'PUPIL']:
+    tracking_mode_used = header_on_sky[0]['ESO INS4 COMB ROT']
+    if not tracking_mode_used in ['FIELD', 'PUPIL']:
         raise IOError('\n\nThe tracking mode of the on-sky data is not field-tracking or pupil-tracking.')
+
+    if perform_adi == True and tracking_mode_used != 'PUPIL':
+        # Do not perform angular differential imaging
+        perform_adi = False
+        printandlog('\nWARNING, setting \'perform_adi\' to False, because angular differential imaging cannot be performed on observations that are not taken in pupil-tracking mode.')
 
     if not all([x['ESO INS4 OPTI8 NAME'] == 'H_NIR' for x in header_on_sky]):
         raise IOError('\n\nOne or more files of the on-sky data do not have the NIR half-wave plate inserted.')
@@ -1045,18 +1074,6 @@ def check_sort_data_create_directories(frames_to_remove=[],
         else:
             directories_already_existing.append(path_preprocessed_dir)
 
-    if not os.path.exists(path_reduced_dir):
-        os.makedirs(path_reduced_dir)
-        directories_created.append(path_reduced_dir)
-    else:
-        directories_already_existing.append(path_reduced_dir)
-
-    if not os.path.exists(path_reduced_star_pol_subtr_dir):
-        os.makedirs(path_reduced_star_pol_subtr_dir)
-        directories_created.append(path_reduced_star_pol_subtr_dir)
-    else:
-        directories_already_existing.append(path_reduced_star_pol_subtr_dir)
-
     # Print which directories have been created and which already existed
     if any(directories_created):
         printandlog('\nThe following directories have been created:')
@@ -1073,7 +1090,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
            indices_to_remove_dark, indices_to_remove_flat, indices_to_remove_object, \
            indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, \
            indices_to_remove_flux, indices_to_remove_sky_flux, file_index_object, \
-           file_index_flux, object_centering_method, combination_method_polarization
+           file_index_flux, object_centering_method, combination_method_polarization, perform_adi
 
 ###############################################################################
 # read_fits_files
@@ -2989,25 +3006,26 @@ def annulus_0_to_1_based(annulus):
     return annulus
 
 ###############################################################################
-# perform_preprocessing
+# preprocess_data
 ###############################################################################
 
-def perform_preprocessing(frames_to_remove=[],
-                          sigma_filtering=True,
-                          object_collapse_ndit=False,
-                          show_images_center_coordinates=True,
-                          object_centering_method='automatic',
-                          center_subtract_object=True,
-                          object_center_coordinates='automatic',
-                          center_param_centering=(12, None, 30000),
-                          object_param_centering=(60, None, 30000),
-                          flux_centering_method='gaussian',
-                          flux_center_coordinates=(477, 521, 1503, 511),
-                          flux_param_centering=(60, None, 30000),
-                          flux_annulus_background='large annulus',
-                          flux_annulus_star='automatic',
-                          save_preprocessed_data=True,
-                          combination_method_polarization='least squares'):
+def preprocess_data(frames_to_remove=[],
+                    sigma_filtering=True,
+                    object_collapse_ndit=False,
+                    show_images_center_coordinates=True,
+                    perform_adi=True,
+                    object_centering_method='automatic',
+                    center_subtract_object=True,
+                    object_center_coordinates='automatic',
+                    center_param_centering=(12, None, 30000),
+                    object_param_centering=(60, None, 30000),
+                    flux_centering_method='gaussian',
+                    flux_center_coordinates=(477, 521, 1503, 511),
+                    flux_param_centering=(60, None, 30000),
+                    flux_annulus_background='large annulus',
+                    flux_annulus_star='automatic',
+                    save_preprocessed_data=True,
+                    combination_method_polarization='least squares'):
     '''
     Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data,
     background subtraction, flat-fielding, bad pixel removal, centering and compution
@@ -3033,6 +3051,8 @@ def perform_preprocessing(frames_to_remove=[],
             center coordinates for each frame of the OBJECT- and FLUX-files.
             The plots allow for checking whether the centering is correct and
             to scan the data for frames with bad quality (default = True).
+        perform_adi: If True, perform angular differential imaging on pre-
+            processed data (default = True).
         object_centering_method: method to center the OBJECT-frames. If
             'center frames' determine the center coordinates from the
             CENTER-frames. If 'gaussian', fit a 2D Gaussian to each frame.
@@ -3175,6 +3195,8 @@ def perform_preprocessing(frames_to_remove=[],
         file_index_object: list of file indices of OBJECT-files (0-based)
         combination_method_polarization: method to be used to produce the
             incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
+        perform_adi: If True, perform angular differential imaging on pre-
+            processed data (default = True).
 
     File written by Rob van Holstein; based on function by Christian Ginski
     Function status: verified
@@ -3195,12 +3217,13 @@ def perform_preprocessing(frames_to_remove=[],
     indices_to_remove_dark, indices_to_remove_flat, indices_to_remove_object, \
     indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, \
     indices_to_remove_flux, indices_to_remove_sky_flux, file_index_object, \
-    file_index_flux, object_centering_method, combination_method_polarization \
+    file_index_flux, object_centering_method, combination_method_polarization, perform_adi \
     = check_sort_data_create_directories(frames_to_remove=frames_to_remove,
                                          combination_method_polarization=combination_method_polarization,
                                          object_centering_method=object_centering_method,
                                          save_preprocessed_data=save_preprocessed_data,
-                                         show_images_center_coordinates=show_images_center_coordinates)
+                                         show_images_center_coordinates=show_images_center_coordinates,
+                                         perform_adi=perform_adi)
 
     ###############################################################################
     # Computing master flat and bad pixel map or reading static ones
@@ -3481,8 +3504,10 @@ def perform_preprocessing(frames_to_remove=[],
                     ' determine the star flux in Jansky in the corresponding filter, and multiply the final images by the factor' +
                     ' star_flux_in_jansky / (reference_flux_left+right * pixel_scale^2).')
 
+    printandlog('\nEnd of pre-processing.')
+
     return cube_left_frames, cube_right_frames, header, file_index_object, \
-            combination_method_polarization
+            combination_method_polarization, perform_adi
 
 ###############################################################################
 # compute_double_sum_double_difference
@@ -4117,11 +4142,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     ax.grid()
     plt.legend(loc = 'best')
     plt.tight_layout()
-    plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
-    plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
+    plt.savefig(os.path.join(path_pdi_figures_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.close()
-    printandlog(os.path.join(path_reduced_dir, plot_name), wrap=False)
-    printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), wrap=False)
+    printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
 
     ###############################################################################
     # Compute model coefficient matrix, IP and cross-talk elements
@@ -4298,11 +4321,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     ax2.tick_params(axis = 'y', labelsize = font_size)
     ax2.grid()
     plt.tight_layout()
-    plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
-    plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
+    plt.savefig(os.path.join(path_pdi_figures_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.close()
-    printandlog(os.path.join(path_reduced_dir, plot_name), wrap=False)
-    printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), wrap=False)
+    printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
 
     # Plot elements Q->Q and U->Q from model as a function of HWP cycle number
     plot_name = name_file_root + 'model_crosstalk_transmission.png'
@@ -4325,11 +4346,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     ax.grid()
     plt.legend(loc = 'best')
     plt.tight_layout()
-    plt.savefig(os.path.join(path_reduced_dir, plot_name), dpi = 300, bbox_inches = 'tight')
-    plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), dpi = 300, bbox_inches = 'tight')
+    plt.savefig(os.path.join(path_pdi_figures_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.close()
-    printandlog(os.path.join(path_reduced_dir, plot_name), wrap=False)
-    printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name), wrap=False)
+    printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
 
     ###############################################################################
     # Compute incident Q- and U-images by correcting for instrumental polarization effects
@@ -4339,7 +4358,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     cube_Q_IP_subtracted = cube_Q_double_difference - IP_Q[:, np.newaxis, np.newaxis]*cube_I_Q_double_sum
     cube_U_IP_subtracted = cube_U_double_difference - IP_U[:, np.newaxis, np.newaxis]*cube_I_U_double_sum
 
-#TODO: remove simple cADI below
+#TODO: Rob: properly implement ADI+PCA for polarimetry below (now cADI)
 #    cube_Q_IP_subtracted -= np.median(cube_Q_IP_subtracted, axis=0)
 #    cube_U_IP_subtracted -= np.median(cube_U_IP_subtracted, axis=0)
 
@@ -4401,7 +4420,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     # Compute incident I_Q- and I_U-images
     ###############################################################################
 
-#TODO: remove simple cADI below
+#TODO: remove simple total intensity cADI below
 #    cube_I_Q_double_sum -= np.median(cube_I_Q_double_sum, axis=0)
 #    cube_I_U_double_sum -= np.median(cube_I_U_double_sum, axis=0)
 
@@ -4566,27 +4585,63 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
     return frame_I_tot, frame_Q_phi, frame_U_phi, frame_I_pol, frame_AoLP, frame_DoLP, frame_q, frame_u, frame_AoLP_norm, frame_DoLP_norm
 
 ###############################################################################
-# perform_postprocessing
+# create_directories
 ###############################################################################
 
-def perform_postprocessing(cube_left_frames,
-                           cube_right_frames,
-                           header,
-                           file_index_object,
-                           annulus_star='automatic',
-                           annulus_background='large annulus',
-                           double_difference_type='conventional',
-                           remove_vertical_band_detector_artefact=True,
-                           combination_method_polarization='least squares',
-                           trimmed_mean_prop_to_cut_polar=0.1,
-                           combination_method_intensity='mean',
-                           trimmed_mean_prop_to_cut_intens=0.1,
-                           single_posang_north_up=True,
-                           normalized_polarization_images=False):
-
+def create_directories(list_path_dir):
     '''
-    Perform post-processing of data, including applying the model-based correction
-    for the instrumental polarization effects, and save final images to FITS-files
+    Create directories from a list of paths
+
+    Input:
+        list_path_dir: list of absolute paths to directories
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Create new directories
+    directories_created = []
+    directories_already_existing = []
+
+    for path_dir_sel in list_path_dir:
+        if not os.path.exists(path_dir_sel):
+            os.makedirs(path_dir_sel)
+            directories_created.append(path_dir_sel)
+        else:
+            directories_already_existing.append(path_dir_sel)
+
+    # Print which directories have been created and which already existed
+    if any(directories_created):
+        printandlog('\nThe following directories have been created:')
+        for directory_sel in directories_created:
+            printandlog('{0:s}'.format(directory_sel), wrap=False)
+
+    if any(directories_already_existing):
+        printandlog('\nThe following directories already exist. Data in these directories will be overwritten:')
+        for directory_sel in directories_already_existing:
+            printandlog('{0:s}'.format(directory_sel), wrap=False)
+
+###############################################################################
+# apply_pdi
+###############################################################################
+
+def apply_pdi(cube_left_frames,
+              cube_right_frames,
+              header,
+              file_index_object,
+              annulus_star='automatic',
+              annulus_background='large annulus',
+              double_difference_type='conventional',
+              remove_vertical_band_detector_artefact=True,
+              combination_method_polarization='least squares',
+              trimmed_mean_prop_to_cut_polar=0.1,
+              combination_method_intensity='mean',
+              trimmed_mean_prop_to_cut_intens=0.1,
+              single_posang_north_up=True,
+              normalized_polarization_images=False):
+    '''
+    Perform polarimetric differential imaging on pre-processed data, including applying the model-
+    based correction for the instrumental polarization effects, and save final images to FITS-files
 
     Input:
         cube_left_frames: cube of pre-processed left frames
@@ -4640,6 +4695,12 @@ def perform_postprocessing(cube_left_frames,
     File written by Rob van Holstein
     Function status: verified
     '''
+
+    ###############################################################################
+    # Create directories
+    ###############################################################################
+
+    create_directories([path_pdi_no_subtr_dir, path_pdi_subtr_dir, path_pdi_figures_dir])
 
     ###############################################################################
     # Define annulus for star polarization and background
@@ -4881,11 +4942,9 @@ def perform_postprocessing(cube_left_frames,
         ax.grid()
         plt.legend(loc = 'best')
         plt.tight_layout()
-        plt.savefig(os.path.join(path_reduced_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
-        plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
+        plt.savefig(os.path.join(path_pdi_figures_dir, plot_name_star_quDoLP), dpi = 300, bbox_inches = 'tight')
         plt.close()
-        printandlog(os.path.join(path_reduced_dir, plot_name_star_quDoLP), wrap=False)
-        printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_quDoLP), wrap=False)
+        printandlog(os.path.join(path_pdi_figures_dir, plot_name_star_quDoLP), wrap=False)
 
         # Plot AoLP from annulus as function of HWP cycle number
         plot_name_star_AoLP = name_file_root + 'star_pol_AoLP.png'
@@ -4904,11 +4963,9 @@ def perform_postprocessing(cube_left_frames,
         ax.grid()
         plt.legend(loc = 'best')
         plt.tight_layout()
-        plt.savefig(os.path.join(path_reduced_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
-        plt.savefig(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
+        plt.savefig(os.path.join(path_pdi_figures_dir, plot_name_star_AoLP), dpi = 300, bbox_inches = 'tight')
         plt.close()
-        printandlog(os.path.join(path_reduced_dir, plot_name_star_AoLP), wrap=False)
-        printandlog(os.path.join(path_reduced_star_pol_subtr_dir, plot_name_star_AoLP), wrap=False)
+        printandlog(os.path.join(path_pdi_figures_dir, plot_name_star_AoLP), wrap=False)
 
         printandlog('\nHorizontal trends in the data points of the plots ' + plot_name_star_quDoLP + ' and ' + plot_name_star_AoLP + ' indicate that the instrumental polarization effects have been removed successfully. However, this is only true provided that:')
         printandlog('\n1) the observations are taken with a sufficiently large range of parallactic and altitude angles,')
@@ -4990,11 +5047,11 @@ def perform_postprocessing(cube_left_frames,
     # Write files of the images with the star polarization present
     printandlog('')
     for frame, file_name in zip(frames_to_write, file_names):
-        write_fits_files(data=frame, path=os.path.join(path_reduced_dir, name_file_root + file_name + '.fits'), header=False)
+        write_fits_files(data=frame, path=os.path.join(path_pdi_no_subtr_dir, name_file_root + file_name + '.fits'), header=False)
 
     # Write frames that show annuli used to retrieve star and background signals in reduced directory
-    write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_dir, name_file_root + 'annulus_star.fits'), header=False)
-    write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_dir, name_file_root + 'annulus_background.fits'), header=False)
+    write_fits_files(data=frame_annulus_star, path=os.path.join(path_pdi_no_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
+    write_fits_files(data=frame_annulus_background, path=os.path.join(path_pdi_no_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)
 
     # List files of the images with the star polarization subtracted and define their file names
     frames_to_write = [frame_I_Q_background_subtracted, frame_I_U_background_subtracted, frame_I_tot, frame_Q_star_polarization_subtracted, frame_U_star_polarization_subtracted, \
@@ -5009,53 +5066,143 @@ def perform_postprocessing(cube_left_frames,
 
     # Write files of the images with the star polarization subtracted
     for frame, file_name in zip(frames_to_write, file_names):
-        write_fits_files(data=frame, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + file_name + '.fits'), header=False)
+        write_fits_files(data=frame, path=os.path.join(path_pdi_subtr_dir, name_file_root + file_name + '.fits'), header=False)
 
     # Write frames that show annuli used to retrieve star and background signals in reduced_star_pol_subtr directory
-    write_fits_files(data=frame_annulus_star, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
-    write_fits_files(data=frame_annulus_background, path=os.path.join(path_reduced_star_pol_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)
+    write_fits_files(data=frame_annulus_star, path=os.path.join(path_pdi_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
+    write_fits_files(data=frame_annulus_background, path=os.path.join(path_pdi_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)
+
+    printandlog('\nEnd of polarimetric differential imaging.')
+
+###############################################################################
+# adi_subfunction_1
+###############################################################################
+
+def adi_subfunction_1(input_var):
+    print('do something')
+
+###############################################################################
+# apply_adi
+###############################################################################
+
+def apply_adi(cube_left_frames,
+              cube_right_frames,
+              header,
+              file_index_object,
+              adi_trimmed_mean_prop_to_cut=0.1,
+              number_principal_components='disk',
+              pca_radii=[0, 20]):
+    '''
+    Perform angular differential imaging on the pre-processed data, both classical (cADI) and with
+    principal component analysis (ADI+PCA), and save final images to FITS-files
+
+    Input:
+        cube_left_frames: cube of pre-processed left frames
+        cube_right_frames: cube of pre-processed right frames
+        header: list of FITS-headers of OBJECT-files
+#TODO: from here check what you need and rewrite
+        file_index_object: list of file indices of OBJECT-files (0-based)
+        adi_trimmed_mean_prop_to_cut: fraction to cut off of both tails of the
+            distribution (default = 0.1) ...
+        number_principal_components: number of principal components to subtract for the ADI+PCA
+            reduction. If 'disk', use 3, if 'companion', use 20.
+        pca_radii: list of inner and outer radii of annuli used to optimize principal
+            components over ... (default = [0, 20]). #TODO: rephrase, maybe include example,
+            e.g. [0, 20, 80, 200] and set default.
+
+    File written by Julien Milli; adapted by Rob van Holstein
+    Function status:
+    '''
+
+#TODO: Points to consider:
+# - The whole pipeline should already work for ADI, i.e. for a PT data set a reduction enters this
+#   apply_adi function so you should be able to easily test it.
+# - Please write the subfunctions you need for perform_adi (if any) above this function
+# - Note that in cube_left_frames we have already computed the mean over the
+#   NDIT frames of each file, i.e. cube_left_frames contains the same number of
+#   frames as there are OBJECT FITS-files. I know this makes the ADI less good,
+#   but data sets with NDIT > 1 are not very common for polarimetry and saving all
+#   frames would cost a lot of rewriting + storage space. IRDAP should give a first
+#   good ADI reduction. If someone wants a perfect ADI reduction he should use
+#   another pipeline, and then he can also do fake planet injection.
+# - I have added file_index_object too in case you for example want to make
+#   a graph showing some property as a function of file number.
+# - Global variables you should use for saving FITS-files and figures:
+#    o path_adi_classical_dir
+#    o path_reduced_adipca_dir
+#    o name_file_root
+# - When do you use adi_trimmed_mean_prop_to_cut exactly? If it is not really needed, I'd prefer
+#   removing it as an input parameter to limit the number of parameters in the config file. Perhaps
+#   a value of 0.1 always works.
+# - If we have number_principal_components as an input parameter, you need to rerun IRDAP several
+#   times at least to get the result you want. Could we perhaps implement instead that IRDAP
+#   automatically produces a cube of frames with different number of principal components
+#   subtracted? That would be really neat. Maybe we can then turn this input parameter into a
+#   list with a start and end value of the range of number of principal components to be
+#   subtracted.
+
+   ###############################################################################
+    # Create directories
+    ###############################################################################
+
+    create_directories([path_adi_classical_dir, path_adi_pca_dir])
+
+    ###############################################################################
+    # Do something here
+    ###############################################################################
+
+    printandlog('\n###############################################################################')
+    printandlog('# Do something here')
+    printandlog('###############################################################################')
+
+#TODO: Below should be changed as it is actually more complicated if there are less files than the
+# number of components. Also the docstring above needs to be changed.
+    # Set number of principal components to be subtracted in case it is 'disk' or 'companion'
+    if number_principal_components == 'disk':
+        number_principal_components = 3
+    elif number_principal_components == 'companion':
+        number_principal_components = 20
+
+ #TODO: Example on how to extract the angles from the headers. See also the first part of apply_pdi
+    # Compute angles from headers
+    something = [x['ESO SOMETHING'] for x in header]
+
+    # Perform angular differential imaging separately for the left and right frames
+    for cube_frames in [cube_left_frames, cube_right_frames]:
+        #TODO: Julien's ADI magic here, if I understood correctly separate results for cADI and ADI+PCA
+        dummy = something + 2
+        frame = dummy + 3
+
+        # Perform classical angular differential imaging
+        adi_trimmed_mean_prop_to_cut
+
+        # Save final images and diagnostic figures
+
+        #TODO: similar as the end of apply_pdi function; name_file_root is a global variable; file_name is to be defined
+        file_name = '_cADI'
+        write_fits_files(data=frame, path=os.path.join(path_adi_classical_dir,
+                                                       name_file_root + file_name + '.fits'),
+                                                       header=False)
+
+        # Similar for ADI+PCA
+        adi_trimmed_mean_prop_to_cut
+        number_principal_components
+        pca_radii
+
+        #TODO: note different directory
+        file_name = '_ADI+PCA'
+        write_fits_files(data=frame, path=os.path.join(path_adi_pca_dir,
+                                                       name_file_root + file_name + '.fits'),
+                                                       header=False)
+
+    # Add final images of left and right halves and save
 
 
 
 
-################################################################################
-## perform_adi
-################################################################################
-#
-#def perform_adi(cube_left_frames, cube_right_frames):
-#    '''
-#    ...
-#    '''
 
-
-
-## TODO: I suggest you write the main function to perform ADI here (with sub functions above), and that gets
-## the input cube_left_frames, cube_right_frames all the way at the bottom of the script, below the call
-## of perform_postprocessing. That way the ADI part shares the pre-processed data, but is totally
-## separate from the polarimetry part. Should make the implementation much easier.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    # Final print statement needed for proper functioning of log file
+    printandlog('\nEnd of angular differential imaging.')
 
 ###############################################################################
 # run_demo
@@ -5157,24 +5304,24 @@ def make_config(path_main_dir):
         print_wrap('\nCreated a default configuration file ' + path_config_file_write + '.')
 
 ###############################################################################
-# mean_combine_images
+# mean_combine_pdi_images
 ###############################################################################
 
-def mean_combine_images(path_main_dir, path_read_dirs):
+def mean_combine_pdi_images(path_main_write_dir, path_read_dirs):
     '''
-    Mean-combine the images of two or more reductions
+    Mean-combine the images of two or more PDI reductions
 
     Input:
-        path_main_dir: string specifying path to main directory
+        path_main_write_dir: string specifying path to main directory to write data to
         path_read_dirs: list of strings specifying paths to directories to read data from
 
     File written by Rob van Holstein
     Function status: verified
     '''
 
-    for reduced_dir in ['reduced', 'reduced_star_pol_subtr']:
+    for reduced_dir in ['no_star_pol_subtr', 'star_pol_subtr']:
         # Define path of directory to write combined images to
-        path_write_dir_sel = os.path.join(path_main_dir, reduced_dir + '_combined')
+        path_write_dir_sel = os.path.join(path_main_write_dir, reduced_dir)
 
         if not os.path.exists(path_write_dir_sel):
             # Create directory if it does not exist yet
@@ -5231,7 +5378,7 @@ def mean_combine_images(path_main_dir, path_read_dirs):
             path_list =" ".join(glob.glob(os.path.join(os.path.join(path_sel, reduced_dir), '*.fits')))
             normalized_polarization_images.append(all([x in path_list for x in ['DoLP', 'q_norm', 'u_norm', 'AoLP_norm', 'DoLP_norm']]))
 
-        if reduced_dir == 'reduced':
+        if reduced_dir == 'no_star_pol_subtr':
             # Define name_file_root based on names of files in each read directory
             name_file_roots = [os.path.basename(x)[:os.path.basename(x).index('_I_Q')] for x in paths_I_Q]
             target_name = [x[:-10] for x in name_file_roots][0]
@@ -5277,7 +5424,7 @@ def mean_combine_images(path_main_dir, path_read_dirs):
             file_names += ['DoLP', 'q_norm', 'u_norm', 'AoLP_norm', 'DoLP_norm']
 
         # Add substring '_star_pol_subtr' to appropriate files
-        if reduced_dir == 'reduced_star_pol_subtr':
+        if reduced_dir == 'star_pol_subtr':
             for i in range(len(file_names)):
                 if file_names[i] not in ['I_Q', 'I_U', 'I_tot']:
                     file_names[i] += '_star_pol_subtr'
@@ -5286,15 +5433,87 @@ def mean_combine_images(path_main_dir, path_read_dirs):
         for frame, file_name in zip(frames_to_write, file_names):
             write_fits_files(data=frame, path=os.path.join(path_write_dir_sel, name_file_root + file_name + '.fits'), header=False, silent=True)
 
+###############################################################################
+# mean_combine_adi_images
+###############################################################################
+
+def mean_combine_adi_images(path_main_write_dir, path_read_dirs):
+    '''
+    Mean-combine the images of two or more ADI reductions
+
+    Input:
+        path_main_write_dir: string specifying path to main directory to write data to
+        path_read_dirs: list of strings specifying paths to directories to read data from
+
+    File written by Rob van Holstein
+    Function status:
+    '''
+
+    for reduced_dir in ['classical', 'pca']:
+        # Define path of directory to write combined images to
+        path_write_dir_sel = os.path.join(path_main_write_dir, reduced_dir)
+
+        if not os.path.exists(path_write_dir_sel):
+            # Create directory if it does not exist yet
+            os.makedirs(path_write_dir_sel)
+
+#TODO: Rob: finish function
+
+###############################################################################
+# mean_combine_images
+###############################################################################
+
+def mean_combine_images(path_main_dir, path_read_dirs):
+    '''
+    Mean-combine the PDI and/or ADI images of two or more reductions
+
+    Input:
+        path_main_dir: string specifying path to main directory
+        path_read_dirs: list of strings specifying paths to directories to read data from
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Define paths to directories
+    path_pdi_write_dir = os.path.join(path_main_dir, 'reduced_pdi_combined')
+    path_adi_write_dir = os.path.join(path_main_dir, 'reduced_adi_combined')
+    path_read_pdi_dirs = [os.path.join(x, 'reduced_pdi') for x in path_read_dirs]
+    path_read_adi_dirs = [os.path.join(x, 'reduced_adi') for x in path_read_dirs]
+
+    # Check whether DPI and ADI reduction directories exist for all directories to be read from
+    exists_pdi = all([os.path.exists(x) for x in path_read_pdi_dirs])
+    exists_any_pdi = any([os.path.exists(x) for x in path_read_pdi_dirs])
+    exists_adi = all([os.path.exists(x) for x in path_read_adi_dirs])
+    exists_any_adi = any([os.path.exists(x) for x in path_read_adi_dirs])
+
+    if exists_pdi:
+        # Mean combine PDI images
+        mean_combine_pdi_images(path_main_write_dir=path_pdi_write_dir, path_read_dirs=path_read_pdi_dirs)
+    elif exists_any_pdi:
+        print('\nWARNING, one or more directories provided do not contain the subdirectories with reduced PDI data.')
+
+    if exists_adi:
+        # Mean combine ADI images
+        mean_combine_adi_images(path_main_write_dir=path_adi_write_dir, path_read_dirs=path_read_adi_dirs)
+    elif exists_any_adi:
+        print('\nWARNING, one or more directories provided do not contain the subdirectories with reduced ADI data.')
+
+    if not exists_pdi and not exists_adi:
+        raise IOError('\n\nSome or all of the directories provided do not contain subdirectories with reduced PDI or ADI images.')
+
+    # Define list of paths of directories thar are read from
+    path_read_dirs_exists = exists_pdi*path_read_pdi_dirs + exists_adi*path_read_adi_dirs
+
     # Write TXT-file with directories from which the original images come
     f = open(os.path.join(path_main_dir, 'images_mean_combined.txt'), 'w+')
-    f.write('The combined images are computed as the mean of the corresponding images in the following directories:')
-    for path_sel in path_read_dirs:
+    f.write('The mean-combined images are computed from the corresponding images in the following directories:')
+    for path_sel in path_read_dirs_exists:
         f.write('\n' + path_sel)
     f.close()
 
     print('\nSuccessfully mean-combined the images located in:')
-    for path_sel in path_read_dirs:
+    for path_sel in path_read_dirs_exists:
         print(path_sel)
 
 ###############################################################################
@@ -5379,7 +5598,6 @@ def run_pipeline(path_main_dir):
     global pixel_scale
     global msd
     global path_raw_dir
-    global path_calib_dir
     global path_flat_dir
     global path_bpm_dir
     global path_sky_dir
@@ -5387,13 +5605,15 @@ def run_pipeline(path_main_dir):
     global path_flux_dir
     global path_sky_flux_dir
     global path_preprocessed_dir
-    global path_reduced_dir
-    global path_reduced_star_pol_subtr_dir
+    global path_pdi_no_subtr_dir
+    global path_pdi_subtr_dir
+    global path_pdi_figures_dir
+    global path_adi_classical_dir
+    global path_adi_pca_dir
     global name_file_root
     global path_log_file
     global path_overview
     global path_static_calib_dir
-    global convert_in_contrast_per_arcsec2
 
     # Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     pupil_offset = 135.99
@@ -5418,8 +5638,13 @@ def run_pipeline(path_main_dir):
     path_flux_dir = os.path.join(path_calib_dir, 'flux')
     path_sky_flux_dir = os.path.join(path_calib_dir, 'sky_flux')
     path_preprocessed_dir = os.path.join(path_main_dir, 'preprocessed')
-    path_reduced_dir = os.path.join(path_main_dir, 'reduced')
-    path_reduced_star_pol_subtr_dir = os.path.join(path_main_dir, 'reduced_star_pol_subtr')
+    path_pdi_dir = os.path.join(path_main_dir, 'reduced_pdi')
+    path_pdi_no_subtr_dir = os.path.join(path_pdi_dir, 'no_star_pol_subtr')
+    path_pdi_subtr_dir = os.path.join(path_pdi_dir, 'star_pol_subtr')
+    path_pdi_figures_dir = os.path.join(path_pdi_dir, 'figures')
+    path_adi_dir = os.path.join(path_main_dir, 'reduced_adi')
+    path_adi_classical_dir = os.path.join(path_adi_dir, 'classical')
+    path_adi_pca_dir = os.path.join(path_adi_dir, 'pca')
 
     # Check if raw directory exists, if not create it
     if not os.path.exists(path_raw_dir):
@@ -5491,20 +5716,33 @@ def run_pipeline(path_main_dir):
         raise IOError('\n\nThere is a copy of the configuration file of the previous reduction, but no log file. Please remove the copy of the configuration file.')
 
     ###############################################################################
-    # Check if there is a configuration file and start writing log file
+    # Check if there is a log file and start writing log file
     ###############################################################################
 
     # Create boolean saying whether log file already existed
     log_file_existed = len(path_log_file_old) != 0
 
     if log_file_existed == True:
-        # Save relevant lines from pre-processing
+        # Save relevant lines from pre-processing, DPI and ADI
         log_file_lines = [x.rstrip('\n') for x in open(path_log_file_old, 'r')]
-        if '# Starting post-processing' in log_file_lines:
-            log_file_lines = log_file_lines[log_file_lines.index('# Starting pre-processing') - 2: \
-                                            log_file_lines.index('# Starting post-processing') - 2]
+
+        if 'End of pre-processing.' in log_file_lines:
+            log_file_lines_preproc = log_file_lines[log_file_lines.index('# Starting pre-processing') - 2: \
+                                                    log_file_lines.index('End of pre-processing.') + 1]
         else:
-            log_file_lines = None
+            log_file_lines_preproc = None
+
+        if 'End of polarimetric differential imaging.' in log_file_lines:
+            log_file_lines_pdi = log_file_lines[log_file_lines.index('# Starting polarimetric differential imaging') - 2: \
+                                                log_file_lines.index('End of polarimetric differential imaging.') + 1]
+        else:
+            log_file_lines_pdi = None
+
+        if 'End of angular differential imaging.' in log_file_lines:
+            log_file_lines_adi = log_file_lines[log_file_lines.index('# Starting angular differential imaging') - 2: \
+                                                    log_file_lines.index('End of angular differential imaging.') + 1]
+        else:
+            log_file_lines_adi = None
 
     # Start writing log file
     time_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -5536,14 +5774,19 @@ def run_pipeline(path_main_dir):
     # Read configuration file
     printandlog('\nReading configuration file ' + path_config_file + '.')
 
+    perform_preprocessing, \
     sigma_filtering, \
     object_collapse_ndit, \
     object_centering_method, \
-    skip_preprocessing, \
     frames_to_remove, \
+    perform_pdi, \
     annulus_star, \
     annulus_background, \
     normalized_polarization_images, \
+    perform_adi, \
+    adi_trimmed_mean_prop_to_cut, \
+    number_principal_components, \
+    pca_radii, \
     center_subtract_object, \
     center_param_centering, \
     object_center_coordinates, \
@@ -5554,7 +5797,7 @@ def run_pipeline(path_main_dir):
     flux_annulus_background, \
     flux_annulus_star, \
     double_difference_type, \
-    single_posang_north_up, \
+    single_posang_north_up \
     = read_config_file(path_config_file)
 
     # Define some fixed input parameters
@@ -5566,16 +5809,26 @@ def run_pipeline(path_main_dir):
     trimmed_mean_prop_to_cut_polar = 0.1
     trimmed_mean_prop_to_cut_intens = 0.1
 
-    # Check validity of input of skip_preprocessing
-    if skip_preprocessing not in [True, False]:
-        raise ValueError('\n\n\'skip_preprocessing\' should be either True or False. Before starting another reduction, please delete the log file ' + path_log_file + '.')
+    # Check validity of input of perform_preprocessing, perform_pdi and perform_adi
+    if perform_preprocessing not in [True, False]:
+        raise ValueError('\n\n\'perform_preprocessing\' should be either True or False. Before starting another reduction, please delete the log file ' + path_log_file + '.')
 
-    if skip_preprocessing == True:
+    if perform_pdi not in [True, False]:
+        raise ValueError('\n\n\'perform_pdi\' should be either True or False. Before starting another reduction, please delete the log file ' + path_log_file + '.')
+
+    if perform_adi not in [True, False]:
+        raise ValueError('\n\n\'perform_adi\' should be either True or False. Before starting another reduction, please delete the log file ' + path_log_file + '.')
+
+    # Raise error if perform_preprocessing, perform_pdi and perform_adi are all False
+    if not any([perform_preprocessing, perform_pdi, perform_adi]):
+        raise ValueError('\n\n\'perform_preprocessing\', \'perform_pdi\' and \'perform_adi\' cannot all be False. Before starting another reduction, please delete the log file ' + path_log_file + '.')
+
+    if perform_preprocessing == False:
         # Raise errors if there is no log file from the previous reduction or pre-processing was not finished
         if log_file_existed is False:
-            raise IOError('\n\nThere is no log file from a previous reduction. Remove the log file that has been created for the current reduction attempt and then run IRDAP with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
-        elif log_file_lines is None:
-            raise IOError('\n\nThe pre-processing part of the reduction is not complete in the previous log file. Remove the log file that has been created last and then run IRDAP with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+            raise IOError('\n\nThere is no log file from a previous reduction. Remove the log file that has been created for the current reduction attempt and then run IRDAP with \'perform_preprocessing\' = True to perform the pre-processing of the raw data and save the results.')
+        elif log_file_lines_preproc is None:
+            raise IOError('\n\nThe pre-processing part of the reduction is not complete in the previous log file. Remove the log file that has been created last and then run IRDAP with \'perform_preprocessing\' = True to perform the pre-processing of the raw data and save the results.')
 
     ###############################################################################
     # Make a copy of configuration file
@@ -5589,30 +5842,49 @@ def run_pipeline(path_main_dir):
                                              os.path.splitext(os.path.basename(path_config_file))[0] + \
                                              '_' + str(config_file_copy_old_number + 1) + os.path.splitext(path_config_file)[1])
 
-    if skip_preprocessing == True:
-        if len(path_config_file_copy_old) == 0:
-            raise IOError('\n\nThere was no copy of the configuration file from a previous reduction. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+    # Raise error if perform_preprocessing is False but there is no copy of a previous configuration file
+    if perform_preprocessing == False and len(path_config_file_copy_old) == 0:
+        raise IOError('\n\nThere was no copy of the configuration file from a previous reduction. Run IRDAP first with \'perform_preprocessing\' = True to perform the pre-processing of the raw data and save the results.')
 
+    if len(path_config_file_copy_old) != 0:
         # Read lines of existing copy of configuration file
         config_file_lines_old = [x for x in open(path_config_file_copy_old, 'r')]
 
-        # Define indices of lines pertaining to pre-processing input parameters
-        n0 = config_file_lines.index('[Basic pre-processing options]\n') + 2
-        n1 = config_file_lines.index('[Basic post-processing options]\n') - 1
-        n2 = config_file_lines.index('[Advanced pre-processing options]\n') + 3
-        n3 = config_file_lines.index('[Advanced post-processing options]\n') - 1
+        if perform_preprocessing == False:
+            # Define indices of lines pertaining to pre-processing input parameters
+            n_preproc0 = config_file_lines.index('[Basic pre-processing options]\n') + 2
+            n_preproc1 = config_file_lines.index('[Basic PDI options]\n') - 1
+            n_preproc2 = config_file_lines.index('[Advanced pre-processing options]\n') + 3
+            n_preproc3 = config_file_lines.index('[Advanced PDI options]\n') - 1
 
-        # Replace pre-processing lines of configuration file by those from the previous copy
-        config_file_lines[n0:n1] = config_file_lines_old[n0:n1]
-        config_file_lines[n2:n3] = config_file_lines_old[n2:n3]
+            # Replace pre-processing lines of configuration file by those from the previous copy
+            config_file_lines[n_preproc0:n_preproc1] = config_file_lines_old[n_preproc0:n_preproc1]
+            config_file_lines[n_preproc2:n_preproc3] = config_file_lines_old[n_preproc2:n_preproc3]
+
+        if perform_pdi == False:
+            # Define indices of lines pertaining to pre-processing input parameters
+            n_pdi0 = config_file_lines.index('[Basic PDI options]\n') + 2
+            n_pdi1 = config_file_lines.index('[Basic ADI options]\n') - 1
+            n_pdi2 = config_file_lines.index('[Advanced PDI options]\n') + 3
+            n_pdi3 = len(config_file_lines)
+
+            # Replace PDI lines of configuration file by those from the previous copy
+            config_file_lines[n_pdi0:n_pdi1] = config_file_lines_old[n_pdi0:n_pdi1]
+            config_file_lines[n_pdi2:n_pdi3] = config_file_lines_old[n_pdi2:n_pdi3]
+
+        if perform_adi == False:
+            # Define indices of lines pertaining to pre-processing input parameters
+            n_adi0 = config_file_lines.index('[Basic ADI options]\n') + 2
+            n_adi1 = config_file_lines.index('[Advanced pre-processing options]\n') - 1
+
+            # Replace ADI lines of configuration file by those from the previous copy
+            config_file_lines[n_adi0:n_adi1] = config_file_lines_old[n_adi0:n_adi1]
 
     # Write lines in copy of configuration file and save to main directory
     with open(path_config_file_copy_new, 'w') as f:
         for x in config_file_lines:
             f.write(x)
     printandlog('\nCreated a copy of the used configuration file ' + path_config_file_copy_new + '.')
-    if skip_preprocessing == True:
-        printandlog('\nBecause the pre-processing is skipped, the pre-processing input parameters from the previous reduction have been used for this copy.')
 
     ###############################################################################
     # Copy previous log and configuration files to separate directory
@@ -5888,8 +6160,8 @@ def run_pipeline(path_main_dir):
     if type(trimmed_mean_prop_to_cut_polar) not in [int, float]:
         raise TypeError('\n\n\'trimmed_mean_prop_to_cut_polar\' should be of type int or float.')
 
-    if not 0 <= trimmed_mean_prop_to_cut_polar <= 1:
-        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_polar\' should be in range 0 <= trimmed_mean_prop_to_cut_polar <= 1.')
+    if not 0 <= trimmed_mean_prop_to_cut_polar < 0.5:
+        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_polar\' should be in range 0 <= trimmed_mean_prop_to_cut_polar < 0.5.')
 
     # combination_method_intensity
     if combination_method_intensity not in ['mean', 'trimmed mean', 'median']:
@@ -5899,8 +6171,8 @@ def run_pipeline(path_main_dir):
     if type(trimmed_mean_prop_to_cut_intens) not in [int, float]:
         raise TypeError('\n\n\'trimmed_mean_prop_to_cut_intens\' should be of type int or float.')
 
-    if not 0 <= trimmed_mean_prop_to_cut_intens <= 1:
-        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_intens\' should be in range 0 <= trimmed_mean_prop_to_cut_intens <= 1.')
+    if not 0 <= trimmed_mean_prop_to_cut_intens < 0.5:
+        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_intens\' should be in range 0 <= trimmed_mean_prop_to_cut_intens < 0.5.')
 
     # single_posang_north_up
     if single_posang_north_up not in [True, False]:
@@ -5909,6 +6181,39 @@ def run_pipeline(path_main_dir):
     # normalized_polarization_images
     if normalized_polarization_images not in [True, False]:
         raise ValueError('\n\n\'normalized_polarization_images\' should be either True or False.')
+
+    # adi_trimmed_mean_prop_to_cut
+    if type(adi_trimmed_mean_prop_to_cut) not in [int, float]:
+        raise TypeError('\n\n\'adi_trimmed_mean_prop_to_cut\' should be of type int or float.')
+
+    if not 0 <= adi_trimmed_mean_prop_to_cut < 0.5:
+        raise ValueError('\n\n\'adi_trimmed_mean_prop_to_cut\' should be in range 0 <= adi_trimmed_mean_prop_to_cut < 0.5.')
+
+    # number_principal_components
+    if type(number_principal_components) not in [int, str]:
+        raise TypeError('\n\n\'number_principal_components\' should be \'companion\', \'disk\' or a positive integer.')
+
+    if type(number_principal_components) is str and number_principal_components not in ['companion', 'disk']:
+        raise ValueError('\n\n\'number_principal_components\' should be \'companion\', \'disk\' or a positive integer.')
+
+    if type(number_principal_components) is int and number_principal_components < 1:
+        raise ValueError('\n\n\'number_principal_components\' should be \'companion\', \'disk\' or a positive integer.')
+
+    # pca_radii
+    if type(pca_radii) is not list:
+        raise TypeError('\n\n\'pca_radii\' should be a list of at least length 2 containing positive and increasing integers (including 0).')
+
+    if len(pca_radii) < 2:
+        raise TypeError('\n\n\'pca_radii\' should be a list of at least length 2 containing positive and increasing integers (including 0).')
+
+    if any([type(x) != int for x in pca_radii]):
+        raise TypeError('\n\n\'pca_radii\' should be a list of at least length 2 containing positive and increasing integers (including 0).')
+
+    if any([x < 0 for x in pca_radii]):
+        raise TypeError('\n\n\'pca_radii\' should be a list of at least length 2 containing positive and increasing integers (including 0).')
+
+    if pca_radii != sorted(pca_radii):
+        raise ValueError('\n\n\'pca_radii\' should be a list of at least length 2 containing positive and increasing integers (including 0).')
 
     printandlog('\nThe input parameters have passed all checks.')
 
@@ -5944,10 +6249,10 @@ def run_pipeline(path_main_dir):
     annulus_background = annulus_1_to_0_based(annulus_background)
 
     ###############################################################################
-    # Run pre-processing and post-processing functions
+    # Run pre-processing and PDI and ADI functions
     ###############################################################################
 
-    if skip_preprocessing == False:
+    if perform_preprocessing == True:
         # Pre-process raw data
         printandlog('\n###############################################################################')
         printandlog('# Starting pre-processing')
@@ -5955,33 +6260,28 @@ def run_pipeline(path_main_dir):
         printandlog('\nStarting pre-processing of raw data.')
 
         cube_left_frames, cube_right_frames, header, file_index_object,\
-        combination_method_polarization \
-        = perform_preprocessing(frames_to_remove=frames_to_remove,
-                                sigma_filtering=sigma_filtering,
-                                object_collapse_ndit=object_collapse_ndit,
-                                show_images_center_coordinates=show_images_center_coordinates,
-                                object_centering_method=object_centering_method,
-                                center_subtract_object=center_subtract_object,
-                                object_center_coordinates=object_center_coordinates,
-                                center_param_centering=center_param_centering,
-                                object_param_centering=object_param_centering,
-                                flux_centering_method=flux_centering_method,
-                                flux_center_coordinates=flux_center_coordinates,
-                                flux_param_centering=flux_param_centering,
-                                flux_annulus_background=flux_annulus_background,
-                                flux_annulus_star = flux_annulus_star,
-                                save_preprocessed_data=save_preprocessed_data,
-                                combination_method_polarization=combination_method_polarization)
+        combination_method_polarization, perform_adi \
+        = preprocess_data(frames_to_remove=frames_to_remove,
+                          sigma_filtering=sigma_filtering,
+                          object_collapse_ndit=object_collapse_ndit,
+                          show_images_center_coordinates=show_images_center_coordinates,
+                          perform_adi=perform_adi,
+                          object_centering_method=object_centering_method,
+                          center_subtract_object=center_subtract_object,
+                          object_center_coordinates=object_center_coordinates,
+                          center_param_centering=center_param_centering,
+                          object_param_centering=object_param_centering,
+                          flux_centering_method=flux_centering_method,
+                          flux_center_coordinates=flux_center_coordinates,
+                          flux_param_centering=flux_param_centering,
+                          flux_annulus_background=flux_annulus_background,
+                          flux_annulus_star = flux_annulus_star,
+                          save_preprocessed_data=save_preprocessed_data,
+                          combination_method_polarization=combination_method_polarization)
 
-        # Print that post-processing starts
-        printandlog('\n###############################################################################')
-        printandlog('# Starting post-processing')
-        printandlog('###############################################################################')
-        printandlog('\nContinuing with the pre-processed data.')
-
-    elif skip_preprocessing == True:
+    elif perform_preprocessing == False:
         # Write lines from pre-processing of previous log file
-        for line in log_file_lines:
+        for line in log_file_lines_preproc:
             print(line, file=open(path_log_file, 'a'))
 
         # Define paths to read pre-processed data and headers from
@@ -5991,12 +6291,25 @@ def run_pipeline(path_main_dir):
         path_file_index_object = os.path.join(path_preprocessed_dir, name_file_root + 'file_index_object.txt')
 
         if os.path.exists(path_cube_left_frames) and os.path.exists(path_cube_right_frames) and os.path.exists(path_object_files_text) and os.path.exists(path_file_index_object):
-            # Print that post-processing starts
-            printandlog('\n###############################################################################')
-            printandlog('# Starting post-processing')
-            printandlog('###############################################################################')
-            printandlog('\nSkipping pre-processing and reading pre-processed data and headers.')
-            printandlog('')
+            if perform_pdi == True:
+                # Print that polarimetric differential imaging starts
+                printandlog('\n###############################################################################')
+                printandlog('# Starting polarimetric differential imaging')
+                printandlog('###############################################################################')
+                printandlog('\nSkipping pre-processing and reading pre-processed data and headers.')
+                printandlog('')
+            elif perform_adi == True:
+                if log_file_lines_pdi != None:
+                    # Write lines from PDI of previous log file
+                    for line in log_file_lines_pdi:
+                        print(line, file=open(path_log_file, 'a'))
+
+                # Print that angular differential imaging starts
+                printandlog('\n###############################################################################')
+                printandlog('# Starting angular differential imaging')
+                printandlog('###############################################################################')
+                printandlog('\nSkipping pre-processing and reading pre-processed data and headers.')
+                printandlog('')
 
             # Read pre-processed single-sum and difference- images
             cube_left_frames = read_fits_files(path=path_cube_left_frames, silent=False)[0]
@@ -6010,29 +6323,64 @@ def run_pipeline(path_main_dir):
             file_index_object = literal_eval([x for x in open(path_file_index_object, 'r')][0])
             printandlog('Read indices of OBJECT-files from ' + path_file_index_object + '.')
 
-            printandlog('\nRetained part of previous log file pertaining to pre-processing.')
+            # Set perform_adi to False if the observations are not taken in pupil-tracking mode
+            tracking_mode_used = header[0]['ESO INS4 COMB ROT']
+            if perform_adi == True and tracking_mode_used != 'PUPIL':
+                perform_adi = False
+                if perform_pdi == False:
+                    raise IOError('\n\n\'Angular differential imaging cannot be performed on observations that are not taken in pupil-tracking mode. Because \'perform_preprocessing\' and \'perform_pdi\' are both False, there is no task to do.')
 
         else:
-            raise IOError('\n\nThe files ' + path_cube_left_frames + ', ' + path_cube_right_frames + ', ' + path_object_files_text + ' and/or ' + path_file_index_object + ' do not exist. Run IRDAP first with \'skip_preprocessing\' = False to perform the pre-processing of the raw data and save the results.')
+            raise IOError('\n\nThe files ' + path_cube_left_frames + ', ' + path_cube_right_frames + ', ' + path_object_files_text + ' and/or ' + path_file_index_object + ' do not exist. Run IRDAP first with \'perform_preprocessing\' = True to perform the pre-processing of the raw data and save the results.')
 
-    # Perform post-processing of data
-    perform_postprocessing(cube_left_frames=cube_left_frames,
-                           cube_right_frames=cube_right_frames,
-                           header=header,
-                           file_index_object=file_index_object,
-                           annulus_star=annulus_star,
-                           annulus_background=annulus_background,
-                           double_difference_type=double_difference_type,
-                           remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact,
-                           combination_method_polarization=combination_method_polarization,
-                           trimmed_mean_prop_to_cut_polar=trimmed_mean_prop_to_cut_polar,
-                           combination_method_intensity=combination_method_intensity,
-                           trimmed_mean_prop_to_cut_intens=trimmed_mean_prop_to_cut_intens,
-                           single_posang_north_up=single_posang_north_up,
-                           normalized_polarization_images=normalized_polarization_images)
+    if perform_pdi == True:
+        # Perform polarimetric differential imaging on pre-processed data
+        if perform_preprocessing == True:
+            printandlog('\n###############################################################################')
+            printandlog('# Starting polarimetric differential imaging')
+            printandlog('###############################################################################')
+            printandlog('\nContinuing with the pre-processed data.')
 
-#TODO: Add main ADI function
-#    perform_adi()
+        apply_pdi(cube_left_frames=cube_left_frames,
+                  cube_right_frames=cube_right_frames,
+                  header=header,
+                  file_index_object=file_index_object,
+                  annulus_star=annulus_star,
+                  annulus_background=annulus_background,
+                  double_difference_type=double_difference_type,
+                  remove_vertical_band_detector_artefact=remove_vertical_band_detector_artefact,
+                  combination_method_polarization=combination_method_polarization,
+                  trimmed_mean_prop_to_cut_polar=trimmed_mean_prop_to_cut_polar,
+                  combination_method_intensity=combination_method_intensity,
+                  trimmed_mean_prop_to_cut_intens=trimmed_mean_prop_to_cut_intens,
+                  single_posang_north_up=single_posang_north_up,
+                  normalized_polarization_images=normalized_polarization_images)
+
+    elif perform_pdi == False and perform_preprocessing == True and log_file_lines_pdi != None:
+        # Write lines from PDI of previous log file
+        for line in log_file_lines_pdi:
+            print(line, file=open(path_log_file, 'a'))
+
+    if perform_adi == True:
+        # Perform angular differential imaging on pre-processed data
+        if perform_preprocessing == True or perform_pdi == True:
+            printandlog('\n###############################################################################')
+            printandlog('# Starting angular differential imaging')
+            printandlog('###############################################################################')
+            printandlog('\nContinuing with the pre-processed data.')
+
+        apply_adi(cube_left_frames=cube_left_frames,
+                  cube_right_frames=cube_right_frames,
+                  header=header,
+                  file_index_object=file_index_object,
+                  adi_trimmed_mean_prop_to_cut=adi_trimmed_mean_prop_to_cut,
+                  number_principal_components=number_principal_components,
+                  pca_radii=pca_radii)
+
+    elif perform_adi == False and log_file_lines_adi != None:
+        # Write lines from ADI of previous log file
+        for line in log_file_lines_adi:
+            print(line, file=open(path_log_file, 'a'))
 
     # Print time elapsed
     time_end = time.time()
