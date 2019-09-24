@@ -5743,6 +5743,9 @@ def run_pipeline(path_main_dir):
                                                     log_file_lines.index('End of angular differential imaging.') + 1]
         else:
             log_file_lines_adi = None
+    else:
+       log_file_lines_pdi = None
+       log_file_lines_adi = None
 
     # Start writing log file
     time_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')

@@ -14,6 +14,14 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.0.0 September 2019, R.G. van Holstein:
+ - Added analysis of master flux frame to enable the user to express the final images in contrast/arcsec^2 or Jansky/arcsec^2
+ - Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
+ - Added ADI+PCA for polarimetric data reduction of pupil-tracking observations 
+ - Restructered code and configuration file to allow for the separate execution of pre-processing, polarimetric differential imaging (previously referred to as post-processing) and angular differential imaging 
+ - Added plot of center coordinates of center frames vs time
+ - Confirmed that polarimetric data with dithering applied is correctly reduced
+ 
 v0.3.0 July 2019, R.G. van Holstein:
  - Added command-line option to mean-combine final images of multiple observation blocks
 
@@ -31,14 +39,9 @@ v0.1.2 June 2019, R.G. van Holstein:
 To-do high priority
 -------------------
 
-   - Add ADI (including PCA) of total intensity images for pupil-tracking observations
-   - Change config file option skip_preprocessing to perform_preprocessing: True/False, perform_polarimetry: True/False and perform_adi: True/False
-   - Add option to express final images in contrast/arcsec^2 or mJansky/arcsec^2
-   - Add plot of center coordinates of center frames vs time
-   - Test polarimetric data with dithering applied (e.g. centering methods, subtraction of object file from center file)
    - Add accurate (calibrated) model correction for narrowband filters
    - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)
-   - For pupil-tracking data mask bad pixel clusters when computing least squares solution to get rid off sectors of bad data  
+   - For pupil-tracking data mask bad pixel clusters when computing least squares solution to get rid off sectors of bad data; for field-tracking data set bad pixel clusters to NaN   
    - Add detection limits (e.g. contrast curves)
    
 To-do low priority
@@ -48,7 +51,6 @@ To-do low priority
    - Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)
    - Add option for 'stupid ADI' for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset
    - Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number
-   - Add optional ADI (including PCA) for polarization images
    - Make figures with sub-images horizontal, or make multiple lines of left and right images in a single figure   
    - Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)
    - When rotating images, make complete frame still visible to not cut out any parts of the data
@@ -56,7 +58,6 @@ To-do low priority
    - Test finding of satellite spots of center files when waffle pattern is '+'
    - Add weighted least-squares as option for model correction (depending on image quality or polarimetric efficiency)	
    - Add multiprocessing for sigma filtering and centering of frames
-   - Make IRDAP runable from a script by importing it and calling main function
    - Add option to scale the master sky frame to subtract from the object frames (especially for Ks; see also Gallicher et al. 2011)
    - Exclude saturated pixels in aperture to determine star polarization (same way as used in function fit_2d_gaussian)
    - Determine star polarization as a function of aperture radius	

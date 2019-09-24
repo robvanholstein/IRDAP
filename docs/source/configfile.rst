@@ -7,12 +7,13 @@ The configuration file with the input parameters for IRDAP is shown below:
 .. include:: ../../irdap/config.conf
    :literal:
 
-The input parameters are divided into four groups:
+The input parameters are divided into five groups:
 
 - :ref:`Basic pre-processing options`
-- :ref:`Basic post-processing options`
+- :ref:`Basic PDI options`
+- :ref:`Basic ADI options`
 - :ref:`Advanced pre-processing options`
-- :ref:`Advanced post-processing options`
+- :ref:`Advanced PDI options`
 
 Below we discuss for each parameter of the configuration file what it does and what the valid input options are.
 
@@ -21,6 +22,15 @@ Below we discuss for each parameter of the configuration file what it does and w
 	
 Basic pre-processing options
 ----------------------------
+
+.. _perform_preprocessing:
+
+.. py:function:: perform_preprocessing:
+
+   ``True``, ``False`` (default = ``True``)
+   
+   If True, perform :ref:`pre-processing <Pre-processing in a nutshell>` on the raw data, i.e. prepare the data for the subsequent :ref:`polarimetric differential imaging (PDI) <PDI in a nutshell>` and/or :ref:`angular differential imaging (ADI) <ADI in a nutshell>` steps. `perform_preprocessing` must be ``True`` the first time IRDAP is run on a particular data set. When re-running IRDAP on the same data set, `perform_preprocessing` can be set to ``False`` to skip the pre-processing and save time when tweaking the input parameters of the PDI and/or ADI steps.
+
 
 .. py:function:: sigma_filtering:
 
@@ -35,6 +45,7 @@ Basic pre-processing options
 
    If ``True``, compute the mean over the (NDIT) frames of the OBJECT-files before sky (or background) subtraction, flat-fielding, bad pixel removal and centering to speed up the pre-processing. If ``False``, perform the above steps for each frame and then compute the mean over the frames. The latter will result in the most accurate reduction and is recommended for a final reduction.
 
+
 .. _object_centering_method:
 
 .. py:function:: object_centering_method:
@@ -43,14 +54,7 @@ Basic pre-processing options
 
    Method to center the OBJECT-frames. If ``center frames``, center the OBJECT-frames with the center coordinates determined from the CENTER-frames. If ``gaussian``, center the OBJECT-frames by fitting a 2D Gaussian to each frame. If ``cross-correlation``, perform the centering by fitting a 2D Gaussian to the first frame and then using cross-correlation to align (register) the other frames onto the centered first frame. Generally ``gaussian`` yields more accurate results than ``cross-correlation``. For ``gaussian`` and ``cross-correlation`` the determined center coordinates are plotted for each image. If ``manual``, use fixed coordinates as defined with object_center_coordinates_ to center the OBJECT-frames. If ``automatic``, center the OBJECT-frames using the CENTER-files if they exist, and fit a 2D Gaussian to each OBJECT-frame if there are no CENTER-files.
 
-   In case the centering is not accurate, the advanced parameters center_subtract_object_, center_param_centering_, object_center_coordinates_ and object_param_centering_ can be adapted.
-
- 
-.. py:function:: skip_preprocessing:
-
-   ``True``, ``False`` (default = ``False``)
-
-   If ``True``, skip the pre-processing and only perform the post-processing of the data. This way time can be saved when tweaking the input parameters of the post-processing. Skipping the pre-processing is only possible if the data has been pre-processed before. If ``False``, do not skip the pre-processing. 
+   In case the centering is not accurate, the advanced parameters center_subtract_object_, center_param_centering_, object_center_coordinates_ and object_param_centering_ can be adapted. 
 
 
 .. py:function:: frames_to_remove:
@@ -66,8 +70,14 @@ Basic pre-processing options
       To check for frames of bad quality or frames that are not centered correctly, the user can examine the sub-images of the (pre-)processed OBJECT- and FLUX-frames that IRDAP writes to the ``preprocessed`` and ``calibration/flux`` subdirectories. Because the file and frame indices are displayed next to the sub-images, the bad frames can straightforwardly be removed by inserting the corresponding indices in the list of `frames_to_remove`.
 
 
-Basic post-processing options
+Basic PDI options
 -----------------------------
+
+.. py:function:: perform_pdi:
+
+   ``True``, ``False`` (default = ``True``)
+   
+   If True, perform :ref:`polarimetric differential imaging (PDI) <PDI in a nutshell>` using the pre-processed data. To perform this step, perform_preprocessing_ must be ``True`` or the raw data must have been pre-processed before. If ``False``, do not perform PDI. The latter can be useful when tweaking the input parameters of the ADI step only.
 
 
 .. _annulus_star:
@@ -130,6 +140,43 @@ Basic post-processing options
    These additional final images are only valid if all flux in the images originates from the source of interest. This is generally the case for observations of for example solar system objects or galaxies. The images are generally not valid for observations of circumstellar disks or companions because in that case a large part of the flux in the total intensity images originates from the central star. 
    
    *DoLP_norm* and *AoLP_norm* are potentially more accurate than *DoLP* (above) and *AoLP* = 0.5 arctan(*U* / *Q*) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If ``False``, do not create these images.
+
+Basic ADI options
+-----------------------------
+
+.. py:function:: perform_adi:
+
+   ``True``, ``False`` (default = ``True``)
+   
+   If True, perform :ref:`angular differential imaging (ADI) <ADI in a nutshell>` using the pre-processed data. ADI is only performed on data taken in pupil-tracking mode. To perform this step, perform_preprocessing_ must be ``True`` or the raw data must have been pre-processed before. If ``False``, do not perform ADI. The latter can be useful when tweaking the input parameters of the PDI step only.
+
+
+.. _adi_trimmed_mean_prop_to_cut:
+
+.. py:function:: adi_trimmed_mean_prop_to_cut:
+
+   `float` (default = ``0.1``)
+   
+   Text here. #TODO:Julien
+
+
+.. _number_principal_components:
+
+.. py:function:: number_principal_components:
+
+   ``companion``, ``disk``, `integer` (default = ``companion``)
+
+   Text here. #TODO:Julien
+   
+   
+.. _pca_radii:
+
+.. py:function:: pca_radii:
+
+   `list` (default = ``[0, 20]``)
+
+   Text here. #TODO:Julien
+
 
 Advanced pre-processing options
 -------------------------------
@@ -242,7 +289,17 @@ Advanced pre-processing options
    Annulus used to remove the background in the FLUX-frames. For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. If ``large annulus``, the annulus will be centered on the central star and be located far away from the star with an inner radius of 320 pixels and an outer radius of 380 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for annulus_star_.
 
 
-Advanced post-processing options
+.. _flux_annulus_star:
+
+.. py:function:: flux_annulus_star:
+
+   ``automatic``, `list`, `tuple` (default = ``automatic``)
+
+   Annulus used to measure the total flux of the star in the master flux frames. The total fluxes are converted into reference fluxes that can be used to express the final images (e.g. the *I*\ :sub:`Q`- or *Q*:math:`_\phi`-images) in units of contrast/arcsec\ :sup:`2` or Jansky/arcsec\ :sup:`2`. The annulus should contain all signal from the central star, but no signal from for example a (stellar) companion or background star. 
+   
+   If ``automatic``, the annulus will be an aparture of radius 120 pixels located at the position of the central star. In case more control over the exact shape of the annulus is required, for example to exclude an object close to the central star, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for annulus_star_.
+
+Advanced PDI options
 --------------------------------
 
 .. py:function:: double_difference_type:

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuration file &mdash; IRDAP 0.3.0 documentation</title>
+  <title>Configuration file &mdash; IRDAP 1.0.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                0.3.0
+                1.0.0
               </div>
             
           
@@ -89,9 +89,10 @@
 <li class="toctree-l1"><a class="reference internal" href="instructions.html">Usage instructions</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Configuration file</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#basic-pre-processing-options">Basic pre-processing options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#basic-post-processing-options">Basic post-processing options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-pdi-options">Basic PDI options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-adi-options">Basic ADI options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#advanced-pre-processing-options">Advanced pre-processing options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#advanced-post-processing-options">Advanced post-processing options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-pdi-options">Advanced PDI options</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="citing.html">Citing IRDAP</a></li>
@@ -173,17 +174,25 @@
 
 <span class="p">[</span><span class="n">Basic</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
 
+<span class="n">perform_preprocessing</span>           <span class="o">=</span> <span class="kc">True</span>
 <span class="n">sigma_filtering</span>                 <span class="o">=</span> <span class="kc">True</span>
 <span class="n">object_collapse_ndit</span>            <span class="o">=</span> <span class="kc">False</span>
 <span class="n">object_centering_method</span>         <span class="o">=</span> <span class="n">automatic</span>
-<span class="n">skip_preprocessing</span>              <span class="o">=</span> <span class="kc">False</span>
 <span class="n">frames_to_remove</span>                <span class="o">=</span> <span class="p">[]</span>
 
-<span class="p">[</span><span class="n">Basic</span> <span class="n">post</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
+<span class="p">[</span><span class="n">Basic</span> <span class="n">PDI</span> <span class="n">options</span><span class="p">]</span>
 
+<span class="n">perform_pdi</span>                     <span class="o">=</span> <span class="kc">True</span>
 <span class="n">annulus_star</span>                    <span class="o">=</span> <span class="n">automatic</span>
 <span class="n">annulus_background</span>              <span class="o">=</span> <span class="n">large</span> <span class="n">annulus</span>
 <span class="n">normalized_polarization_images</span>  <span class="o">=</span> <span class="kc">False</span>
+
+<span class="p">[</span><span class="n">Basic</span> <span class="n">ADI</span> <span class="n">options</span><span class="p">]</span>
+
+<span class="n">perform_adi</span>                     <span class="o">=</span> <span class="kc">True</span>
+<span class="n">adi_trimmed_mean_prop_to_cut</span>    <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">number_principal_components</span>     <span class="o">=</span> <span class="n">companion</span>
+<span class="n">pca_radii</span>                       <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">]</span>
 
 <span class="p">[</span><span class="n">Advanced</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
 <span class="c1"># Generally do not need to be changed</span>
@@ -198,19 +207,20 @@
 <span class="n">flux_annulus_background</span>         <span class="o">=</span> <span class="n">large</span> <span class="n">annulus</span>
 <span class="n">flux_annulus_star</span>               <span class="o">=</span> <span class="n">automatic</span>
 
-<span class="p">[</span><span class="n">Advanced</span> <span class="n">post</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
+<span class="p">[</span><span class="n">Advanced</span> <span class="n">PDI</span> <span class="n">options</span><span class="p">]</span>
 <span class="c1"># Generally do not need to be changed</span>
 
 <span class="n">double_difference_type</span>          <span class="o">=</span> <span class="n">conventional</span>
 <span class="n">single_posang_north_up</span>          <span class="o">=</span> <span class="kc">True</span>
 </pre></div>
 </div>
-<p>The input parameters are divided into four groups:</p>
+<p>The input parameters are divided into five groups:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#basic-pre-processing-options"><span class="std std-ref">Basic pre-processing options</span></a></li>
-<li><a class="reference internal" href="#basic-post-processing-options"><span class="std std-ref">Basic post-processing options</span></a></li>
+<li><a class="reference internal" href="#basic-pdi-options"><span class="std std-ref">Basic PDI options</span></a></li>
+<li><a class="reference internal" href="#basic-adi-options"><span class="std std-ref">Basic ADI options</span></a></li>
 <li><a class="reference internal" href="#advanced-pre-processing-options"><span class="std std-ref">Advanced pre-processing options</span></a></li>
-<li><a class="reference internal" href="#advanced-post-processing-options"><span class="std std-ref">Advanced post-processing options</span></a></li>
+<li><a class="reference internal" href="#advanced-pdi-options"><span class="std std-ref">Advanced PDI options</span></a></li>
 </ul>
 <p>Below we discuss for each parameter of the configuration file what it does and what the valid input options are.</p>
 <div class="admonition important">
@@ -219,6 +229,13 @@
 </div>
 <div class="section" id="basic-pre-processing-options">
 <h2>Basic pre-processing options<a class="headerlink" href="#basic-pre-processing-options" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="perform-preprocessing"></span><dl class="function">
+<dt>
+<code class="descname">perform_preprocessing:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
+<p>If True, perform <a class="reference internal" href="instructions.html#pre-processing-in-a-nutshell"><span class="std std-ref">pre-processing</span></a> on the raw data, i.e. prepare the data for the subsequent <a class="reference internal" href="instructions.html#pdi-in-a-nutshell"><span class="std std-ref">polarimetric differential imaging (PDI)</span></a> and/or <a class="reference internal" href="instructions.html#adi-in-a-nutshell"><span class="std std-ref">angular differential imaging (ADI)</span></a> steps. <cite>perform_preprocessing</cite> must be <code class="docutils literal notranslate"><span class="pre">True</span></code> the first time IRDAP is run on a particular data set. When re-running IRDAP on the same data set, <cite>perform_preprocessing</cite> can be set to <code class="docutils literal notranslate"><span class="pre">False</span></code> to skip the pre-processing and save time when tweaking the input parameters of the PDI and/or ADI steps.</p>
+</dd></dl>
+
 <dl class="function">
 <dt>
 <code class="descname">sigma_filtering:</code></dt>
@@ -243,13 +260,6 @@
 
 <dl class="function">
 <dt>
-<code class="descname">skip_preprocessing:</code></dt>
-<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">False</span></code>)</p>
-<p>If <code class="docutils literal notranslate"><span class="pre">True</span></code>, skip the pre-processing and only perform the post-processing of the data. This way time can be saved when tweaking the input parameters of the post-processing. Skipping the pre-processing is only possible if the data has been pre-processed before. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not skip the pre-processing.</p>
-</dd></dl>
-
-<dl class="function">
-<dt>
 <code class="descname">frames_to_remove:</code></dt>
 <dd><p><cite>list</cite> (default = <code class="docutils literal notranslate"><span class="pre">[]</span></code>)</p>
 <p>List of integers and length-2-tuples of integers indicating which files and frames not to use for the data reduction. This parameter allows the user to remove frames of bad quality and to exclude complete files from the reduction without (re)moving them from the raw subdirectory. A complete file can be removed by specifying its integer index, while a frame of a specific file can be removed by specifying a tuple <code class="docutils literal notranslate"><span class="pre">(file_index,</span> <span class="pre">frame_index)</span></code>. For example <code class="docutils literal notranslate"><span class="pre">[2,</span> <span class="pre">4,</span> <span class="pre">(5,</span> <span class="pre">3)]</span></code> will exclude files 2 and 4 from the reduction and will remove frame 3 of file 5. If no files or frames should be removed, use an empty list <code class="docutils literal notranslate"><span class="pre">[]</span></code>. The files are sorted in chronological order from oldest to newest. The file indices of each file are shown in the header overview that is created when you run IRDAP.</p>
@@ -264,8 +274,15 @@
 </dd></dl>
 
 </div>
-<div class="section" id="basic-post-processing-options">
-<h2>Basic post-processing options<a class="headerlink" href="#basic-post-processing-options" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="basic-pdi-options">
+<h2>Basic PDI options<a class="headerlink" href="#basic-pdi-options" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt>
+<code class="descname">perform_pdi:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
+<p>If True, perform <a class="reference internal" href="instructions.html#pdi-in-a-nutshell"><span class="std std-ref">polarimetric differential imaging (PDI)</span></a> using the pre-processed data. To perform this step, <a class="reference internal" href="#perform-preprocessing">perform_preprocessing</a> must be <code class="docutils literal notranslate"><span class="pre">True</span></code> or the raw data must have been pre-processed before. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not perform PDI. The latter can be useful when tweaking the input parameters of the ADI step only.</p>
+</dd></dl>
+
 <span class="target" id="annulus-star"></span><dl class="function">
 <dt>
 <code class="descname">annulus_star:</code></dt>
@@ -317,6 +334,37 @@
 </ul>
 <p>These additional final images are only valid if all flux in the images originates from the source of interest. This is generally the case for observations of for example solar system objects or galaxies. The images are generally not valid for observations of circumstellar disks or companions because in that case a large part of the flux in the total intensity images originates from the central star.</p>
 <p><em>DoLP_norm</em> and <em>AoLP_norm</em> are potentially more accurate than <em>DoLP</em> (above) and <em>AoLP</em> = 0.5 arctan(<em>U</em> / <em>Q</em>) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not create these images.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="basic-adi-options">
+<h2>Basic ADI options<a class="headerlink" href="#basic-adi-options" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt>
+<code class="descname">perform_adi:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
+<p>If True, perform <a class="reference internal" href="instructions.html#adi-in-a-nutshell"><span class="std std-ref">angular differential imaging (ADI)</span></a> using the pre-processed data. ADI is only performed on data taken in pupil-tracking mode. To perform this step, <a class="reference internal" href="#perform-preprocessing">perform_preprocessing</a> must be <code class="docutils literal notranslate"><span class="pre">True</span></code> or the raw data must have been pre-processed before. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not perform ADI. The latter can be useful when tweaking the input parameters of the PDI step only.</p>
+</dd></dl>
+
+<span class="target" id="adi-trimmed-mean-prop-to-cut"></span><dl class="function">
+<dt>
+<code class="descname">adi_trimmed_mean_prop_to_cut:</code></dt>
+<dd><p><cite>float</cite> (default = <code class="docutils literal notranslate"><span class="pre">0.1</span></code>)</p>
+<p>Text here. #TODO:Julien</p>
+</dd></dl>
+
+<span class="target" id="number-principal-components"></span><dl class="function">
+<dt>
+<code class="descname">number_principal_components:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">companion</span></code>, <code class="docutils literal notranslate"><span class="pre">disk</span></code>, <cite>integer</cite> (default = <code class="docutils literal notranslate"><span class="pre">companion</span></code>)</p>
+<p>Text here. #TODO:Julien</p>
+</dd></dl>
+
+<span class="target" id="pca-radii"></span><dl class="function">
+<dt>
+<code class="descname">pca_radii:</code></dt>
+<dd><p><cite>list</cite> (default = <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">20]</span></code>)</p>
+<p>Text here. #TODO:Julien</p>
 </dd></dl>
 
 </div>
@@ -415,9 +463,17 @@
 <p>Annulus used to remove the background in the FLUX-frames. For the most accurate results the annulus should not contain any signal from the star or any other source in the field of view. If <code class="docutils literal notranslate"><span class="pre">large</span> <span class="pre">annulus</span></code>, the annulus will be centered on the central star and be located far away from the star with an inner radius of 320 pixels and an outer radius of 380 pixels. In case more control over the exact shape of the annulus is required, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
 </dd></dl>
 
+<span class="target" id="flux-annulus-star"></span><dl class="function">
+<dt>
+<code class="descname">flux_annulus_star:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">automatic</span></code>, <cite>list</cite>, <cite>tuple</cite> (default = <code class="docutils literal notranslate"><span class="pre">automatic</span></code>)</p>
+<p>Annulus used to measure the total flux of the star in the master flux frames. The total fluxes are converted into reference fluxes that can be used to express the final images (e.g. the <em>I</em><sub>Q</sub>- or <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images) in units of contrast/arcsec<sup>2</sup> or Jansky/arcsec<sup>2</sup>. The annulus should contain all signal from the central star, but no signal from for example a (stellar) companion or background star.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">automatic</span></code>, the annulus will be an aparture of radius 120 pixels located at the position of the central star. In case more control over the exact shape of the annulus is required, for example to exclude an object close to the central star, the user can define the annulus with a (list of) length-6-tuple(s) in the same way as for <a class="reference internal" href="#annulus-star">annulus_star</a>.</p>
+</dd></dl>
+
 </div>
-<div class="section" id="advanced-post-processing-options">
-<h2>Advanced post-processing options<a class="headerlink" href="#advanced-post-processing-options" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="advanced-pdi-options">
+<h2>Advanced PDI options<a class="headerlink" href="#advanced-pdi-options" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt>
 <code class="descname">double_difference_type:</code></dt>

@@ -21,8 +21,9 @@ to the terminal's current directory.
    An internet connection is required to run the demo, because 56.6 MB of raw data needs to be downloaded from the 
    `GitHub repository <https://github.com/robvanholstein/IRDAP/tree/master/irdap/example_data>`_.
 
-After running the demo, you can navigate to the :file:`reduced` subdirectory and open the 
-files :file:`T_Cha_2016-02-20_Q_phi.fits` and :file:`T_Cha_2016-02-20_U_phi.fits` that
+After running the demo, you can navigate to the :file:`reduced_pdi/no_star_pol_subtr` 
+subdirectory and open the files :file:`T_Cha_2016-02-20_Q_phi.fits` 
+and :file:`T_Cha_2016-02-20_U_phi.fits` that
 show the final *Q*:math:`_\phi`- and *U*:math:`_\phi`-images. 
 Opening these files with `DS9 <http://ds9.si.edu/>`_, setting color to cool, scale to linear 
 and the limits to -500 to 1500 and -300 to 150, respectively, you will see the following:

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Usage instructions &mdash; IRDAP 0.3.0 documentation</title>
+  <title>Usage instructions &mdash; IRDAP 1.0.0 documentation</title>
   
 
   
@@ -58,7 +58,7 @@
             
             
               <div class="version">
-                0.3.0
+                1.0.0
               </div>
             
           
@@ -89,7 +89,9 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage instructions</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#running-irdap">Running IRDAP</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#pre-processing-in-a-nutshell">Pre-processing in a nutshell</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#post-processing-in-a-nutshell">Post-processing in a nutshell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pdi-in-a-nutshell">PDI in a nutshell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adi-in-a-nutshell">ADI in a nutshell</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#combining-multiple-data-sets">Combining multiple data sets</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configfile.html">Configuration file</a></li>
@@ -170,7 +172,7 @@
 <p>Reducing data with IRDAP is very straightforward and only requires two commands to be entered in the terminal. First, create a directory (e.g. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20</span></code>) containing a subdirectory called <code class="file docutils literal notranslate"><span class="pre">raw</span></code> (i.e. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20/raw</span></code>) in which you place the raw FITS-files.</p>
 <div class="admonition attention">
 <p class="first admonition-title">Attention</p>
-<p class="last">The raw FITS-files should have <cite>DPR TYPE</cite> equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see <a class="reference internal" href="#pre-processing-in-a-nutshell"><span class="std std-ref">Pre-processing in a nutshell</span></a>) <cite>DPR TYPE</cite> can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK.</p>
+<p class="last">The raw FITS-files should have <cite>DPR TYPE</cite> equal to OBJECT, OBJECT,CENTER, OBJECT,FLUX or SKY. If the user wishes to make a new master flat and bad pixel map (see <a class="reference internal" href="#pre-processing-in-a-nutshell"><span class="std std-ref">Pre-processing in a nutshell</span></a>) <cite>DPR TYPE</cite> can also be equal to FLAT,LAMP, DARK,BACKGROUND or DARK. FITS-files with a <cite>DPR TYPE</cite> other than the ones mentioned above will automatically be ignored.</p>
 </div>
 <div class="admonition hint">
 <p class="first admonition-title">Hint</p>
@@ -194,18 +196,19 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </div>
 <div class="section" id="pre-processing-in-a-nutshell">
 <h2>Pre-processing in a nutshell<a class="headerlink" href="#pre-processing-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
-<p>The data reduction is divided in a pre-processing and a post-processing part.</p>
+<p>The data reduction is divided into a pre-processing, polarimetric differential imaging (PDI) and angular differential imaging (ADI) part.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">The data-reduction steps are only described concisely here. The log file that IRDAP creates describes the steps in more detail and also briefly describes the output files created. It is therefore recommended to carefully read the log file the first time you run IRDAP.</p>
 </div>
-<p>The pre-processing starts with reading the configuration file and creating the log file that contains all the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the raw subdirectory, sorts the raw data and creates subdirectories to write the output files to.</p>
+<p>The pre-processing starts with reading the configuration file and creating the log file that contains all the lines printed on screen. In addition, IRDAP creates overviews of the relevant header keywords for each file in the <code class="file docutils literal notranslate"><span class="pre">raw</span></code> subdirectory, sorts the raw data and creates subdirectories to write the output files to.</p>
 <div class="admonition-hints admonition">
 <p class="first admonition-title">Hints</p>
 <ul class="last simple">
-<li>When reducing data with IRDAP, keep an eye out for the WARNING messages printed on screen and in the log file;</li>
 <li>The header overviews can also be created without running IRDAP by typing <code class="code docutils literal notranslate"><span class="pre">irdap</span> <span class="pre">--headers</span></code> in the terminal;</li>
+<li>When reducing data with IRDAP, keep an eye out for the WARNING messages printed on screen and in the log file;</li>
 <li>When running IRDAP a copy of the configuration file is made. When subsequently re-running IRDAP, this copy is moved together with the log file to the <code class="docutils literal notranslate"><span class="pre">logs</span></code> subdirectory as a record of the performed reductions.</li>
+<li>In case some steps of the reduction are skipped when re-running IRDAP (i.e. setting <a class="reference internal" href="configfile.html#basic-pre-processing-options"><span class="std std-ref">perform_preprocessing</span></a>, <a class="reference internal" href="configfile.html#basic-pdi-options"><span class="std std-ref">perform_pdi</span></a> and/or <a class="reference internal" href="configfile.html#basic-adi-options"><span class="std std-ref">perform_adi</span></a> equal to <code class="docutils literal notranslate"><span class="pre">False</span></code> in the <a class="reference internal" href="configfile.html#configuration-file"><span class="std std-ref">configuration file</span></a>), the sections pertaining to these skipped reduction steps are copied from the previous to the new log file and configuration file. This way the latest log file and configuration file always contain  all relevant information and input parameters of the reduction steps taken.</li>
 </ul>
 </div>
 <p>After these initial steps, IRDAP will pre-process the OBJECT-files. To this end, it loads the static bad pixel map and the static master flat of the right filter, and creates a master sky frame from the provided SKY-files. The OBJECT-files are then sky (or background) subtracted, flat fielded, bad-pixel filtered and centered with a method chosen by the user. The centering would generally be performed using the CENTER-files, which are then processed accordingly.</p>
@@ -213,23 +216,27 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="first admonition-title">Note</p>
 <p class="last">Rather than using the static bad pixel map and master flat, the user can also create a master flat and bad pixel map by including a sequence of FLAT,LAMP- and DARK,BACKGROUND-files (or DARK-files) in the <code class="docutils literal notranslate"><span class="pre">raw</span></code> subdirectory (e.g. a sequence with exposure times 1, 2, 3, 4 and 5 s). The FLAT,LAMP-files preferably have the P0-90 polarizer set inserted, because it causes strong vignetting at the edges of the field of view which will otherwise not be corrected.</p>
 </div>
-<p>A master flux frame is created by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flat frame.</p>
+<p>A cube of master flux frames is created for the left and right detector halves by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flux frames.</p>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">IRDAP automatically determines the reference fluxes from the master flux frames and writes them to a CSV-file. These references fluxes can be used to convert the final images produced by IRDAP (e.g. the <em>I</em><sub>Q</sub>- or <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images) from units of counts (ADU) into units of contrast/arcsec<sup>2</sup>. If the user can determine the stellar flux in Jansky, the final images can be expressed in Jansky/arcsec<sup>2</sup> (see the log file created by IRDAP for more details).</p>
+</div>
 <p>The pre-processed OBJECT-data is written to the subdirectory <code class="docutils literal notranslate"><span class="pre">preprocessed</span></code> and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory <code class="docutils literal notranslate"><span class="pre">calibration</span></code>.</p>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
 <p class="last">In case the pre-processed OBJECT- or FLUX-data is not correctly centered, IRDAP should be run again after adapting the <a class="reference internal" href="configfile.html#advanced-pre-processing-options"><span class="std std-ref">Advanced pre-processing options</span></a> of the configuration file.</p>
 </div>
 </div>
-<div class="section" id="post-processing-in-a-nutshell">
-<h2>Post-processing in a nutshell<a class="headerlink" href="#post-processing-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
-<p>For the post-processing part, IRDAP computes the double sum and double difference from the pre-processed OBJECT-files. It then applies the model-based correction method as described in <a class="reference external" href="ADSlink">van Holstein et al. 2019</a> to remove the instrumental polarization and cross-talk. The correction method for pupil-tracking observations has some differences compared to that of field-tracking observations (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V">van Holstein et al. 2017</a>). Subsequently, the background in the images is subtracted and the polarization of the star determined. The FITS-files of the final images are then written to two subdirectories:</p>
+<div class="section" id="pdi-in-a-nutshell">
+<h2>PDI in a nutshell<a class="headerlink" href="#pdi-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
+<p>For the polarimetric differential imaging (PDI) part, IRDAP computes the double sum and double difference from the pre-processed OBJECT-files. It then applies the model-based correction method as described in <a class="reference external" href="ADSlink">van Holstein et al. 2019</a> to remove the instrumental polarization and cross-talk. The correction method for pupil-tracking observations has some differences compared to that of field-tracking observations (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V">van Holstein et al. 2017</a>). Subsequently, the background in the images is subtracted and the polarization of the star determined. The FITS-files of the final images are then written to two subdirectories:</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">reduced</span></code>, containing the final images with the polarization of the star still present;</li>
-<li><code class="docutils literal notranslate"><span class="pre">reduced_star_pol_subtr</span></code>, containing the final images with the polarization of the star subtracted.</li>
+<li><code class="docutils literal notranslate"><span class="pre">reduced_pdi\no_star_pol_subtr</span></code>, containing the final images with the polarization of the star still present;</li>
+<li><code class="docutils literal notranslate"><span class="pre">reduced_pdi\star_pol_subtr</span></code>, containing the final images with the polarization of the star subtracted.</li>
 </ul>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
-<p class="last">By default, the polarization of the star is determined with an annulus over the AO residuals. However, for the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. Therefore the user often needs to adjust the input parameter <a class="reference internal" href="configfile.html#basic-post-processing-options"><span class="std std-ref">annulus_star</span></a> in the configuration file.</p>
+<p class="last">By default, the polarization of the star is determined with an annulus over the AO residuals. However, for the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. Therefore the user often needs to adjust the input parameter <a class="reference internal" href="configfile.html#basic-pdi-options"><span class="std std-ref">annulus_star</span></a> in the configuration file.</p>
 </div>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
@@ -237,13 +244,20 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </div>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory <code class="docutils literal notranslate"><span class="pre">reduced</span></code>, i.e. those without the polarization subtracted.</p>
+<p class="last">For targets without a bright star (e.g. solar system objects), one would always use the images in the subdirectory <code class="docutils literal notranslate"><span class="pre">reduced_pdi\no_star_pol_subtr</span></code>, i.e. those without the polarization subtracted.</p>
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The units of the <em>I</em><sub>Q</sub>-, <em>I</em><sub>U</sub>- and <em>I</em><sub>tot</sub>-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the <em>Q</em>-, <em>U</em>-, <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>- and <em>U</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images are the number of counts when subtracting the right from the left frame half of a single exposure.</p>
 </div>
-<p>If a target was observed using multiple observation blocks (OBs), it is recommended to first reduce each OB separately. After that, the final images can be mean-combined by using the terminal to navigate to a directory of your choice and typing:</p>
+</div>
+<div class="section" id="adi-in-a-nutshell">
+<h2>ADI in a nutshell<a class="headerlink" href="#adi-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
+<p>For the angular differential imaging (ADI) part, #TODO:Julien</p>
+</div>
+<div class="section" id="combining-multiple-data-sets">
+<h2>Combining multiple data sets<a class="headerlink" href="#combining-multiple-data-sets" title="Permalink to this headline">¶</a></h2>
+<p>If a target was observed using multiple observation blocks (OBs), it is recommended to first reduce each OB separately. After that, the final images of the PDI and ADI reductions can be mean-combined by using the terminal to navigate to a directory of your choice and typing:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">meancombine</span> <span class="n">path1</span> <span class="n">path2</span> <span class="o">...</span> <span class="n">pathx</span>
 </pre></div>
 </div>
