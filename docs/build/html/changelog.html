@@ -171,10 +171,9 @@
 <dt>v1.0.0 September 2019, R.G. van Holstein:</dt>
 <dd><ul class="first last simple">
 <li>Added analysis of master flux frame to enable the user to express the final images in contrast/arcsec^2 or Jansky/arcsec^2</li>
-<li>Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations</li>
-<li>Added ADI+PCA for polarimetric data reduction of pupil-tracking observations</li>
 <li>Restructered code and configuration file to allow for the separate execution of pre-processing, polarimetric differential imaging (previously referred to as post-processing) and angular differential imaging</li>
 <li>Added plot of center coordinates of center frames vs time</li>
+<li>Added possibility to open documentation through terminal command <code class="code docutils literal notranslate"><span class="pre">irdap</span> <span class="pre">--website</span></code></li>
 <li>Confirmed that polarimetric data with dithering applied is correctly reduced</li>
 </ul>
 </dd>
@@ -206,6 +205,8 @@
 <h2>To-do high priority<a class="headerlink" href="#to-do-high-priority" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
+<li>Add angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations</li>
+<li>Add ADI+PCA for polarimetric data reduction of pupil-tracking observations</li>
 <li>Add accurate (calibrated) model correction for narrowband filters</li>
 <li>Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)</li>
 <li>For pupil-tracking data mask bad pixel clusters when computing least squares solution to get rid off sectors of bad data; for field-tracking data set bad pixel clusters to NaN</li>

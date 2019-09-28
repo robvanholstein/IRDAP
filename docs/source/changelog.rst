@@ -14,12 +14,18 @@ Changelog & to-do
 Changelog
 ---------
 
+..
+   v1.1.0 October 2019, R.G. van Holstein
+..
+    - Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
+..   
+   - Added ADI+PCA for polarimetric data reduction of pupil-tracking observations
+
 v1.0.0 September 2019, R.G. van Holstein:
  - Added analysis of master flux frame to enable the user to express the final images in contrast/arcsec^2 or Jansky/arcsec^2
- - Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
- - Added ADI+PCA for polarimetric data reduction of pupil-tracking observations 
  - Restructered code and configuration file to allow for the separate execution of pre-processing, polarimetric differential imaging (previously referred to as post-processing) and angular differential imaging 
  - Added plot of center coordinates of center frames vs time
+ - Added possibility to open documentation through terminal command :code:`irdap --website`
  - Confirmed that polarimetric data with dithering applied is correctly reduced
  
 v0.3.0 July 2019, R.G. van Holstein:
@@ -39,6 +45,8 @@ v0.1.2 June 2019, R.G. van Holstein:
 To-do high priority
 -------------------
 
+   - Add angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
+   - Add ADI+PCA for polarimetric data reduction of pupil-tracking observations
    - Add accurate (calibrated) model correction for narrowband filters
    - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)
    - For pupil-tracking data mask bad pixel clusters when computing least squares solution to get rid off sectors of bad data; for field-tracking data set bad pixel clusters to NaN   

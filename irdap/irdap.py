@@ -120,10 +120,15 @@ def read_config_file(path_config_file):
     normalized_polarization_images = config_true_false(config.get('Basic PDI options', 'normalized_polarization_images'))
 
     # Get parameters from [Basic ADI options] section
+#TODO: Julien: change back for implementation of ADI
     perform_adi                  = config_true_false(config.get('Basic ADI options', 'perform_adi'))
-    adi_trimmed_mean_prop_to_cut = literal_eval(config.get('Basic ADI options', 'adi_trimmed_mean_prop_to_cut'))
-    number_principal_components  = config_float_int(config.get('Basic ADI options', 'number_principal_components'))
-    pca_radii                    = config_list_tuple(config.get('Basic ADI options', 'pca_radii'))
+#    adi_trimmed_mean_prop_to_cut = literal_eval(config.get('Basic ADI options', 'adi_trimmed_mean_prop_to_cut'))
+#    number_principal_components  = config_float_int(config.get('Basic ADI options', 'number_principal_components'))
+#    pca_radii                    = config_list_tuple(config.get('Basic ADI options', 'pca_radii'))
+    perform_adi                     = False
+    adi_trimmed_mean_prop_to_cut    = 0.1
+    number_principal_components     = 'companion'
+    pca_radii                       = [0, 20]
 
     # Get parameters from [Advanced pre-processing options] section
     center_subtract_object    = config_true_false(config.get('Advanced pre-processing options', 'center_subtract_object'))
@@ -364,7 +369,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
     print_array += separator_array
 
     # Save the overview to a text file
-    np.savetxt(path_overview, print_array, fmt = '%s', newline= '\r\n')
+    np.savetxt(path_overview, print_array, fmt = '%s', newline= '\n')
 
     # Save the overview to a csv file
     df_array = pd.DataFrame(print_array[1:,1:], columns=print_array[0,1:], index=print_array[1:, 0])

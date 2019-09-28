@@ -150,32 +150,35 @@ Basic ADI options
    
    If True, perform :ref:`angular differential imaging (ADI) <ADI in a nutshell>` using the pre-processed data. ADI is only performed on data taken in pupil-tracking mode. To perform this step, perform_preprocessing_ must be ``True`` or the raw data must have been pre-processed before. If ``False``, do not perform ADI. The latter can be useful when tweaking the input parameters of the PDI step only.
 
+.. attention::
+   Angular differential imaging is not functional yet. It will be added around mid-October. 
 
-.. _adi_trimmed_mean_prop_to_cut:
+..
+   .. _adi_trimmed_mean_prop_to_cut:
+..
+   .. py:function:: adi_trimmed_mean_prop_to_cut:
+..
+      `float` (default = ``0.1``)
+..   
+      Text here. #TODO:Julien
 
-.. py:function:: adi_trimmed_mean_prop_to_cut:
-
-   `float` (default = ``0.1``)
+..
+   .. _number_principal_components:
+..
+   .. py:function:: number_principal_components:
+..
+      ``companion``, ``disk``, `integer` (default = ``companion``)
+..
+      Text here. #TODO:Julien
    
-   Text here. #TODO:Julien
-
-
-.. _number_principal_components:
-
-.. py:function:: number_principal_components:
-
-   ``companion``, ``disk``, `integer` (default = ``companion``)
-
-   Text here. #TODO:Julien
-   
-   
-.. _pca_radii:
-
-.. py:function:: pca_radii:
-
-   `list` (default = ``[0, 20]``)
-
-   Text here. #TODO:Julien
+..  
+   .. _pca_radii:
+..
+   .. py:function:: pca_radii:
+..
+      `list` (default = ``[0, 20]``)
+..
+      Text here. #TODO:Julien
 
 
 Advanced pre-processing options

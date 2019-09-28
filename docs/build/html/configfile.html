@@ -189,10 +189,7 @@
 
 <span class="p">[</span><span class="n">Basic</span> <span class="n">ADI</span> <span class="n">options</span><span class="p">]</span>
 
-<span class="n">perform_adi</span>                     <span class="o">=</span> <span class="kc">True</span>
-<span class="n">adi_trimmed_mean_prop_to_cut</span>    <span class="o">=</span> <span class="mf">0.1</span>
-<span class="n">number_principal_components</span>     <span class="o">=</span> <span class="n">companion</span>
-<span class="n">pca_radii</span>                       <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">]</span>
+<span class="n">perform_adi</span>                     <span class="o">=</span> <span class="kc">False</span>
 
 <span class="p">[</span><span class="n">Advanced</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
 <span class="c1"># Generally do not need to be changed</span>
@@ -346,27 +343,10 @@
 <p>If True, perform <a class="reference internal" href="instructions.html#adi-in-a-nutshell"><span class="std std-ref">angular differential imaging (ADI)</span></a> using the pre-processed data. ADI is only performed on data taken in pupil-tracking mode. To perform this step, <a class="reference internal" href="#perform-preprocessing">perform_preprocessing</a> must be <code class="docutils literal notranslate"><span class="pre">True</span></code> or the raw data must have been pre-processed before. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not perform ADI. The latter can be useful when tweaking the input parameters of the PDI step only.</p>
 </dd></dl>
 
-<span class="target" id="adi-trimmed-mean-prop-to-cut"></span><dl class="function">
-<dt>
-<code class="descname">adi_trimmed_mean_prop_to_cut:</code></dt>
-<dd><p><cite>float</cite> (default = <code class="docutils literal notranslate"><span class="pre">0.1</span></code>)</p>
-<p>Text here. #TODO:Julien</p>
-</dd></dl>
-
-<span class="target" id="number-principal-components"></span><dl class="function">
-<dt>
-<code class="descname">number_principal_components:</code></dt>
-<dd><p><code class="docutils literal notranslate"><span class="pre">companion</span></code>, <code class="docutils literal notranslate"><span class="pre">disk</span></code>, <cite>integer</cite> (default = <code class="docutils literal notranslate"><span class="pre">companion</span></code>)</p>
-<p>Text here. #TODO:Julien</p>
-</dd></dl>
-
-<span class="target" id="pca-radii"></span><dl class="function">
-<dt>
-<code class="descname">pca_radii:</code></dt>
-<dd><p><cite>list</cite> (default = <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">20]</span></code>)</p>
-<p>Text here. #TODO:Julien</p>
-</dd></dl>
-
+<div class="admonition attention">
+<p class="first admonition-title">Attention</p>
+<p class="last">Angular differential imaging is not functional yet. It will be added around mid-October.</p>
+</div>
 </div>
 <div class="section" id="advanced-pre-processing-options">
 <h2>Advanced pre-processing options<a class="headerlink" href="#advanced-pre-processing-options" title="Permalink to this headline">¶</a></h2>

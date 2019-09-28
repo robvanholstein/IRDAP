@@ -85,8 +85,8 @@ For the polarimetric differential imaging (PDI) part, IRDAP computes the double 
 ADI in a nutshell
 -----------------
 
-For the angular differential imaging (ADI) part, #TODO:Julien
-
+.. attention::
+   Angular differential imaging is not functional yet. It will be added around mid-October. 
 
 Combining multiple data sets
 ----------------------------
