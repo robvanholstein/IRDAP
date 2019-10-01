@@ -7,7 +7,7 @@ end-to-end example reduction can be performed. This demo uses a small portion of
 polarimetric data of the circumstellar disk of T Cha from ESO Program 096.C-0248(C). This
 data set was the first to be reduced with IRDAP's correction method and is published in
 `Pohl et al. (2017) <http://adsabs.harvard.edu/abs/2017A%26A...605A..34P>`_. It is also 
-used in `van Holstein et al. (2019) <ADS link>`_ to exemplify the correction method.
+used in `van Holstein et al. (2019) <https://arxiv.org/abs/1909.13108>`_ to exemplify the correction method.
 
 To run the demo, change the current directory of the terminal to a directory of your choice and type:
 ::
@@ -32,7 +32,7 @@ and the limits to -500 to 1500 and -300 to 150, respectively, you will see the f
     :width: 750px
     :align: center
 	
-These images correspond to Figure 14 (left column) of `van Holstein et al. (2019) <ADS link>`_, 
+These images correspond to Figure 14 (left column) of `van Holstein et al. (2019) <https://arxiv.org/abs/1909.13108>`_, 
 but with lower signal-to-noise because for the demo the data of only 1 instead of 30 HWP cycles 
 was used.
 

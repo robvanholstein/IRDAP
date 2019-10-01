@@ -129,7 +129,7 @@ Basic PDI options
 
    ``True``, ``False`` (default = ``False``)
 
-   If ``True``, create final images of degree of linear polarization, normalized Stokes *q* and *u* (see `van Holstein et al. 2019 <ADS link>`_) and degree and angle of linear polarization computed from *q* and *u*: 
+   If ``True``, create final images of degree of linear polarization, normalized Stokes *q* and *u* (see `van Holstein et al. 2019 <https://arxiv.org/abs/1909.13108>`_) and degree and angle of linear polarization computed from *q* and *u*: 
    
    - *DoLP* = sqrt(*Q*\ :sup:`2`\ + *U*\ :sup:`2`\) / [0.5 (*I*\ :sub:`Q` + *I*\ :sub:`U`)]
    - *q* = *Q* / *I*\ :sub:`Q`
@@ -309,7 +309,7 @@ Advanced PDI options
 
    ``conventional``, ``normalized`` (default = ``conventional``)
 
-   Type of double difference to be computed. In almost all cases one would use ``conventional``. When there are large variations in atmospheric seeing and sky transparency among the measurements, using ``normalized`` can suppress spurious polarization signals and improve the quality of the final images (see `van Holstein et al. 2019 <ADS link>`_).
+   Type of double difference to be computed. In almost all cases one would use ``conventional``. When there are large variations in atmospheric seeing and sky transparency among the measurements, using ``normalized`` can suppress spurious polarization signals and improve the quality of the final images (see `van Holstein et al. 2019 <https://arxiv.org/abs/1909.13108>`_).
 
 .. _single_posang_north_up:
 
@@ -331,7 +331,7 @@ Advanced PDI options
    Variables not used anymore
 
 ..
-   py:function:: combination_method_polarization (``least squares`` or ``trimmed mean`` or ``median``): Method to be used to produce the incident Q- and U-images, i.e. the images that are corrected for the instrumental polarization effects. Valid values are ``least squares``, ``trimmed mean`` or ``median``. The recommended option is ``trimmed mean``. With ``least squares`` the images are obtained by solving for every pixel the system of equations describing the measurements using linear least squares (see Eq. 35 of `van Holstein et al. 2019 <ADS link>`_). With ``trimmed mean`` or ``median`` the images are obtained by solving the system of equations for each pair of double-difference Q- and U-images (each HWP cycle) separately, and then computing the trimmed mean or median over all resulting images. ``least squares`` is the most accurate option, but any unremoved bad pixels will still be visible in the images. Using ``median`` will remove these bad pixels, but is the least accurate option and also yields images with a lower signal-to-noise ratio as is clear from images of circumstellar disks. Using ``trimmed mean`` will yield images that have essentially the same accuracy and signal-to-noise ratio images produced using ``least squares``, but without the bad pixels. Therefore ``trimmed mean`` is the recommended option.
+   py:function:: combination_method_polarization (``least squares`` or ``trimmed mean`` or ``median``): Method to be used to produce the incident Q- and U-images, i.e. the images that are corrected for the instrumental polarization effects. Valid values are ``least squares``, ``trimmed mean`` or ``median``. The recommended option is ``trimmed mean``. With ``least squares`` the images are obtained by solving for every pixel the system of equations describing the measurements using linear least squares (see Eq. 35 of `van Holstein et al. 2019 <https://arxiv.org/abs/1909.13108>`_). With ``trimmed mean`` or ``median`` the images are obtained by solving the system of equations for each pair of double-difference Q- and U-images (each HWP cycle) separately, and then computing the trimmed mean or median over all resulting images. ``least squares`` is the most accurate option, but any unremoved bad pixels will still be visible in the images. Using ``median`` will remove these bad pixels, but is the least accurate option and also yields images with a lower signal-to-noise ratio as is clear from images of circumstellar disks. Using ``trimmed mean`` will yield images that have essentially the same accuracy and signal-to-noise ratio images produced using ``least squares``, but without the bad pixels. Therefore ``trimmed mean`` is the recommended option.
 
 ..
    py:function:: combination_method_intensity (``mean`` or ``trimmed mean`` or ``median``): Method to be used to produce the incident I_Q- and I_U-images. These images are computed by combining the I_Q- or I_U-images of all HWP cycles using the ``mean``, ``trimmed mean`` or ``median``. ``mean`` yields the most accurate images, but any unremoved bad pixels will still be visible in the images. Using ``median`` will remove these bad pixels, but is the least accurate option. ``trimmed mean`` produces images similar to ``mean``, but without the bad pixels. When using ``trimmed mean``, also check the input parameter **trimmed_mean_prop_to_cut_intens**. It is generally recommended to use either ``trimmed mean`` or ``mean``.
