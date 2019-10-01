@@ -7,9 +7,9 @@ Copyright (C) 2019 R.G. van Holstein
 Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
-When publishing data reduced with IRDAP, please cite van Holstein et al. 
-(2019): <ADS link>. 
-For data in pupil-tracking mode please additionally cite van Holstein et al. 
+When publishing data reduced with IRDAP, please cite van Holstein et al.
+(2019): <https://arxiv.org/abs/1909.13108>.
+For data in pupil-tracking mode please additionally cite van Holstein et al.
 (2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
 This program is free software: you can redistribute it and/or modify
@@ -23,17 +23,17 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
-'''   
+'''
 
 from setuptools import setup
 
 version = {}
 with open('irdap/version.py') as fp:
     exec(fp.read(), version)
-    
+
 with open("README.rst", "r") as fh:
     long_description = fh.read()
-    
+
 setup(
    name='irdap',
    version=version['__version__'],

@@ -9,7 +9,7 @@ Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al.
-(2019): <ADS link>.
+(2019): <https://arxiv.org/abs/1909.13108>.
 For data in pupil-tracking mode please additionally cite van Holstein et al.
 (2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
@@ -83,7 +83,7 @@ def main(args=None):
                                                  'typing irdap --demo. Note that an internet connection is required as a small\n' +
                                                  'amount of raw data needs to be downloaded.\n\n' +
                                                  'When publishing data reduced with IRDAP, please cite van Holstein et al.\n' +
-                                                 '(2019): <ADS link>.\n' +
+                                                 '(2019): <https://arxiv.org/abs/1909.13108>.\n' +
                                                  'For data in pupil-tracking mode please additionally cite van Holstein et al.\n' +
                                                  '(2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.',
                                      epilog='Full documentation: https://irdap.readthedocs.io\n' +
