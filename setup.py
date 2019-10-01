@@ -8,7 +8,7 @@ Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al.
-(2019): <https://arxiv.org/abs/1909.13108>.
+(2019): https://arxiv.org/abs/1909.13108.
 For data in pupil-tracking mode please additionally cite van Holstein et al.
 (2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 

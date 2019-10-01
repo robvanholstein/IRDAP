@@ -8,7 +8,7 @@ Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al.
-(2019): <https://arxiv.org/abs/1909.13108>.
+(2019): https://arxiv.org/abs/1909.13108.
 For data in pupil-tracking mode please additionally cite van Holstein et al.
 (2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
@@ -5758,7 +5758,7 @@ def run_pipeline(path_main_dir):
     printandlog('# Important notice')
     printandlog('###############################################################################')
     printandlog('\nWhen publishing data reduced with IRDAP, please cite van Holstein et al.')
-    printandlog('(2019): <https://arxiv.org/abs/1909.13108>.')
+    printandlog('(2019): https://arxiv.org/abs/1909.13108.')
     printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
     printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
     printandlog('\nFull documentation: https://robvanholstein.github.io/IRDAP')
@@ -6400,7 +6400,7 @@ def run_pipeline(path_main_dir):
     printandlog('# Important notice')
     printandlog('###############################################################################')
     printandlog('\nWhen publishing data reduced with IRDAP, please cite van Holstein et al.')
-    printandlog('(2019): <https://arxiv.org/abs/1909.13108>.')
+    printandlog('(2019): https://arxiv.org/abs/1909.13108.')
     printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
     printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
     printandlog('\nFull documentation: https://robvanholstein.github.io/IRDAP')
