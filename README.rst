@@ -19,7 +19,7 @@
 .. |license| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
     :target: https://github.com/robvanholstein/IRDAP/blob/master/LICENSE
 
-.. |ads1| image:: https://img.shields.io/badge/ADS-%3CADS%20link%3E-blueviolet.svg
+.. |ads1| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2019)-blueviolet
 	:target: https://arxiv.org/abs/1909.13108
 
 .. |ads2| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2017)-blueviolet.svg
