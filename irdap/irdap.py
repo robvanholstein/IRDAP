@@ -542,7 +542,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     # Extract headers
     header = [pyfits.getheader(x) for x in path_raw_files]
-    check_own_programs(header)
+#    check_own_programs(header)
 
     # Sort raw files and headers based on observation date in headers
     date_obs = [x['DATE-OBS'] for x in header]

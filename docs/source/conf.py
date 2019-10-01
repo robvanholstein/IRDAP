@@ -92,10 +92,12 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 
-html_theme_options = {                      
+html_theme_options = {
                       'titles_only': False,
-                      }
+                      'logo_only': True,
+                     }
 
+html_logo = 'figs/irdap_logo_blue.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

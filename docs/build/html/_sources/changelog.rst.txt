@@ -22,7 +22,7 @@ Changelog
    - Added ADI+PCA for polarimetric data reduction of pupil-tracking observations
 
 v1.0.0 September 2019, R.G. van Holstein:
- - Added analysis of master flux frame to enable the user to express the final images in contrast/arcsec^2 or Jansky/arcsec^2
+ - Added analysis of master flux frames to enable the user to express the final images in contrast/arcsec^2 or Jansky/arcsec^2
  - Restructered code and configuration file to allow for the separate execution of pre-processing, polarimetric differential imaging (previously referred to as post-processing) and angular differential imaging 
  - Added plot of center coordinates of center frames vs time
  - Added possibility to open documentation through terminal command :code:`irdap --website`
