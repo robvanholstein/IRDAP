@@ -58,7 +58,12 @@ from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
+from pca_imagecube import pca_imagecube
 from .version import __version__
+
+# to avoid some warning from pandas and matplotlib
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
 ###############################################################################
 # read_config_file
@@ -125,10 +130,10 @@ def read_config_file(path_config_file):
 #    adi_trimmed_mean_prop_to_cut = literal_eval(config.get('Basic ADI options', 'adi_trimmed_mean_prop_to_cut'))
 #    number_principal_components  = config_float_int(config.get('Basic ADI options', 'number_principal_components'))
 #    pca_radii                    = config_list_tuple(config.get('Basic ADI options', 'pca_radii'))
-    perform_adi                     = False
-    adi_trimmed_mean_prop_to_cut    = 0.1
+#    perform_adi                     = False # line deleted by JM for the implementation of PCA
+    adi_trimmed_mean_prop_to_cut    = 0.5
     number_principal_components     = 'companion'
-    pca_radii                       = [0, 20]
+    pca_radii                       = [0, 20,512]
 
     # Get parameters from [Advanced pre-processing options] section
     center_subtract_object    = config_true_false(config.get('Advanced pre-processing options', 'center_subtract_object'))
@@ -395,14 +400,16 @@ def check_own_programs(header):
     Function status: verified
     '''
 
-    own_programs = ['098.C-0790(A)',
-                    '0101.C-0502(A)',
-                    '0101.C-0502(B)',
-                    '0102.C-0871(A)',
-                    '0102.C-0916(A)',
-                    '0102.C-0916(B)',
-                    '0102.C-0916(C)',
-                    '2102.C-5016(B)']
+#    own_programs = ['098.C-0790(A)',
+#                    '0101.C-0502(A)',
+#                    '0101.C-0502(B)',
+#                    '0102.C-0871(A)',
+#                    '0102.C-0916(A)',
+#                    '0102.C-0916(B)',
+#                    '0102.C-0916(C)',
+#                    '2102.C-5016(B)']
+
+    own_programs = []    # for debugging purposes
 
     program_id = [x['ESO OBS PROG ID'] for x in header]
 
@@ -5083,8 +5090,92 @@ def apply_pdi(cube_left_frames,
 # adi_subfunction_1
 ###############################################################################
 
-def adi_subfunction_1(input_var):
-    print('do something')
+def adi_subtract_median(cube):
+    """
+    Subtracts the median frame from a cube
+    Input:
+        - cube: a cube of images
+    Output:
+        - residual cube after median subtraction
+    """
+    return cube - np.nanmedian(cube,axis=0)
+
+def adi_collapse_cube(cube,adi_trimmed_mean_prop_to_cut=0.5):
+    """
+    Computes the trimmed mean of a cube along the temporal direction.
+    Input:
+        - cube: a cube of images
+        - adi_trimmed_mean_prop_to_cut: if 0.5, it is equivalent to 
+                    taking the median. Otherwise expects
+                     a value between 0 (mean) and 0.5 (median) corresponding to the 
+                     fraction of frames to remove on both sides (lower side and upper side) before 
+                     computing the mean of the cube along the axis 0. For 
+                     trim=0.1 (default value), this removes 10% of the lowest and highest pixels
+                     along the third axis of the cube before collapsing the cube
+    Output:
+        - mean frame of the cube
+    """
+    if adi_trimmed_mean_prop_to_cut>=0.5:
+        return np.nanmedian(cube,axis=0)
+    elif adi_trimmed_mean_prop_to_cut<=0:
+        return np.nanmean(cube,axis=0)
+    else:          
+        return trim_mean(cube,adi_trimmed_mean_prop_to_cut,axis=0)
+
+def adi_derotate(cube,angles):
+    """
+    Derotates a cube of images
+    Input:
+        - cube: a cube of images
+        - angles: the list of angles to use for derotation. It should be a list 
+                of length the number of frames in the cube
+    Output:
+        - derotated cube
+    """
+    derotated_cube = np.zeros_like(cube)*np.nan
+    for i, (frame, angle) in enumerate(zip(cube, angles)):
+        derotated_cube[i, :, :] = rotate(frame, -angle, reshape=False,order=1,prefilter=False)
+    return derotated_cube
+
+def adi_apply_classical_adi(cube,angles,adi_trimmed_mean_prop_to_cut=0.5):
+    """
+    Input:
+        - cube: a cube of images
+        - angles: the list of angles to use for derotation. It should be a list 
+                of length the number of frames in the cube
+        - adi_trimmed_mean_prop_to_cut: if 0.5, it is equivalent to 
+                    taking the median. Otherwise expects
+                     a value between 0 (mean) and 0.5 (median) corresponding to the 
+                     fraction of frames to remove on both sides (lower side and upper side) before 
+                     computing the mean of the cube along the axis 0. For 
+                     trim=0.1 (default value), this removes 10% of the lowest and highest pixels
+                     along the third axis of the cube before collapsing the cube
+    Output:
+        - fimal image after applying classical ADI subtraction and derotation
+    """
+    return adi_collapse_cube(adi_derotate(adi_subtract_median(cube),angles),adi_trimmed_mean_prop_to_cut)
+
+def adi_apply_pca_adi(cube,angles,adi_trimmed_mean_prop_to_cut=0.5,method='cor',\
+                      radii=[0,20,100,500],verbose=False,number_principal_components=1):
+    """
+    Input:
+        - cube: a cube of images
+        - angles: the list of angles to use for derotation. It should be a list 
+                of length the number of frames in the cube
+        - adi_trimmed_mean_prop_to_cut: if 0.5, it is equivalent to 
+                    taking the median. Otherwise expects
+                     a value between 0 (mean) and 0.5 (median) corresponding to the 
+                     fraction of frames to remove on both sides (lower side and upper side) before 
+                     computing the mean of the cube along the axis 0. For 
+                     trim=0.1 (default value), this removes 10% of the lowest and highest pixels
+                     along the third axis of the cube before collapsing the cube
+    Output:
+        - fimal image after applying classical ADI subtraction and derotation
+    """
+    pca_object = pca_imagecube(cube,method=method,verbose=verbose,radii=radii,\
+                    path='.',name='tmp',header=None)
+    residuals_cube = pca_object.compute_residuals(truncation=number_principal_components,save=False)
+    return adi_collapse_cube(adi_derotate(residuals_cube,angles),adi_trimmed_mean_prop_to_cut)
 
 ###############################################################################
 # apply_adi
@@ -5094,9 +5185,9 @@ def apply_adi(cube_left_frames,
               cube_right_frames,
               header,
               file_index_object,
-              adi_trimmed_mean_prop_to_cut=0.1,
+              adi_trimmed_mean_prop_to_cut=0.5,
               number_principal_components='disk',
-              pca_radii=[0, 20]):
+              pca_radii=[20,100,500]):
     '''
     Perform angular differential imaging on the pre-processed data, both classical (cADI) and with
     principal component analysis (ADI+PCA), and save final images to FITS-files
@@ -5108,12 +5199,13 @@ def apply_adi(cube_left_frames,
 #TODO: from here check what you need and rewrite
         file_index_object: list of file indices of OBJECT-files (0-based)
         adi_trimmed_mean_prop_to_cut: fraction to cut off of both tails of the
-            distribution (default = 0.1) ...
+            distribution (default = 0.5, meaning we median-combine the cube).
         number_principal_components: number of principal components to subtract for the ADI+PCA
-            reduction. If 'disk', use 3, if 'companion', use 20.
+            reduction. If 'disk', use 3, if 'companion', use 20. As we actually cannot 
+            remove more components than the number of frames in the cube, this number
+            of components can be reduced if there are not enough frames
         pca_radii: list of inner and outer radii of annuli used to optimize principal
-            components over ... (default = [0, 20]). #TODO: rephrase, maybe include example,
-            e.g. [0, 20, 80, 200] and set default.
+            components over ... (default = [020,512]). 
 
     File written by Julien Milli; adapted by Rob van Holstein
     Function status:
@@ -5152,59 +5244,67 @@ def apply_adi(cube_left_frames,
 
     create_directories([path_adi_classical_dir, path_adi_pca_dir])
 
-    ###############################################################################
-    # Do something here
-    ###############################################################################
+    # Compute angles from headers
+    parang_start = [x['ESO TEL PARANG START'] for x in header]
+    parang_end= [x['ESO TEL PARANG END'] for x in header]
+    mean_parang = compute_mean_angle((parang_start,parang_end),axis=0)
+    derotation_angle = mean_parang+pupil_offset+true_north_correction
+    unwrapped_derotation_angle = np.rad2deg(np.unwrap(np.deg2rad(derotation_angle)))
+    amplitude_field_rotation = np.max(unwrapped_derotation_angle) - np.min(unwrapped_derotation_angle)
+    if amplitude_field_rotation<5:
+        printandlog('Warning, the amplitude of field rotation is limited to {0:.1f} deg, which will result in severe self-subtraction.'.format(amplitude_field_rotation))
+    else:
+        printandlog('The amplitude of field rotation for ADI reduction is {0:.1f} deg'.format(amplitude_field_rotation))
+        
+    nframes = len(derotation_angle)
 
-    printandlog('\n###############################################################################')
-    printandlog('# Do something here')
-    printandlog('###############################################################################')
-
-#TODO: Below should be changed as it is actually more complicated if there are less files than the
-# number of components. Also the docstring above needs to be changed.
     # Set number of principal components to be subtracted in case it is 'disk' or 'companion'
     if number_principal_components == 'disk':
         number_principal_components = 3
     elif number_principal_components == 'companion':
         number_principal_components = 20
-
- #TODO: Example on how to extract the angles from the headers. See also the first part of apply_pdi
-    # Compute angles from headers
-    something = [x['ESO SOMETHING'] for x in header]
-
+    if number_principal_components>nframes:
+        printandlog('The number of principal components for the PCA-ADI reduction was decreased from {0:d} to {1:d} because there are only {1:d} frames in the ADI cube'.format(number_principal_components,nframes))
+        number_principal_components = nframes
+    printandlog('The number of principal components removed for the PCA-ADI reduction is {0:d}.\n'.format(number_principal_components))
+    
     # Perform angular differential imaging separately for the left and right frames
-    for cube_frames in [cube_left_frames, cube_right_frames]:
-        #TODO: Julien's ADI magic here, if I understood correctly separate results for cADI and ADI+PCA
-        dummy = something + 2
-        frame = dummy + 3
-
+    cadi_combined_frame = np.zeros((1024,1024))
+    pca_adi_combined_frame = np.zeros((1024,1024))
+    for cube_frames, side in zip([cube_left_frames, cube_right_frames], ['left','right']):
         # Perform classical angular differential imaging
-        adi_trimmed_mean_prop_to_cut
-
+        printandlog('Performing classical ADI on the {0:s} channel...'.format(side))
+        file_name = 'cADI_'+side
+        frame_cadi = adi_apply_classical_adi(cube_frames,derotation_angle,\
+                                             adi_trimmed_mean_prop_to_cut=adi_trimmed_mean_prop_to_cut)
+        cadi_combined_frame = cadi_combined_frame+frame_cadi
         # Save final images and diagnostic figures
-
-        #TODO: similar as the end of apply_pdi function; name_file_root is a global variable; file_name is to be defined
-        file_name = '_cADI'
-        write_fits_files(data=frame, path=os.path.join(path_adi_classical_dir,
+        write_fits_files(data=frame_cadi, path=os.path.join(path_adi_classical_dir,
                                                        name_file_root + file_name + '.fits'),
                                                        header=False)
 
         # Similar for ADI+PCA
-        adi_trimmed_mean_prop_to_cut
-        number_principal_components
-        pca_radii
-
-        #TODO: note different directory
-        file_name = '_ADI+PCA'
-        write_fits_files(data=frame, path=os.path.join(path_adi_pca_dir,
+        printandlog('Performing PCA-ADI on the {0:s} channel...'.format(side))
+        frame_pca_adi = adi_apply_pca_adi(cube_frames,derotation_angle,\
+                                          adi_trimmed_mean_prop_to_cut=adi_trimmed_mean_prop_to_cut,\
+                                          method='cor',radii=pca_radii,\
+                                          verbose=False,\
+                                          number_principal_components=number_principal_components)
+        file_name = 'ADI+PCA_'+side
+        write_fits_files(data=frame_pca_adi, path=os.path.join(path_adi_pca_dir,
                                                        name_file_root + file_name + '.fits'),
                                                        header=False)
+        pca_adi_combined_frame = pca_adi_combined_frame+frame_pca_adi
 
-    # Add final images of left and right halves and save
-
-
-
-
+    # Save the final image
+    file_name = 'cADI_sum'
+    write_fits_files(data=cadi_combined_frame, path=os.path.join(path_adi_classical_dir,
+                                                   name_file_root + file_name + '.fits'),
+                                                   header=False)
+    file_name = 'PCA-ADI_sum'
+    write_fits_files(data=pca_adi_combined_frame, path=os.path.join(path_adi_classical_dir,
+                                                   name_file_root + file_name + '.fits'),
+                                                   header=False)
 
     # Final print statement needed for proper functioning of log file
     printandlog('\nEnd of angular differential imaging.')
@@ -6194,7 +6294,7 @@ def run_pipeline(path_main_dir):
     if type(adi_trimmed_mean_prop_to_cut) not in [int, float]:
         raise TypeError('\n\n\'adi_trimmed_mean_prop_to_cut\' should be of type int or float.')
 
-    if not 0 <= adi_trimmed_mean_prop_to_cut < 0.5:
+    if not 0 <= adi_trimmed_mean_prop_to_cut <= 0.5:
         raise ValueError('\n\n\'adi_trimmed_mean_prop_to_cut\' should be in range 0 <= adi_trimmed_mean_prop_to_cut < 0.5.')
 
     # number_principal_components

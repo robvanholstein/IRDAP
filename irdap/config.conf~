@@ -1,0 +1,34 @@
+[Basic pre-processing options]
+
+sigma_filtering                 = True
+object_collapse_ndit            = False
+object_centering_method         = automatic
+skip_preprocessing              = False
+frames_to_remove                = []
+
+[Basic post-processing options]
+
+annulus_star                    = automatic
+annulus_background              = large annulus
+normalized_polarization_images  = False
+
+[Advanced pre-processing options]
+# Generally do not need to be changed
+
+center_subtract_object          = True
+center_param_centering          = (12, None, 30000)
+object_center_coordinates       = automatic
+object_param_centering          = (60, None, 30000)
+flux_centering_method           = gaussian
+flux_center_coordinates         = (478, 522, 1504, 512)
+flux_param_centering            = (60, None, 30000)
+flux_annulus_background         = large annulus
+flux_annulus_star               = automatic
+
+[Advanced post-processing options]
+# Generally do not need to be changed
+
+double_difference_type          = conventional
+single_posang_north_up          = True
+adi				= False
+convert_in_contrast_per_arcsec2 = True
