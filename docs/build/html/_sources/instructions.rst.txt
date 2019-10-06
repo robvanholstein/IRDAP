@@ -55,12 +55,12 @@ After these initial steps, IRDAP will pre-process the OBJECT-files. To this end,
 A cube of master flux frames is created for the left and right detector halves by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flux frames. 
 
 .. hint::
-   IRDAP automatically determines the reference fluxes from the master flux frames and writes them to a CSV-file. These references fluxes can be used to convert the final images produced by IRDAP (e.g. the *I*\ :sub:`Q`- or *Q*:math:`_\phi`-images) from units of counts (ADU) into units of contrast/arcsec\ :sup:`2`. If the user can determine the stellar flux in Jansky, the final images can be expressed in Jansky/arcsec\ :sup:`2` (see the log file created by IRDAP for more details).
+   IRDAP automatically determines the reference fluxes from the master flux frames and writes them to a CSV-file. These references fluxes can be used to convert the final images produced by IRDAP (e.g. the *I*\ :sub:`Q`- or *Q*:math:`_\phi`-images) from units of counts (ADU) into units of contrast/arcsec\ :sup:`2`. If the user can determine the stellar flux in Jansky, the final images can be expressed in Jansky/arcsec\ :sup:`2`. See the log file created by IRDAP for more details.
 
 The pre-processed OBJECT-data is written to the subdirectory ``preprocessed`` and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory ``calibration``.
 
 .. important::
-   In case the pre-processed OBJECT- or FLUX-data is not correctly centered, IRDAP should be run again after adapting the :ref:`Advanced pre-processing options` of the configuration file.
+	Always check the FITS-files and figures that IRDAP writes to the subdirectories ``calibration`` and ``preprocessed``. In case the pre-processed OBJECT- or FLUX-data is not correctly centered, IRDAP should be run again after removing images of bad quality and/or adapting the :ref:`Advanced pre-processing options` of the configuration file.
 
 PDI in a nutshell
 -----------------
