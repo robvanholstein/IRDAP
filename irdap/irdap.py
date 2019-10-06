@@ -58,13 +58,13 @@ from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
 from skimage.feature import register_translation
-from pca_imagecube import pca_imagecube
 from .version import __version__
+from .pca_adi import pca_adi
 
 # to avoid some warning from pandas and matplotlib
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
-
+    
 ###############################################################################
 # read_config_file
 ###############################################################################
@@ -125,15 +125,9 @@ def read_config_file(path_config_file):
     normalized_polarization_images = config_true_false(config.get('Basic PDI options', 'normalized_polarization_images'))
 
     # Get parameters from [Basic ADI options] section
-#TODO: Julien: change back for implementation of ADI
     perform_adi                  = config_true_false(config.get('Basic ADI options', 'perform_adi'))
-#    adi_trimmed_mean_prop_to_cut = literal_eval(config.get('Basic ADI options', 'adi_trimmed_mean_prop_to_cut'))
-#    number_principal_components  = config_float_int(config.get('Basic ADI options', 'number_principal_components'))
-#    pca_radii                    = config_list_tuple(config.get('Basic ADI options', 'pca_radii'))
-#    perform_adi                     = False # line deleted by JM for the implementation of PCA
-    adi_trimmed_mean_prop_to_cut    = 0.5
-    number_principal_components     = 'companion'
-    pca_radii                       = [0, 20,512]
+    principal_components         = config_list_tuple(config.get('Basic ADI options', 'principal_components'))
+    pca_radii                    = config_list_tuple(config.get('Basic ADI options', 'pca_radii'))
 
     # Get parameters from [Advanced pre-processing options] section
     center_subtract_object    = config_true_false(config.get('Advanced pre-processing options', 'center_subtract_object'))
@@ -160,8 +154,7 @@ def read_config_file(path_config_file):
            annulus_background, \
            normalized_polarization_images, \
            perform_adi, \
-           adi_trimmed_mean_prop_to_cut, \
-           number_principal_components, \
+           principal_components, \
            pca_radii, \
            center_subtract_object, \
            center_param_centering, \
@@ -409,7 +402,7 @@ def check_own_programs(header):
 #                    '0102.C-0916(C)',
 #                    '2102.C-5016(B)']
 
-    own_programs = []    # for debugging purposes
+    own_programs = []    # fTODO: remove that, this was here for debugging purposes
 
     program_id = [x['ESO OBS PROG ID'] for x in header]
 
@@ -3512,7 +3505,7 @@ def preprocess_data(frames_to_remove=[],
                     ' showing for each FLUX-file the ratios of the transmission and DIT of the OBJECT- and FLUX-files, and the measured' +
                     ' star total flux in ADU of the left and right frame halves and the left + right frame halves. The file ' +
                     ' also shows the reference fluxes which are the products star_total_flux * transmission_ratio * dit_ratio.' +
-                    ' To express the final images produced by IRDAP (e.g. the I_Q- or Qphi-images) in Jansky per arcsec^2,' +
+                    ' To express the final images produced by IRDAP (e.g. the I_Q-, Qphi- or ADI images) in Jansky per arcsec^2,' +
                     ' determine the star flux in Jansky in the corresponding filter, and multiply the final images by the factor' +
                     ' star_flux_in_jansky / (reference_flux_left+right * pixel_scale^2).')
 
@@ -5087,7 +5080,7 @@ def apply_pdi(cube_left_frames,
     printandlog('\nEnd of polarimetric differential imaging.')
 
 ###############################################################################
-# adi_subfunction_1
+# adi_subfunctions
 ###############################################################################
 
 def adi_subtract_median(cube):
@@ -5100,27 +5093,15 @@ def adi_subtract_median(cube):
     """
     return cube - np.nanmedian(cube,axis=0)
 
-def adi_collapse_cube(cube,adi_trimmed_mean_prop_to_cut=0.5):
+def adi_collapse_cube(cube):
     """
-    Computes the trimmed mean of a cube along the temporal direction.
+    Computes the median of a cube along the temporal direction.
     Input:
         - cube: a cube of images
-        - adi_trimmed_mean_prop_to_cut: if 0.5, it is equivalent to 
-                    taking the median. Otherwise expects
-                     a value between 0 (mean) and 0.5 (median) corresponding to the 
-                     fraction of frames to remove on both sides (lower side and upper side) before 
-                     computing the mean of the cube along the axis 0. For 
-                     trim=0.1 (default value), this removes 10% of the lowest and highest pixels
-                     along the third axis of the cube before collapsing the cube
     Output:
         - mean frame of the cube
     """
-    if adi_trimmed_mean_prop_to_cut>=0.5:
-        return np.nanmedian(cube,axis=0)
-    elif adi_trimmed_mean_prop_to_cut<=0:
-        return np.nanmean(cube,axis=0)
-    else:          
-        return trim_mean(cube,adi_trimmed_mean_prop_to_cut,axis=0)
+    return np.nanmedian(cube,axis=0)
 
 def adi_derotate(cube,angles):
     """
@@ -5134,60 +5115,59 @@ def adi_derotate(cube,angles):
     """
     derotated_cube = np.zeros_like(cube)*np.nan
     for i, (frame, angle) in enumerate(zip(cube, angles)):
-        derotated_cube[i, :, :] = rotate(frame, -angle, reshape=False,order=1,prefilter=False)
+        derotated_cube[i, :, :] = rotate(frame, -angle, reshape=False)#,order=1,prefilter=False)
     return derotated_cube
 
-def adi_apply_classical_adi(cube,angles,adi_trimmed_mean_prop_to_cut=0.5):
+def adi_apply_classical_adi(cube,angles):
     """
+    Performs the 3 steps of classical ADI: remove the median, derotate the images
+    and median-combined the resulting cube.
     Input:
         - cube: a cube of images
         - angles: the list of angles to use for derotation. It should be a list 
                 of length the number of frames in the cube
-        - adi_trimmed_mean_prop_to_cut: if 0.5, it is equivalent to 
-                    taking the median. Otherwise expects
-                     a value between 0 (mean) and 0.5 (median) corresponding to the 
-                     fraction of frames to remove on both sides (lower side and upper side) before 
-                     computing the mean of the cube along the axis 0. For 
-                     trim=0.1 (default value), this removes 10% of the lowest and highest pixels
-                     along the third axis of the cube before collapsing the cube
     Output:
         - fimal image after applying classical ADI subtraction and derotation
     """
-    return adi_collapse_cube(adi_derotate(adi_subtract_median(cube),angles),adi_trimmed_mean_prop_to_cut)
+    return adi_collapse_cube(adi_derotate(adi_subtract_median(cube),angles))
 
-def adi_apply_pca_adi(cube,angles,adi_trimmed_mean_prop_to_cut=0.5,method='cor',\
-                      radii=[0,20,100,500],verbose=False,number_principal_components=1):
+def adi_apply_pca_adi(cube,angles,radii=[10,512],\
+                      verbose=False,principal_components=[4]):
     """
+    Performs a full PCA-ADI reduction, calling the pca_adi object defined 
+    in a auxilary file.
     Input:
         - cube: a cube of images
         - angles: the list of angles to use for derotation. It should be a list 
                 of length the number of frames in the cube
-        - adi_trimmed_mean_prop_to_cut: if 0.5, it is equivalent to 
-                    taking the median. Otherwise expects
-                     a value between 0 (mean) and 0.5 (median) corresponding to the 
-                     fraction of frames to remove on both sides (lower side and upper side) before 
-                     computing the mean of the cube along the axis 0. For 
-                     trim=0.1 (default value), this removes 10% of the lowest and highest pixels
-                     along the third axis of the cube before collapsing the cube
+        - radii: the list of radii defining the annuli in which the PCA is to be done.
+        - principal_components: the number of principal components to remove. It should be 
+            an array. By default removes 4 components.
+        - verbose: True or False for additional terminal output
     Output:
         - fimal image after applying classical ADI subtraction and derotation
     """
-    pca_object = pca_imagecube(cube,method=method,verbose=verbose,radii=radii,\
-                    path='.',name='tmp',header=None)
-    residuals_cube = pca_object.compute_residuals(truncation=number_principal_components,save=False)
-    return adi_collapse_cube(adi_derotate(residuals_cube,angles),adi_trimmed_mean_prop_to_cut)
+    pca_object = pca_adi(cube,method='cor',verbose=verbose,radii=radii)
+    nb_components=len(principal_components)
+    pca_adi_result = np.ndarray((nb_components,1024,1024),dtype=float)
+    x_array = np.arange(1024)-511.5
+    y_array = np.arange(1024)-511.5
+    xx_array,yy_array=np.meshgrid(x_array,y_array)
+    distarr = np.abs(xx_array+1j*yy_array)    
+    for i,principal_component in enumerate(principal_components):
+        residuals_cube = pca_object.compute_residuals(truncation=principal_component) 
+        residuals_cube[~np.isfinite(residuals_cube)] = 0
+        pca_final_image = adi_collapse_cube(adi_derotate(residuals_cube,angles))
+        pca_final_image[distarr>np.max(radii)] = np.nan
+        pca_adi_result[i,:,:] = pca_final_image
+    return pca_adi_result.squeeze()
 
 ###############################################################################
 # apply_adi
 ###############################################################################
 
-def apply_adi(cube_left_frames,
-              cube_right_frames,
-              header,
-              file_index_object,
-              adi_trimmed_mean_prop_to_cut=0.5,
-              number_principal_components='disk',
-              pca_radii=[20,100,500]):
+def apply_adi(cube_left_frames,cube_right_frames,header,\
+              principal_components='disk',pca_radii=[10,512]):
     '''
     Perform angular differential imaging on the pre-processed data, both classical (cADI) and with
     principal component analysis (ADI+PCA), and save final images to FITS-files
@@ -5196,47 +5176,16 @@ def apply_adi(cube_left_frames,
         cube_left_frames: cube of pre-processed left frames
         cube_right_frames: cube of pre-processed right frames
         header: list of FITS-headers of OBJECT-files
-#TODO: from here check what you need and rewrite
-        file_index_object: list of file indices of OBJECT-files (0-based)
-        adi_trimmed_mean_prop_to_cut: fraction to cut off of both tails of the
-            distribution (default = 0.5, meaning we median-combine the cube).
-        number_principal_components: number of principal components to subtract for the ADI+PCA
-            reduction. If 'disk', use 3, if 'companion', use 20. As we actually cannot 
+        principal_components: list of principal components to subtract for the ADI+PCA
+            reduction. If 'disk', use 4, if 'companion', use 16. As we actually cannot 
             remove more components than the number of frames in the cube, this number
             of components can be reduced if there are not enough frames
         pca_radii: list of inner and outer radii of annuli used to optimize principal
-            components over ... (default = [020,512]). 
+            components over ... (default = [20,512]). 
 
     File written by Julien Milli; adapted by Rob van Holstein
     Function status:
     '''
-
-#TODO: Points to consider:
-# - The whole pipeline should already work for ADI, i.e. for a PT data set a reduction enters this
-#   apply_adi function so you should be able to easily test it.
-# - Please write the subfunctions you need for perform_adi (if any) above this function
-# - Note that in cube_left_frames we have already computed the mean over the
-#   NDIT frames of each file, i.e. cube_left_frames contains the same number of
-#   frames as there are OBJECT FITS-files. I know this makes the ADI less good,
-#   but data sets with NDIT > 1 are not very common for polarimetry and saving all
-#   frames would cost a lot of rewriting + storage space. IRDAP should give a first
-#   good ADI reduction. If someone wants a perfect ADI reduction he should use
-#   another pipeline, and then he can also do fake planet injection.
-# - I have added file_index_object too in case you for example want to make
-#   a graph showing some property as a function of file number.
-# - Global variables you should use for saving FITS-files and figures:
-#    o path_adi_classical_dir
-#    o path_reduced_adipca_dir
-#    o name_file_root
-# - When do you use adi_trimmed_mean_prop_to_cut exactly? If it is not really needed, I'd prefer
-#   removing it as an input parameter to limit the number of parameters in the config file. Perhaps
-#   a value of 0.1 always works.
-# - If we have number_principal_components as an input parameter, you need to rerun IRDAP several
-#   times at least to get the result you want. Could we perhaps implement instead that IRDAP
-#   automatically produces a cube of frames with different number of principal components
-#   subtracted? That would be really neat. Maybe we can then turn this input parameter into a
-#   list with a start and end value of the range of number of principal components to be
-#   subtracted.
 
    ###############################################################################
     # Create directories
@@ -5254,19 +5203,26 @@ def apply_adi(cube_left_frames,
     if amplitude_field_rotation<5:
         printandlog('Warning, the amplitude of field rotation is limited to {0:.1f} deg, which will result in severe self-subtraction.'.format(amplitude_field_rotation))
     else:
-        printandlog('The amplitude of field rotation for ADI reduction is {0:.1f} deg'.format(amplitude_field_rotation))
-        
+        printandlog('The amplitude of field rotation for ADI reduction is {0:.1f} deg'.format(amplitude_field_rotation))        
     nframes = len(derotation_angle)
-
     # Set number of principal components to be subtracted in case it is 'disk' or 'companion'
-    if number_principal_components == 'disk':
-        number_principal_components = 3
-    elif number_principal_components == 'companion':
-        number_principal_components = 20
-    if number_principal_components>nframes:
-        printandlog('The number of principal components for the PCA-ADI reduction was decreased from {0:d} to {1:d} because there are only {1:d} frames in the ADI cube'.format(number_principal_components,nframes))
-        number_principal_components = nframes
-    printandlog('The number of principal components removed for the PCA-ADI reduction is {0:d}.\n'.format(number_principal_components))
+    if principal_components == 'disk':
+        principal_components = [2,4]
+    elif principal_components == 'companion':
+        principal_components = [10,16]
+    principal_components = np.asarray(principal_components,dtype=int)
+    
+    if len(np.where(principal_components>=nframes)[0])>0:
+        new_principal_components = np.delete(principal_components,np.where(principal_components>=nframes)[0])
+        if len(new_principal_components)<1:
+            new_principal_components = np.array((1,nframes//2))
+        printandlog('The number of principal components for the PCA-ADI reduction was decreased from {0:s} to {1:s} because there are only {1:d} frames in the ADI cube'.format(\
+                    '-'.join('{0:d}'.format(k) for k in principal_components),\
+                    '-'.join('{0:d}'.format(k) for k in new_principal_components),\
+                    nframes))
+        principal_components = new_principal_components
+    description_principal_components = '-'.join(map(str,principal_components))
+    printandlog('The number of principal components removed for the PCA-ADI reduction is {0:s}.\n'.format(description_principal_components))
     
     # Perform angular differential imaging separately for the left and right frames
     cadi_combined_frame = np.zeros((1024,1024))
@@ -5275,8 +5231,7 @@ def apply_adi(cube_left_frames,
         # Perform classical angular differential imaging
         printandlog('Performing classical ADI on the {0:s} channel...'.format(side))
         file_name = 'cADI_'+side
-        frame_cadi = adi_apply_classical_adi(cube_frames,derotation_angle,\
-                                             adi_trimmed_mean_prop_to_cut=adi_trimmed_mean_prop_to_cut)
+        frame_cadi = adi_apply_classical_adi(cube_frames,derotation_angle)
         cadi_combined_frame = cadi_combined_frame+frame_cadi
         # Save final images and diagnostic figures
         write_fits_files(data=frame_cadi, path=os.path.join(path_adi_classical_dir,
@@ -5286,11 +5241,9 @@ def apply_adi(cube_left_frames,
         # Similar for ADI+PCA
         printandlog('Performing PCA-ADI on the {0:s} channel...'.format(side))
         frame_pca_adi = adi_apply_pca_adi(cube_frames,derotation_angle,\
-                                          adi_trimmed_mean_prop_to_cut=adi_trimmed_mean_prop_to_cut,\
-                                          method='cor',radii=pca_radii,\
-                                          verbose=False,\
-                                          number_principal_components=number_principal_components)
-        file_name = 'ADI+PCA_'+side
+                            radii=pca_radii,verbose=False,\
+                            principal_components=principal_components)
+        file_name = 'ADI+PCA_'+description_principal_components+'_'+side
         write_fits_files(data=frame_pca_adi, path=os.path.join(path_adi_pca_dir,
                                                        name_file_root + file_name + '.fits'),
                                                        header=False)
@@ -5301,13 +5254,16 @@ def apply_adi(cube_left_frames,
     write_fits_files(data=cadi_combined_frame, path=os.path.join(path_adi_classical_dir,
                                                    name_file_root + file_name + '.fits'),
                                                    header=False)
-    file_name = 'PCA-ADI_sum'
-    write_fits_files(data=pca_adi_combined_frame, path=os.path.join(path_adi_classical_dir,
+    file_name = 'PCA-ADI_'+description_principal_components+'_sum'
+    write_fits_files(data=pca_adi_combined_frame, path=os.path.join(path_adi_pca_dir,
                                                    name_file_root + file_name + '.fits'),
                                                    header=False)
 
     # Final print statement needed for proper functioning of log file
-    printandlog('\nEnd of angular differential imaging.')
+    printandlog('\nEnd of angular differential imaging. When converting the ADI'+\
+                ' final images to contrast in mJy/arcsec^2 or to point-source contrast'+\
+                ' keep in mind the flux self-subtraction induced by ADI. '+\
+                'Calibration of the self-subtraction is not part of the IRDAP pipeline.')
 
 ###############################################################################
 # run_demo
@@ -5892,8 +5848,7 @@ def run_pipeline(path_main_dir):
     annulus_background, \
     normalized_polarization_images, \
     perform_adi, \
-    adi_trimmed_mean_prop_to_cut, \
-    number_principal_components, \
+    principal_components, \
     pca_radii, \
     center_subtract_object, \
     center_param_centering, \
@@ -5970,7 +5925,7 @@ def run_pipeline(path_main_dir):
             config_file_lines[n_preproc2:n_preproc3] = config_file_lines_old[n_preproc2:n_preproc3]
 
         if perform_pdi == False:
-            # Define indices of lines pertaining to pre-processing input parameters
+            # Define indices of lines pertaining to pdi input parameters
             n_pdi0 = config_file_lines.index('[Basic PDI options]\n') + 2
             n_pdi1 = config_file_lines.index('[Basic ADI options]\n') - 1
             n_pdi2 = config_file_lines.index('[Advanced PDI options]\n') + 3
@@ -5981,7 +5936,7 @@ def run_pipeline(path_main_dir):
             config_file_lines[n_pdi2:n_pdi3] = config_file_lines_old[n_pdi2:n_pdi3]
 
         if perform_adi == False:
-            # Define indices of lines pertaining to pre-processing input parameters
+            # Define indices of lines pertaining to adi input parameters
             n_adi0 = config_file_lines.index('[Basic ADI options]\n') + 2
             n_adi1 = config_file_lines.index('[Advanced pre-processing options]\n') - 1
 
@@ -6290,23 +6245,22 @@ def run_pipeline(path_main_dir):
     if normalized_polarization_images not in [True, False]:
         raise ValueError('\n\n\'normalized_polarization_images\' should be either True or False.')
 
-    # adi_trimmed_mean_prop_to_cut
-    if type(adi_trimmed_mean_prop_to_cut) not in [int, float]:
-        raise TypeError('\n\n\'adi_trimmed_mean_prop_to_cut\' should be of type int or float.')
+    # principal_components    
+    if type(principal_components) not in [str, list]:
+        raise TypeError('\n\n\'principal_components\' should be \'disk\', \'companion\' or a list of positive integers')
 
-    if not 0 <= adi_trimmed_mean_prop_to_cut <= 0.5:
-        raise ValueError('\n\n\'adi_trimmed_mean_prop_to_cut\' should be in range 0 <= adi_trimmed_mean_prop_to_cut < 0.5.')
+    if principal_components == []:
+        raise TypeError('\n\n\'principal_components\' should be \'disk\', \'companion\' or a list of positive integers')
 
-    # number_principal_components
-    if type(number_principal_components) not in [int, str]:
-        raise TypeError('\n\n\'number_principal_components\' should be \'companion\', \'disk\' or a positive integer.')
+    if type(principal_components) is str and principal_components != 'disk' and principal_components != 'companion':
+        raise TypeError('\n\n\'principal_components\' should be \'disk\', \'companion\' or a List of positive integers')
 
-    if type(number_principal_components) is str and number_principal_components not in ['companion', 'disk']:
-        raise ValueError('\n\n\'number_principal_components\' should be \'companion\', \'disk\' or a positive integer.')
+    if  type(principal_components) is list and any([type(x) is not int for x in principal_components]):
+        raise TypeError('\n\n\'principal_components\' should be \'disk\', \'companion\' or a list of positive integers')
 
-    if type(number_principal_components) is int and number_principal_components < 1:
-        raise ValueError('\n\n\'number_principal_components\' should be \'companion\', \'disk\' or a positive integer.')
-
+    if type(principal_components) is list and any([x<=0 for x in principal_components]):
+        raise TypeError('\n\n\'principal_components\' should be \'disk\', \'companion\' or a list of STRICTLY positive integers')
+    
     # pca_radii
     if type(pca_radii) is not list:
         raise TypeError('\n\n\'pca_radii\' should be a list of at least length 2 containing positive and increasing integers (including 0).')
@@ -6480,9 +6434,7 @@ def run_pipeline(path_main_dir):
         apply_adi(cube_left_frames=cube_left_frames,
                   cube_right_frames=cube_right_frames,
                   header=header,
-                  file_index_object=file_index_object,
-                  adi_trimmed_mean_prop_to_cut=adi_trimmed_mean_prop_to_cut,
-                  number_principal_components=number_principal_components,
+                  principal_components=principal_components,
                   pca_radii=pca_radii)
 
     elif perform_adi == False and log_file_lines_adi != None:
