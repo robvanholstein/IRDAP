@@ -1,27 +1,16 @@
-# For a detailed explanation of each input parameter and
-# the options of the configuration file, see:
-# https://irdap.readthedocs.io/en/latest/configfile.html
-
 [Basic pre-processing options]
 
-perform_preprocessing           = True
 sigma_filtering                 = True
 object_collapse_ndit            = False
 object_centering_method         = automatic
+skip_preprocessing              = False
 frames_to_remove                = []
 
-[Basic PDI options]
+[Basic post-processing options]
 
-perform_pdi                     = True
 annulus_star                    = automatic
 annulus_background              = large annulus
 normalized_polarization_images  = False
-
-[Basic ADI options]
-
-perform_adi                     = False
-principal_components		= disk
-pca_radii			= [20,100,512]
 
 [Advanced pre-processing options]
 # Generally do not need to be changed
@@ -36,8 +25,10 @@ flux_param_centering            = (60, None, 30000)
 flux_annulus_background         = large annulus
 flux_annulus_star               = automatic
 
-[Advanced PDI options]
+[Advanced post-processing options]
 # Generally do not need to be changed
 
 double_difference_type          = conventional
 single_posang_north_up          = True
+adi				= False
+convert_in_contrast_per_arcsec2 = True
