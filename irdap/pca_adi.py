@@ -1,13 +1,38 @@
-"""
-Author: Julien Milli (julien.milli@mines-paris.org)
-"""
+'''
+This file contains all ADI+PCA auxiliary functions used by IRDAP.
+File written by Julien Milli (julien.milli@mines-paris.org).
+
+IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
+Copyright (C) 2019 R.G. van Holstein
+
+Full documentation: https://irdap.readthedocs.io
+Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
+
+When publishing data reduced with IRDAP, please cite van Holstein et al.
+(2019): https://arxiv.org/abs/1909.13108.
+For data in pupil-tracking mode please additionally cite van Holstein et al.
+(2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+'''
+
 import numpy as np
 
 class pca_adi(object):
     """
-    Wrapper for the pca class that can handle cubes of images. 
-    It flattens the images into 1D vectors referred to attributes. The pixels of 
-    the images are referred to as objects. We therefore end up with a 2D 
+    Wrapper for the pca class that can handle cubes of images.
+    It flattens the images into 1D vectors referred to attributes. The pixels of
+    the images are referred to as objects. We therefore end up with a 2D
     maxtrix of Nobj objects (rows) by Katt attributes (columns) that is the starting
     point for the PCA, implemented in another class called pca.
     """
@@ -17,10 +42,10 @@ class pca_adi(object):
         Constructor of the pca_imagecube class.
         Input:
             - datacube: a 3d numpy array
-            - method: 'cov' for covariance (default option), 'cor' for correlation 
+            - method: 'cov' for covariance (default option), 'cor' for correlation
                 or 'ssq' for sum of squares
             - verbose: True or False if you want some information printed on the terminal
-            - radii: an array containing the radii in pixels of the annuli in 
+            - radii: an array containing the radii in pixels of the annuli in
                 which the PCA must be calculated. For instance: radii=[10,100,200] means
                 the PCA will be computed in 2 annuli defined by 10px-100px and 100px-200px.
                 By default, assumes te whole image is used.
@@ -56,15 +81,15 @@ class pca_adi(object):
             self.pca_array.append(pca(data,method=method,verbose=verbose))
             if verbose:
                 self.pca_array[i].print_explained_inertia(modes=5)
-                
+
     def compute_residuals(self,truncation=None):
         """
         Reconstructs the datacube, by applying a (truncated) pca and subtract
         the reconstructed data cube from the data themselves to obtain the
-        residuals. 
+        residuals.
         Input:
             - truncation: integer that should be smaller than the number of frames
-                            to perform the truncation of the data. If none, use 
+                            to perform the truncation of the data. If none, use
                             all the frames.
         Output:
             - residuals_datacube:
@@ -74,18 +99,18 @@ class pca_adi(object):
             residuals_data = self.pca_array[i].project_and_subtract(truncation=truncation)
             residuals_datacube[:,self.y_indices_array[i],self.x_indices_array[i]] = \
                 residuals_data.T
-        return residuals_datacube        
-                    
+        return residuals_datacube
+
 class pca(object):
     """
-    Object pca. 
+    Object pca.
     The attributes of the object are:
         - matrix: the data matrix (after centring and normalisation if desired)
                 Its shape is (Nobj,Katt) i.e. Nobj objects (lines) and Katt attributes
                 (columns)
         - Nobj: the number of objects of the PCA
         - Katt: the number of attributes of the PCA
-        - method: the type of PCA to perform: 'cov' (covariance, by default), 
+        - method: the type of PCA to perform: 'cov' (covariance, by default),
                 'cor' for correlation or 'ssq' (sum of squares)
         - inertia_matrix: the inertia matrix (e.g. covariance matrix, correlation
                         matrix or sum of squares matrix, depending of the PCA
@@ -97,11 +122,11 @@ class pca(object):
                     is (Katt,Katt)
         - pc: the principal components. Its shape is (Nobj,Katt)
     """
-    
+
     def __init__(self,data,method='cov',verbose=True):
         """
-        Constructor of the pca class. It checks the format of the input data matrix 
-        and builds the covariance/correlation/sum of squares matrix. 
+        Constructor of the pca class. It checks the format of the input data matrix
+        and builds the covariance/correlation/sum of squares matrix.
         Then it computes the principal components.
         Input:
             - data: a 2d numpy array of shape (Nobj,Katt) i.e with Katt columns and
@@ -117,12 +142,12 @@ class pca(object):
         self.Nobj,self.Katt = data.shape
         self.method=method
         if self.method == 'cov':
-            self.mean_att = np.nanmean(data,axis=0) #mean of each attribute, size Katt 
+            self.mean_att = np.nanmean(data,axis=0) #mean of each attribute, size Katt
             self.matrix = data-self.mean_att
         elif self.method == 'cor':
-            self.mean_att = np.nanmean(data,axis=0) #mean of each attribute, size Katt 
+            self.mean_att = np.nanmean(data,axis=0) #mean of each attribute, size Katt
             self.std_att = np.nanstd(data,axis=0) #std of each attribute, size Katt
-            self.matrix = (data-self.mean_att)/self.std_att            
+            self.matrix = (data-self.mean_att)/self.std_att
         elif self.method == 'ssq':
             self.matrix = data
         else:
@@ -132,9 +157,9 @@ class pca(object):
             print('Method chosen: {0:s}'.format(self.method))
             print('There are {0:d} objects (rows) and {1:d} attributes (columns)'.format(self.Nobj,self.Katt))
             print('Computing the {0:d}x{0:d} inertia matrix...'.format(self.Katt))
-        self.inertia_matrix = np.dot(self.matrix.T,self.matrix)/self.Nobj      
+        self.inertia_matrix = np.dot(self.matrix.T,self.matrix)/self.Nobj
         if verbose:
-            print('Done')            
+            print('Done')
         self.total_inertia = np.trace(self.inertia_matrix)
         eigenval, eigenvect = np.linalg.eigh(self.inertia_matrix)    # eigenvalues and eigenvectors
         self.eigenval = eigenval[::-1] # we re-order the eigenvalues by decreasing order
@@ -144,13 +169,13 @@ class pca(object):
         self.pc = self._compute_principal_components()
         if verbose:
             print('Done')
-        
+
     def get_eigenvect(self,truncation=None):
         """
         Returns the eigenvectors, truncated if desired
         Input:
-            - trunaction: None (by default) to return all eigenvectors (matrix of 
-            shape (Katt,Katt)) or integer smaller or equal that Katt to return a 
+            - trunaction: None (by default) to return all eigenvectors (matrix of
+            shape (Katt,Katt)) or integer smaller or equal that Katt to return a
             truncated matrix of shape (trnucation,Katt).
         """
         if truncation is None:
@@ -161,18 +186,18 @@ class pca(object):
             else:
                 print("Can't truncate by more than {0:d}".format(self.Katt))
                 return
-    
+
     def _compute_principal_components(self):
         """
-        Compute and return the principal components. The principal components 
+        Compute and return the principal components. The principal components
         is a matrix of shape (Nobj,Katt)
         """
-        return np.dot(self.matrix,self.eigenvect)   
+        return np.dot(self.matrix,self.eigenvect)
 
     def get_principal_components(self,truncation=None):
         """
         Returns the principal components, optionnally after truncating
-        a certain number of modes. The principal components is a matrix of shape 
+        a certain number of modes. The principal components is a matrix of shape
         (Nobj,Katt) if truncation is None, or of shape (Nobj,truncation) if truncation
         is an integer.
         Input:
@@ -184,7 +209,7 @@ class pca(object):
         else:
             if truncation>self.Katt:
                 print("Can't truncate by more than {0:d}".format(self.Katt))
-                return            
+                return
             else:
                 return self.pc[:,0:truncation]
 
@@ -195,12 +220,12 @@ class pca(object):
             - truncation: None (by default) to use all vectors or an integer smaller
                         than Katt to truncate the number of modes.
         Output:
-            - the projected matrix of shape (Ndata,Katt) 
+            - the projected matrix of shape (Ndata,Katt)
         """
         matrix_projected  = np.dot(\
                     self.get_principal_components(truncation=truncation),\
                     self.get_eigenvect(truncation=truncation).T)
-        return matrix_projected                
+        return matrix_projected
 
     def project_data(self,truncation=None):
         """
@@ -210,7 +235,7 @@ class pca(object):
         - truncation: None (by default) to use all vectors or an integer smaller
                         than Katt to truncate the number of modes.
         Output:
-            - the projected data of shape (Ndata,Katt) 
+            - the projected data of shape (Ndata,Katt)
         """
         reconstructed_matrix = self.project_matrix(truncation=truncation)
         if self.method == 'cov':
@@ -222,20 +247,20 @@ class pca(object):
 
     def project_and_subtract(self,truncation=None):
         """
-        Function that calls the project_data function to get the projected 
-        data points and then subtract this result from the data to obtain the 
+        Function that calls the project_data function to get the projected
+        data points and then subtract this result from the data to obtain the
         residuals.
         Input:
             - truncation: None (by default) to use all vectors or an integer smaller
                         than Katt to truncate the number of modes.
         Output:
-            - the residuals of shape (Ndata,Katt) 
-        """             
+            - the residuals of shape (Ndata,Katt)
+        """
         if self.method == 'cor':
             return (self.matrix - self.project_matrix(truncation=truncation))*self.std_att # the mean disappears in the difference
         elif self.method == 'cov' or self.method == 'ssq':
             return self.matrix - self.project_matrix(truncation=truncation)
-        
+
     def print_explained_inertia(self,modes=10):
         """
         Prints the part of inertia explained by each mode, as well as the cumulative
