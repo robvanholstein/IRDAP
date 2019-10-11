@@ -261,6 +261,10 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <p class="first admonition-title">Note</p>
 <p class="last">The units of the <em>I</em><sub>Q</sub>-, <em>I</em><sub>U</sub>- and <em>I</em><sub>tot</sub>-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the <em>Q</em>-, <em>U</em>-, <em>Q</em><span class="math notranslate nohighlight">\(_\phi\)</span>- and <em>U</em><span class="math notranslate nohighlight">\(_\phi\)</span>-images are the number of counts when subtracting the right from the left frame half of a single exposure.</p>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The final PDI-images are corrected for the true north offset.</p>
+</div>
 </div>
 <div class="section" id="adi-in-a-nutshell">
 <h2>ADI in a nutshell<a class="headerlink" href="#adi-in-a-nutshell" title="Permalink to this headline">¶</a></h2>
@@ -276,6 +280,10 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The units of the summed ADI-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT) and averaging over the NDIT and the number of FITS-files used. Therefore the units of the summed ADI-images are the same as that of the <em>I</em><sub>Q</sub>-, <em>I</em><sub>U</sub>- and <em>I</em><sub>tot</sub>-images produced by the <a class="reference internal" href="#pdi-in-a-nutshell"><span class="std std-ref">PDI part</span></a> of IRDAP.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The final ADI-images are corrected for the true north offset.</p>
 </div>
 </div>
 <div class="section" id="combining-multiple-data-sets">

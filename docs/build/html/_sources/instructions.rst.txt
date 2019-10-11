@@ -90,6 +90,9 @@ For the polarimetric differential imaging (PDI) part, IRDAP computes the double 
 .. note::
    The units of the *I*\ :sub:`Q`-, *I*\ :sub:`U`- and *I*\ :sub:`tot`-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT). The images are averaged over the NDIT and the number of FITS-files used. Similarly, the units of the *Q*-, *U*-, *Q*:math:`_\phi`- and *U*:math:`_\phi`-images are the number of counts when subtracting the right from the left frame half of a single exposure. 
 
+.. note::
+   The final PDI-images are corrected for the true north offset.
+   
 ADI in a nutshell
 -----------------
 
@@ -103,6 +106,9 @@ With the angular differential imaging (ADI) part, IRDAP enables the detection of
 
 .. note::
 	The units of the summed ADI-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT) and averaging over the NDIT and the number of FITS-files used. Therefore the units of the summed ADI-images are the same as that of the *I*\ :sub:`Q`-, *I*\ :sub:`U`- and *I*\ :sub:`tot`-images produced by the :ref:`PDI part <PDI in a nutshell>` of IRDAP. 
+
+.. note::
+   The final ADI-images are corrected for the true north offset.
 
 Combining multiple data sets
 ----------------------------
