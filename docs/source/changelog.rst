@@ -14,14 +14,11 @@ Changelog & to-do
 Changelog
 ---------
 
-..
-   v1.1.0 October 2019, R.G. van Holstein
-..
-    - Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
-..   
-   - Added ADI+PCA for polarimetric data reduction of pupil-tracking observations
+v1.1.0 October 2019, R.G. van Holstein & J. Milli
+ - Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
+ - Added mean combination of ADI final images to command-line option :code:`irdap --meancombine`
 
-v1.0.0 September 2019, R.G. van Holstein:
+v1.0.0 September 2019, R.G. van Holstein & J. Milli:
  - No backward compatibility with previous versions
  - Added analysis of master flux frames to enable the user to express the final images in contrast/arcsec^2 or Jansky/arcsec^2
  - Restructered code and configuration file to allow for the separate execution of pre-processing, polarimetric differential imaging (previously referred to as post-processing) and angular differential imaging 
@@ -30,7 +27,7 @@ v1.0.0 September 2019, R.G. van Holstein:
  - Confirmed that polarimetric data with dithering applied is correctly reduced
  
 v0.3.0 July 2019, R.G. van Holstein:
- - Added command-line option to mean-combine final images of multiple observation blocks
+ - Added command-line option :code:`irdap --meancombine` to mean-combine final images of multiple observation blocks
 
 v0.2.1 June 2019, R.G. van Holstein:
  - Added the possibility to reduce data taken with the narrowband filters using the existing model of the broadband filters
@@ -46,12 +43,15 @@ v0.1.2 June 2019, R.G. van Holstein:
 To-do high priority
 -------------------
 
-   - Add angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
+   - Add possibility to not collapse data of pre-processing so that ADI can be done more accurately.
+   - Add possibility to crop images when doing ADI to save time
+   - Add possibility to use CENTER-frames with a different exposure time than the OBJECT-frames
+   - Create contrast curves of final PDI-and ADI-images 
    - Add ADI+PCA for polarimetric data reduction of pupil-tracking observations
    - Add accurate (calibrated) model correction for narrowband filters
    - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)
    - For pupil-tracking data mask bad pixel clusters when computing least squares solution to get rid off sectors of bad data; for field-tracking data set bad pixel clusters to NaN   
-   - Add detection limits (e.g. contrast curves)
+
    
 To-do low priority
 ------------------

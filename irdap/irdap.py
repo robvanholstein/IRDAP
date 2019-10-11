@@ -548,7 +548,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     # Extract headers
     header = [pyfits.getheader(x) for x in path_raw_files]
-#    check_own_programs(header)
+    check_own_programs(header)
 
     # Sort raw files and headers based on observation date in headers
     date_obs = [x['DATE-OBS'] for x in header]
@@ -3511,7 +3511,7 @@ def preprocess_data(frames_to_remove=[],
                     ' showing for each FLUX-file the ratios of the transmission and DIT of the OBJECT- and FLUX-files, and the measured' +
                     ' star total flux in ADU of the left and right frame halves and the left + right frame halves. The file ' +
                     ' also shows the reference fluxes which are the products star_total_flux * transmission_ratio * dit_ratio.' +
-                    ' To express the final images produced by IRDAP (e.g. the I_Q-, Qphi- or ADI images) in Jansky per arcsec^2,' +
+                    ' To express the final images produced by IRDAP (e.g. the I_Q-, Qphi- or summed ADI images) in Jansky per arcsec^2,' +
                     ' determine the star flux in Jansky in the corresponding filter, and multiply the final images by the factor' +
                     ' star_flux_in_jansky / (reference_flux_left+right * pixel_scale^2).')
 
@@ -5185,7 +5185,7 @@ def adi_apply_adi_pca(cube, angles, radii=[10, 512],\
 # apply_adi
 ###############################################################################
 
-def apply_adi(cube_left_frames, cube_right_frames,header, principal_components='companion',
+def apply_adi(cube_left_frames, cube_right_frames,header, principal_components='companion+disk',
               pca_radii='automatic'):
     '''
     Perform angular differential imaging on the pre-processed data, both classical (cADI) and with
@@ -5196,18 +5196,18 @@ def apply_adi(cube_left_frames, cube_right_frames,header, principal_components='
         cube_right_frames: cube of pre-processed right frames
         header: list of FITS-headers of OBJECT-files
         principal_components: list of principal components to subtract for the ADI+PCA
-            reduction. If 'companion', use [10, 16]; if 'disk', use [2, 4]. As we actually cannot
-            remove more components than the number of frames in the cube of pre-processed frames,
-            this number of components is reduced if there are not enough frames
-            (default = 'companion').
-        pca_radii: list of inner and outer radii of annuli used to the ADI+PCA reduction over
-            (pixels). If the list has two elements, they define the inner and outer radius of a
+            reduction. If 'companion', use [10, 16]; if 'disk', use [2, 4]. If 'companion+disk', use
+            [2, 4, 10, 16]. As we actually cannot remove more components than the number of frames
+            in the cube of pre-processed frames, this number of components is reduced if there are
+            not enough frames (default = 'companion+disk').
+        pca_radii: list of inner and outer radii of annuli used to optimize the ADI+PCA reduction
+            over (pixels). If the list has two elements, they define the inner and outer radius of a
             single annulus. If the list has more elements, the second element defines the outer
             radius of the first annulus and the inner radius of the second annulus. Likewise the
             third element defines the outer radius of the second annulus and the inner radius of
-            the third annulus, etc. For example, pca_radii = [15, 30, 100, 512] optimizes the
+            the third annulus, etc. For example, pca_radii = [10, 30, 100, 512] optimizes the
             ADI+PCA reduction over three annuli with inner and outer radii equal to 15 and 30, 30
-            and 100, and 100 and 512 pixels. If 'automatic', use [15, 30, 100, 512]
+            and 100, and 100 and 512 pixels. If 'automatic', use [10, 30, 100, 512]
             (default = 'automatic').
 
     File written by Julien Milli; adapted by Rob van Holstein
@@ -5217,8 +5217,11 @@ def apply_adi(cube_left_frames, cube_right_frames,header, principal_components='
     # Create directories
     create_directories([path_adi_classical_dir, path_adi_pca_dir])
 
-    # Set number of principal components to be subtracted in case it is 'companion' or 'disk'
-    if principal_components == 'companion':
+    # Set number of principal components to be subtracted in case it is 'companion+disk', 'companion' or 'disk'
+    if principal_components == 'companion+disk':
+        principal_components = [2, 4, 10, 16]
+        printandlog('\nSetting the default list of ADI+PCA principal components for the detection of companions and disks.')
+    elif principal_components == 'companion':
         principal_components = [10, 16]
         printandlog('\nSetting the default list of ADI+PCA principal components for the detection of companions.')
     elif principal_components == 'disk':
@@ -5244,7 +5247,7 @@ def apply_adi(cube_left_frames, cube_right_frames,header, principal_components='
 
     # Set and print annuli to optimize the ADI+PCA reduction over
     if pca_radii == 'automatic':
-        pca_radii = [15, 30, 100, 512]
+        pca_radii = [10, 30, 100, 512]
         printandlog('\nThe ADI+PCA reduction will be optimized over the 3 default annuli:')
     else:
         printandlog('\nThe ADI+PCA reduction will be optimized over a user-defined annulus or several user-defined annuli:')
@@ -6364,22 +6367,22 @@ def run_pipeline(path_main_dir):
 
     # principal_components
     if type(principal_components) not in [str, list]:
-        raise TypeError('\n\n\'principal_components\' should be  \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
+        raise TypeError('\n\n\'principal_components\' should be \'companion+disk\', \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
 
     if principal_components == []:
-        raise ValueError('\n\n\'principal_components\' should be  \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
+        raise ValueError('\n\n\'principal_components\' should be \'companion+disk\', \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
 
-    if type(principal_components) is str and principal_components not in ['companion', 'disk']:
-        raise ValueError('\n\n\'principal_components\' should be  \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
+    if type(principal_components) is str and principal_components not in ['companion+disk', 'companion', 'disk']:
+        raise ValueError('\n\n\'principal_components\' should be \'companion+disk\', \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
 
     if  type(principal_components) is list and any([type(x) is not int for x in principal_components]):
-        raise TypeError('\n\n\'principal_components\' should be  \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
+        raise TypeError('\n\n\'principal_components\' should be \'companion+disk\', \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
 
     if type(principal_components) is list and any([x <= 0 for x in principal_components]):
-        raise ValueError('\n\n\'principal_components\' should be  \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
+        raise ValueError('\n\n\'principal_components\' should be \'companion+disk\', \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
 
     if type(principal_components) is list and len(principal_components) != len(set(principal_components)):
-        raise ValueError('\n\n\'principal_components\' should be  \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
+        raise ValueError('\n\n\'principal_components\' should be \'companion+disk\', \'companion\', \'disk\', a strictly positive integer or a list of unique and strictly positive integers.')
 
     # pca_radii
     if type(pca_radii) not in [str, list]:

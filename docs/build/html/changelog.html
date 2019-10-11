@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &amp; to-do &mdash; IRDAP 1.0.0 documentation</title>
+  <title>Changelog &amp; to-do &mdash; IRDAP 1.1.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.0.0
+                1.1.0
               </div>
             
           
@@ -171,7 +171,13 @@
 <div class="section" id="changelog">
 <h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
-<dt>v1.0.0 September 2019, R.G. van Holstein:</dt>
+<dt>v1.1.0 October 2019, R.G. van Holstein &amp; J. Milli</dt>
+<dd><ul class="first last simple">
+<li>Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations</li>
+<li>Added mean combination of ADI final images to command-line option <code class="code docutils literal notranslate"><span class="pre">irdap</span> <span class="pre">--meancombine</span></code></li>
+</ul>
+</dd>
+<dt>v1.0.0 September 2019, R.G. van Holstein &amp; J. Milli:</dt>
 <dd><ul class="first last simple">
 <li>No backward compatibility with previous versions</li>
 <li>Added analysis of master flux frames to enable the user to express the final images in contrast/arcsec^2 or Jansky/arcsec^2</li>
@@ -183,7 +189,7 @@
 </dd>
 <dt>v0.3.0 July 2019, R.G. van Holstein:</dt>
 <dd><ul class="first last simple">
-<li>Added command-line option to mean-combine final images of multiple observation blocks</li>
+<li>Added command-line option <code class="code docutils literal notranslate"><span class="pre">irdap</span> <span class="pre">--meancombine</span></code> to mean-combine final images of multiple observation blocks</li>
 </ul>
 </dd>
 <dt>v0.2.1 June 2019, R.G. van Holstein:</dt>
@@ -209,12 +215,14 @@
 <h2>To-do high priority<a class="headerlink" href="#to-do-high-priority" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
-<li>Add angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations</li>
+<li>Add possibility to not collapse data of pre-processing so that ADI can be done more accurately.</li>
+<li>Add possibility to crop images when doing ADI to save time</li>
+<li>Add possibility to use CENTER-frames with a different exposure time than the OBJECT-frames</li>
+<li>Create contrast curves of final PDI-and ADI-images</li>
 <li>Add ADI+PCA for polarimetric data reduction of pupil-tracking observations</li>
 <li>Add accurate (calibrated) model correction for narrowband filters</li>
 <li>Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)</li>
 <li>For pupil-tracking data mask bad pixel clusters when computing least squares solution to get rid off sectors of bad data; for field-tracking data set bad pixel clusters to NaN</li>
-<li>Add detection limits (e.g. contrast curves)</li>
 </ul>
 </div></blockquote>
 </div>

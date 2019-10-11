@@ -70,9 +70,6 @@ Reducing data with IRDAP is very straightforward and does not require the user t
 
 IRDAP yields a multitude of improvements for polarimetric observations of circumstellar disks: it enables us to accurately study the morphology of disks, measure non-azimuthal polarization and determine scattering phase functions and particle properties. Because IRDAP discerns instrumental polarization from stellar polarization, it is a vital tool for accurate radiative transfer modeling of disks and enables the detection of unresolved (inner) disks and the measurement of the polarization of substellar companions. Finally, IRDAP enables accurate data reduction for targets that cannot be reduced with the conventional data-reduction methods (because there is no bright star in the field of view), such as solar system objects.
 
-.. attention::
-   Angular differential imaging is not functional yet. It will be added around mid-October. 
-
 Contents
 ---------
 .. toctree::

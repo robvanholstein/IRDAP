@@ -142,7 +142,9 @@ Basic PDI options
    *DoLP_norm* and *AoLP_norm* are potentially more accurate than *DoLP* (above) and *AoLP* = 0.5 arctan(*U* / *Q*) (as always created), especially when there are significant variations in seeing and sky transparency among the measurements. If ``False``, do not create these images.
 
 Basic ADI options
------------------------------
+-----------------
+
+.. _perform_adi:
 
 .. py:function:: perform_adi:
 
@@ -150,36 +152,23 @@ Basic ADI options
    
    If True, perform :ref:`angular differential imaging (ADI) <ADI in a nutshell>` using the pre-processed data. ADI is only performed on data taken in pupil-tracking mode. To perform this step, perform_preprocessing_ must be ``True`` or the raw data must have been pre-processed before. If ``False``, do not perform ADI. The latter can be useful when tweaking the input parameters of the PDI step only.
 
-.. attention::
-   Angular differential imaging is not functional yet. It will be added around mid-October. 
+.. _principal_components:
 
-..
-   .. _adi_trimmed_mean_prop_to_cut:
-..
-   .. py:function:: adi_trimmed_mean_prop_to_cut:
-..
-      `float` (default = ``0.1``)
-..   
-      Text here. #TODO:Julien
+.. py:function:: principal_components:
 
-..
-   .. _number_principal_components:
-..
-   .. py:function:: number_principal_components:
-..
-      ``companion``, ``disk``, `integer` (default = ``companion``)
-..
-      Text here. #TODO:Julien
+   ``companion+disk``, ``companion``, ``disk``, `integer`, `list` (default = ``companion+disk``)
+  
+   The number of principal components to subtract for the reduction combining angular differential imaging (ADI) and principal component analysis (PCA). If ``companion``, create two frames with 10 and 16 principal components subtracted to search for companions. If ``disk``, create two frames with 2 and 4 principal components subtracted to search for disk signal. If ``companion+disk``, create four frames with 2, 4, 10 and 16 principal components subtracted to search for companions and disk signal. 
    
-..  
-   .. _pca_radii:
-..
-   .. py:function:: pca_radii:
-..
-      `list` (default = ``[0, 20]``)
-..
-      Text here. #TODO:Julien
+   If more control is required, a strictly positive integer or a list of unique and strictly positive integers can be provided. For example providing ``[10, 16]`` will yield two frames with 10 and 16 principal components subtracted. Because we cannot remove more components than the number of frames in the cube of pre-processed frames, the number of components to be subtracted is reduced if there are not enough frames.
+   
+.. _pca_radii:
 
+.. py:function:: pca_radii:
+
+   ``automatic``, `list` (default = ``automatic``)
+
+	Annuli used to optimize the ADI+PCA reduction over. If ``automatic``, the reduction is optimized over three annuli with inner and outer radii equal to 10 and 30, 30 and 100, and 100 and 512 pixels. If more control is required, the user can provide a list of at least length 2 containing positive and increasing integers (including 0) indicating the inner and outer radii of the annuli in pixels. For example, if the list has two elements, these elements define the inner and outer radius of a single annulus. If the list has more elements, the second element defines the outer radius of the first annulus and the inner radius of the second annulus. Likewise the third element defines the outer radius of the second annulus and the inner radius of the third annulus, etc. Therefore setting `pca_radii` to ``[10, 30, 100, 512]`` is equivalent to setting it to ``automatic``.
 
 Advanced pre-processing options
 -------------------------------

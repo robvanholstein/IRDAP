@@ -42,6 +42,6 @@ Full documentation: https://irdap.readthedocs.io
 
 Feedback, questions, comments: send an e-mail to `Rob van Holstein <vanholstein@strw.leidenuniv.nl>`_.
 
-When publishing data reduced with IRDAP, please cite van Holstein et al. (2019): https://arxiv.org/abs/1909.13108. For data in pupil-tracking mode please additionally cite `van Holstein et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
+When publishing data reduced with IRDAP, please cite `van Holstein et al. (2019) <https://arxiv.org/abs/1909.13108>`_. For data in pupil-tracking mode please additionally cite `van Holstein et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
                                                 
 IRDAP is distributed under the GNU General Public License v3. See the `LICENSE file <https://github.com/robvanholstein/IRDAP/blob/master/LICENSE>`_ for the precise terms and conditions.

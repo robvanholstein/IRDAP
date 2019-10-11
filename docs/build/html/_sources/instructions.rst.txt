@@ -2,6 +2,14 @@
 Usage instructions
 ==================
 
+The usage instructions are divided into five sections:
+
+- :ref:`Running IRDAP`
+- :ref:`Pre-processing in a nutshell`
+- :ref:`PDI in a nutshell`
+- :ref:`ADI in a nutshell`
+- :ref:`Combining multiple data sets`
+
 Running IRDAP
 -------------
 
@@ -55,7 +63,7 @@ After these initial steps, IRDAP will pre-process the OBJECT-files. To this end,
 A cube of master flux frames is created for the left and right detector halves by processing the FLUX-files in a similar fashion as the OBJECT-files. If the data contains SKY-files with the same exposure time and neutral density filter as the FLUX-files, IRDAP processes these to subtract the sky background from the master flux frames. 
 
 .. hint::
-   IRDAP automatically determines the reference fluxes from the master flux frames and writes them to a CSV-file. These references fluxes can be used to convert the final images produced by IRDAP (e.g. the *I*\ :sub:`Q`- or *Q*:math:`_\phi`-images) from units of counts (ADU) into units of contrast/arcsec\ :sup:`2`. If the user can determine the stellar flux in Jansky, the final images can be expressed in Jansky/arcsec\ :sup:`2`. See the log file created by IRDAP for more details.
+   IRDAP automatically determines the reference fluxes from the master flux frames and writes them to a CSV-file. These references fluxes can be used to convert the final images produced by IRDAP (e.g. the *I*\ :sub:`Q`- or *Q*:math:`_\phi`-images, or the images produced through ADI) from units of counts (ADU) into units of contrast/arcsec\ :sup:`2`. If the user can determine the stellar flux in Jansky, the final images can be expressed in Jansky/arcsec\ :sup:`2`. See the log file created by IRDAP for more details.
 
 The pre-processed OBJECT-data is written to the subdirectory ``preprocessed`` and the processed SKY-, CENTER- and FLUX-data (and the user-created bad pixel map and master flat) to the subdirectory ``calibration``.
 
@@ -85,8 +93,16 @@ For the polarimetric differential imaging (PDI) part, IRDAP computes the double 
 ADI in a nutshell
 -----------------
 
-.. attention::
-   Angular differential imaging is not functional yet. It will be added around mid-October. 
+With the angular differential imaging (ADI) part, IRDAP enables the detection of companions and disk signal in total intensity by performing both a classical ADI reduction and a reduction combining ADI with principal component analysis (ADI+PCA). IRDAP performs separate reductions for the frames on the left and right halves of the detector. The resulting images, plus an image of their sum, are written to the subdirectories ``reduced_adi\classical`` and ``reduced_adi\pca``. For the ADI+PCA reduction, the user can set the number of principal components to be subtracted and the annuli over which the reduction needs to be optimized (see the :ref:`Basic ADI options` of the configuration file).
+
+.. warning::
+   IRDAP does not calibrate or correct the flux self-subtraction induced by ADI. This should be kept in mind when converting the final ADI-images from units of counts (ADU) into units of contrast/arcsec\ :sup:`2` or Jansky/arcsec\ :sup:`2`. Self-subtraction can be especially problematic when the total parallactic rotation of a data set is limited.
+
+.. hint::
+   The names of the FITS-files produced by the ADI+PCA reduction indicate the number of principal components subtracted and the annuli used to optimize the reduction over. For example `com_2-4_rad_10-30-100-512` in a file name indicates that two frames are created with 2 and 4 principal components subtracted (`com`), and that three annuli were used with inner and outer radii equal to 10 and 30, 30 and 100, and 100 and 512 pixels (`rad`). When repeating the ADI reduction with different values of the input parameters :ref:`principal_components and pca_radii <Basic ADI options>` in the configuration file, any previously created FITS-files are retained.
+
+.. note::
+	The units of the summed ADI-images are the number of counts (ADU) when summing the left and right frame halves of a single exposure (a single DIT) and averaging over the NDIT and the number of FITS-files used. Therefore the units of the summed ADI-images are the same as that of the *I*\ :sub:`Q`-, *I*\ :sub:`U`- and *I*\ :sub:`tot`-images produced by the :ref:`PDI part <PDI in a nutshell>` of IRDAP. 
 
 Combining multiple data sets
 ----------------------------

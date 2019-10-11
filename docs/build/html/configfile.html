@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuration file &mdash; IRDAP 1.0.0 documentation</title>
+  <title>Configuration file &mdash; IRDAP 1.1.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.0.0
+                1.1.0
               </div>
             
           
@@ -192,7 +192,9 @@
 
 <span class="p">[</span><span class="n">Basic</span> <span class="n">ADI</span> <span class="n">options</span><span class="p">]</span>
 
-<span class="n">perform_adi</span>                     <span class="o">=</span> <span class="kc">False</span>
+<span class="n">perform_adi</span>                     <span class="o">=</span> <span class="kc">True</span>
+<span class="n">principal_components</span>            <span class="o">=</span> <span class="n">companion</span><span class="o">+</span><span class="n">disk</span>
+<span class="n">pca_radii</span>                       <span class="o">=</span> <span class="n">automatic</span>
 
 <span class="p">[</span><span class="n">Advanced</span> <span class="n">pre</span><span class="o">-</span><span class="n">processing</span> <span class="n">options</span><span class="p">]</span>
 <span class="c1"># Generally do not need to be changed</span>
@@ -339,17 +341,29 @@
 </div>
 <div class="section" id="basic-adi-options">
 <h2>Basic ADI options<a class="headerlink" href="#basic-adi-options" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
+<span class="target" id="perform-adi"></span><dl class="function">
 <dt>
 <code class="descname">perform_adi:</code></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
 <p>If True, perform <a class="reference internal" href="instructions.html#adi-in-a-nutshell"><span class="std std-ref">angular differential imaging (ADI)</span></a> using the pre-processed data. ADI is only performed on data taken in pupil-tracking mode. To perform this step, <a class="reference internal" href="#perform-preprocessing">perform_preprocessing</a> must be <code class="docutils literal notranslate"><span class="pre">True</span></code> or the raw data must have been pre-processed before. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, do not perform ADI. The latter can be useful when tweaking the input parameters of the PDI step only.</p>
 </dd></dl>
 
-<div class="admonition attention">
-<p class="first admonition-title">Attention</p>
-<p class="last">Angular differential imaging is not functional yet. It will be added around mid-October.</p>
-</div>
+<span class="target" id="principal-components"></span><dl class="function">
+<dt>
+<code class="descname">principal_components:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">companion+disk</span></code>, <code class="docutils literal notranslate"><span class="pre">companion</span></code>, <code class="docutils literal notranslate"><span class="pre">disk</span></code>, <cite>integer</cite>, <cite>list</cite> (default = <code class="docutils literal notranslate"><span class="pre">companion+disk</span></code>)</p>
+<p>The number of principal components to subtract for the reduction combining angular differential imaging (ADI) and principal component analysis (PCA). If <code class="docutils literal notranslate"><span class="pre">companion</span></code>, create two frames with 10 and 16 principal components subtracted to search for companions. If <code class="docutils literal notranslate"><span class="pre">disk</span></code>, create two frames with 2 and 4 principal components subtracted to search for disk signal. If <code class="docutils literal notranslate"><span class="pre">companion+disk</span></code>, create four frames with 2, 4, 10 and 16 principal components subtracted to search for companions and disk signal.</p>
+<p>If more control is required, a strictly positive integer or a list of unique and strictly positive integers can be provided. For example providing <code class="docutils literal notranslate"><span class="pre">[10,</span> <span class="pre">16]</span></code> will yield two frames with 10 and 16 principal components subtracted. Because we cannot remove more components than the number of frames in the cube of pre-processed frames, the number of components to be subtracted is reduced if there are not enough frames.</p>
+</dd></dl>
+
+<span class="target" id="pca-radii"></span><dl class="function">
+<dt>
+<code class="descname">pca_radii:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">automatic</span></code>, <cite>list</cite> (default = <code class="docutils literal notranslate"><span class="pre">automatic</span></code>)</p>
+<blockquote>
+<div>Annuli used to optimize the ADI+PCA reduction over. If <code class="docutils literal notranslate"><span class="pre">automatic</span></code>, the reduction is optimized over three annuli with inner and outer radii equal to 10 and 30, 30 and 100, and 100 and 512 pixels. If more control is required, the user can provide a list of at least length 2 containing positive and increasing integers (including 0) indicating the inner and outer radii of the annuli in pixels. For example, if the list has two elements, these elements define the inner and outer radius of a single annulus. If the list has more elements, the second element defines the outer radius of the first annulus and the inner radius of the second annulus. Likewise the third element defines the outer radius of the second annulus and the inner radius of the third annulus, etc. Therefore setting <cite>pca_radii</cite> to <code class="docutils literal notranslate"><span class="pre">[10,</span> <span class="pre">30,</span> <span class="pre">100,</span> <span class="pre">512]</span></code> is equivalent to setting it to <code class="docutils literal notranslate"><span class="pre">automatic</span></code>.</div></blockquote>
+</dd></dl>
+
 </div>
 <div class="section" id="advanced-pre-processing-options">
 <h2>Advanced pre-processing options<a class="headerlink" href="#advanced-pre-processing-options" title="Permalink to this headline">¶</a></h2>
