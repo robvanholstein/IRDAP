@@ -4074,7 +4074,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     for i, header_sel in enumerate(header):
         p[i] = compute_mean_angle([header_sel['ESO TEL PARANG START'], header_sel['ESO TEL PARANG END']])
         a_start[i] = header_sel['ESO TEL ALT']
-        theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 BEGIN'], 180), np.mod(header_sel['ESO INS4 DROT3 END'], 180)]) - 152.15, 180)
+        theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 BEGIN'] - 152.15, 180), np.mod(header_sel['ESO INS4 DROT3 END'] - 152.15, 180)]), 180)
         if tracking_mode_used == 'FIELD':
             theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 BEGIN'], header_sel['ESO INS4 DROT2 END']]), 360)
         elif tracking_mode_used == 'PUPIL':
