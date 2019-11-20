@@ -853,6 +853,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
     file_index_object = []
     file_index_flux = []
     stokes_parameter = []
+    NDIT_object = []
     mjd_half_object = []
     mjd_half_center = []
 
@@ -871,6 +872,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
             path_object_files.append(file_sel)
             indices_to_remove_object.append(indices_sel)
             file_index_object.append(file_index_sel)
+            NDIT_object.append(NDIT_sel)
 
             # Append Stokes parameter to list
             stokes_parameter.append(header_sel['ESO OCS DPI H2RT STOKES'])
@@ -972,6 +974,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
     stokes_parameter = [x for i,x in enumerate(stokes_parameter) if i not in files_to_remove_stokes]
     indices_to_remove_object = [x for i,x in enumerate(indices_to_remove_object) if i not in files_to_remove_stokes]
     file_index_object = [x for i,x in enumerate(file_index_object) if i not in files_to_remove_stokes]
+    NDIT_object = [x for i,x in enumerate(NDIT_object) if i not in files_to_remove_stokes]
 
     # Check if there are both Q- and U-measurements
     if not all([x in stokes_parameter for x in ['Qplus', 'Qminus', 'Uplus', 'Uminus']]):
@@ -985,6 +988,24 @@ def check_sort_data_create_directories(frames_to_remove=[],
         if stokes_parameter.count('Qplus') != stokes_parameter.count('Uplus'):
             combination_method_polarization = 'least squares'
             printandlog('\nWARNING, combination_method_polarization is forced to \'least squares\' because the number of Q- and U-measurements are unequal. The plots showing the measured star polarization as a function of HWP cycle number will only show the complete HWP cycles.')
+
+    ###############################################################################
+    # Determine number of Q- and U-frames for computation of photon noise
+    ###############################################################################
+
+    # Divide NDIT and indices to remove in Q and U
+    NDIT_Q = [x for x,y in zip(NDIT_object, stokes_parameter) if y in ['Qplus', 'Qminus']]
+    NDIT_U = [x for x,y in zip(NDIT_object, stokes_parameter) if y in ['Uplus', 'Uminus']]
+    indices_to_remove_Q = [x for x,y in zip(indices_to_remove_object, stokes_parameter) if y in ['Qplus', 'Qminus']]
+    indices_to_remove_U = [x for x,y in zip(indices_to_remove_object, stokes_parameter) if y in ['Uplus', 'Uminus']]
+
+    # Determine number of frames to remove for Q and U
+    indices_to_remove_sum_Q = sum([len(x) for x in indices_to_remove_Q])
+    indices_to_remove_sum_U = sum([len(x) for x in indices_to_remove_U])
+
+    # Compute total number of frames of Q and U
+    number_frames_Q = sum(NDIT_Q) - indices_to_remove_sum_Q
+    number_frames_U = sum(NDIT_U) - indices_to_remove_sum_U
 
     ###############################################################################
     # Print number of files for each file type
@@ -1095,6 +1116,11 @@ def check_sort_data_create_directories(frames_to_remove=[],
         printandlog('\nThe following directories already exist. Data in these directories will be overwritten:')
         for directory_sel in directories_already_existing:
             printandlog('{0:s}'.format(directory_sel), wrap=False)
+
+    # Write number of Q- and U-frames to a .txt-file
+    with open(os.path.join(path_preprocessed_dir, name_file_root + 'number_frames_QU.txt'), 'w') as fh:
+        fh.write('%s' % [number_frames_Q, number_frames_U])
+    printandlog('\nWrote file ' + os.path.join(path_preprocessed_dir, name_file_root + 'number_frames_QU.txt') + '.', wrap=False)
 
     return path_dark_files, path_flat_files, path_object_files, path_sky_files, path_center_files, \
            path_object_center_files, path_flux_files, path_sky_flux_files, \
@@ -3621,12 +3647,83 @@ def remove_detector_artefact(cube, number_pixels):
     return cube_artefact_removed
 
 ###############################################################################
+# determine_signal_uncertainty
+###############################################################################
+
+def determine_signal_uncertainty(cube, annulus_star, annulus_background, gain=1, number_frames=1):
+    '''
+    Determine signal and the corresponding uncertainty of signal in annulus following Newberry (1991)
+
+    Input:
+        cube: image frame or cube
+        annulus_star: (list of) length-6-tuple(s) with parameters to generate annulus to measure polarization of star:
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+        annulus_background: (list of) length-6-tuple(s) with parameters to generate annulus to measure and subtract background:
+            coord_center_x: x-coordinate of center (pixels; 0-based)
+            coord_center_y: y-coordinate of center (pixels; 0-based)
+            inner_radius: inner radius (pixels)
+            outer_radius: outer_radius (pixels)
+            start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+            end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+        gain: gain of detector (electrons/count) (default = 1)
+        number_frames: number of frames that have been mean-combined to obtain the frames in the cube (default = 1)
+
+    Output:
+        signal: total signal in annulus (electrons)
+        uncertainty: uncertainty of signal in annulus (electrons)
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Set axis parameter of mean and median depending on whether the cube is a 3D or 2D array
+    if cube.ndim == 2:
+        mean_median_axis = None
+    elif cube.ndim == 3:
+        mean_median_axis = 1
+
+    # Express cube in total number of electrons
+    cube = gain * number_frames * cube
+
+    # Retrieve pixel values in star and background annuli
+    values_star = compute_annulus_values(cube=cube, param=annulus_star)[0]
+    values_background = compute_annulus_values(cube=cube, param=annulus_background)[0]
+
+    # Determine summed signal in star annulus and median and standard deviation in background region
+    sum_star = np.sum(values_star, axis=mean_median_axis)
+    median_background = np.median(values_background, axis=mean_median_axis)
+    std_background = np.std(values_background, axis=mean_median_axis, ddof=1)
+
+    # Determine number of pixels in star and background annuli
+    number_pixels_star = values_star.shape[-1]
+    number_pixels_background = values_background.shape[-1]
+
+    # Compute signal of star
+    signal = sum_star - number_pixels_star*median_background
+
+    # Compute variance of photon noise, background noise and background subtraction
+    variance_photon_noise = signal
+    variance_background = number_pixels_star * std_background**2
+    variance_background_subtraction = variance_background / number_pixels_background
+
+    # Compute total uncertainty on signal of star
+    uncertainty = np.sqrt(variance_photon_noise + variance_background + variance_background_subtraction)
+
+    return signal, uncertainty
+
+###############################################################################
 # determine_star_polarization
 ###############################################################################
 
-def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star, annulus_background):
+def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star,
+                                annulus_background, number_frames_Q=1, number_frames_U=1):
     '''
-    Determine polarization of star in annulus
+    Determine polarization of star and  the corresponding uncertainty in annulus
 
     Input:
         cube_I_Q: cube of I_Q-images
@@ -3647,36 +3744,54 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
             outer_radius: outer_radius (pixels)
             start_angle: start angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
             end_angle: end angle of annulus sector (deg; 0 deg to the right and positive rotation counterclockwise)
+        number_frames_Q: number of frames that have been mean-combined to obtain the Q cubes (default = 1)
+        number_frames_U: number of frames that have been mean-combined to obtain the U cubes (default = 1)
 
     Output:
         q: normalized Stokes q measured in annulus
         u: normalized Stokes u measured in annulus
+        DoLP: degree of linear polarization measured in annulus
+        AoLP: angle of linear polarization measured in annulus
+        sigma_q: uncertainty in normalized Stokes q
+        sigma_u: uncertainty in normalized Stokes u
+        sigma_DoLP: uncertainty in degree of linear polarization
+        sigma_AoLP: uncertainty in angle of linear polarization
 
     File written by Rob van Holstein
     Function status: verified
     '''
 
-    # Set axis parameter of mean and median depending on whether the cube is a 3D or 2D object
-    if cube_I_Q.ndim == 2:
-        mean_median_axis = None
-    elif cube_I_Q.ndim == 3:
-        mean_median_axis = 1
-
     # Compute flux in I_Q, I_U, Q and U in an annulus minus the background in an annulus
-    I_Q = np.mean(compute_annulus_values(cube=cube_I_Q, param=annulus_star)[0], axis=mean_median_axis) - \
-                  np.median(compute_annulus_values(cube=cube_I_Q, param=annulus_background)[0], axis=mean_median_axis)
-    I_U = np.mean(compute_annulus_values(cube=cube_I_U, param=annulus_star)[0], axis=mean_median_axis) - \
-                  np.median(compute_annulus_values(cube=cube_I_U, param=annulus_background)[0], axis=mean_median_axis)
-    Q = np.mean(compute_annulus_values(cube=cube_Q, param=annulus_star)[0], axis=mean_median_axis) - \
-                np.median(compute_annulus_values(cube=cube_Q, param=annulus_background)[0], axis=mean_median_axis)
-    U = np.mean(compute_annulus_values(cube=cube_U, param=annulus_star)[0], axis=mean_median_axis) - \
-                np.median(compute_annulus_values(cube=cube_U, param=annulus_background)[0], axis=mean_median_axis)
+    I_Q, sigma_I_Q = determine_signal_uncertainty(cube=cube_I_Q, annulus_star=annulus_star,
+                                                  annulus_background=annulus_background,
+                                                  gain=irdis_gain, number_frames=number_frames_Q)
+    I_U, sigma_I_U = determine_signal_uncertainty(cube=cube_I_U, annulus_star=annulus_star,
+                                                  annulus_background=annulus_background,
+                                                  gain=irdis_gain, number_frames=number_frames_U)
+    Q, sigma_Q = determine_signal_uncertainty(cube=cube_Q, annulus_star=annulus_star,
+                                              annulus_background=annulus_background,
+                                              gain=irdis_gain, number_frames=number_frames_Q)
+    U, sigma_U = determine_signal_uncertainty(cube=cube_U, annulus_star=annulus_star,
+                                              annulus_background=annulus_background,
+                                              gain=irdis_gain, number_frames=number_frames_U)
 
-    # Compute normalized Stokes q and u
+    # Compute normalized Stokes q and u, DoLP and AoLP
     q = Q / I_Q
     u = U / I_U
+    DoLP = np.sqrt(q**2 + u**2)
+    AoLP = np.mod(np.rad2deg(0.5 * np.arctan2(u, q)), 180)
 
-    return q, u
+    # Compute uncertainties in q, u using linear error propagation
+    sigma_q = np.abs(q) * np.sqrt((sigma_Q / Q)**2 + (sigma_I_Q / I_Q)**2)
+    sigma_u = np.abs(u) * np.sqrt((sigma_U / U)**2 + (sigma_I_U / I_U)**2)
+
+    # Compute uncertainties in DoLP and AoLP using linear error propagation
+    error_term_DoLP = np.sqrt(q**2*sigma_q**2 + u**2*sigma_u**2)
+    sigma_DoLP = 1/DoLP * error_term_DoLP
+    error_term_AoLP = np.sqrt(u**2*sigma_q**2 + q**2*sigma_u**2)
+    sigma_AoLP = np.rad2deg(1/(2*DoLP**2) * error_term_AoLP)
+
+    return q, u, DoLP, AoLP, sigma_q, sigma_u, sigma_DoLP, sigma_AoLP
 
 ###############################################################################
 # compute_mean_angle
@@ -4231,7 +4346,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                                            cube_Q=cube_Q_double_difference,
                                                            cube_U=cube_U_double_difference,
                                                            annulus_star=annulus_star,
-                                                           annulus_background=annulus_background)
+                                                           annulus_background=annulus_background)[:2]
 
     else:
         # Rotate the cubes of double-sum and double-difference images so that the annuli are at the right position
@@ -4255,7 +4370,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                                            cube_Q=cube_Q_annulus,
                                                            cube_U=cube_U_annulus,
                                                            annulus_star=annulus_star,
-                                                           annulus_background=annulus_background)
+                                                           annulus_background=annulus_background)[:2]
 
     ###############################################################################
     # Fit polarization of star from measurements using model coefficient matrix
@@ -4852,22 +4967,30 @@ def apply_pdi(cube_left_frames,
     # Determine star polarization in frames and subtract it
     ###############################################################################
 
+    # Read number of frames for Q and U from .txt-file
+    path_number_frames = os.path.join(path_preprocessed_dir, name_file_root + 'number_frames_QU.txt')
+    number_frames_QU = literal_eval([x for x in open(path_number_frames, 'r')][0])
+    number_frames_Q = number_frames_QU[0]
+    number_frames_U = number_frames_QU[1]
+    printandlog('\nRead number of frames in Q and U from ' + path_number_frames + '.')
+
     # Compute normalized Stokes q and u, DoLP and AoLP in an annulus on the star
-    q_star, u_star = determine_star_polarization(cube_I_Q=frame_I_Q_background_subtracted,
-                                                 cube_I_U=frame_I_U_background_subtracted,
-                                                 cube_Q=frame_Q_background_subtracted,
-                                                 cube_U=frame_U_background_subtracted,
-                                                 annulus_star=annulus_star,
-                                                 annulus_background=annulus_background)
-    DoLP_star = np.sqrt(q_star**2 + u_star**2)
-    AoLP_star = np.mod(np.rad2deg(0.5 * np.arctan2(u_star, q_star)), 180)
+    q_star, u_star, DoLP_star, AoLP_star, sigma_q_star, sigma_u_star, sigma_DoLP_star, sigma_AoLP_star = \
+    determine_star_polarization(cube_I_Q=frame_I_Q_background_subtracted,
+                                cube_I_U=frame_I_U_background_subtracted,
+                                cube_Q=frame_Q_background_subtracted,
+                                cube_U=frame_U_background_subtracted,
+                                annulus_star=annulus_star,
+                                annulus_background=annulus_background,
+                                number_frames_Q=number_frames_Q,
+                                number_frames_U=number_frames_U)
 
     # Print resulting star polarization
-    printandlog('\nMeasured star polarization in the background-subtracted I_Q-, I_U-, Q- and U-images:')
-    printandlog('q_star =    %.4f %%' % (100*q_star))
-    printandlog('u_star =    %.4f %%' % (100*u_star))
-    printandlog('DoLP_star = %.4f %%' % (100*DoLP_star))
-    printandlog('AoLP_star = %.2f deg' % AoLP_star)
+    printandlog('\nMeasured star polarization and statistical error (taking into account photon noise and background noise according to Newberry (1991)) in the background-subtracted I_Q-, I_U-, Q- and U-images:')
+    printandlog('q_star =    %.4f +/- %.4f %%' % (100*q_star, 100*sigma_q_star))
+    printandlog('u_star =    %.4f +/- %.4f %%' % (100*u_star, 100*sigma_u_star))
+    printandlog('DoLP_star = %.4f +/- %.4f %%' % (100*DoLP_star, 100*sigma_DoLP_star))
+    printandlog('AoLP_star = %.2f +/- %.2f deg' % (AoLP_star, sigma_AoLP_star))
     printandlog('\nThe measured star polarization should be very similar to that fitted above when correcting the instrumental polarization effects. The difference in q, u and DoLP should be < 0.1% or << 0.1% depending on the noise in images.')
 
     # Subtract star polarization
@@ -4908,27 +5031,26 @@ def apply_pdi(cube_left_frames,
         ###############################################################################
 
         # Compute normalized Stokes q and u, DoLP and AoLP in an annulus on the star as a function of HWP cycle number
-        q_star_HWP_cycle, u_star_HWP_cycle = determine_star_polarization(cube_I_Q=cube_I_Q_background_subtracted,
-                                                                         cube_I_U=cube_I_U_background_subtracted,
-                                                                         cube_Q=cube_Q_background_subtracted,
-                                                                         cube_U=cube_U_background_subtracted,
-                                                                         annulus_star=annulus_star,
-                                                                         annulus_background=annulus_background)
-        DoLP_star_HWP_cycle = np.sqrt(q_star_HWP_cycle**2 + u_star_HWP_cycle**2)
-        AoLP_star_HWP_cycle = np.mod(np.rad2deg(0.5 * np.arctan2(u_star_HWP_cycle, q_star_HWP_cycle)), 180)
+        q_star_HWP_cycle, u_star_HWP_cycle, DoLP_star_HWP_cycle, AoLP_star_HWP_cycle = \
+        determine_star_polarization(cube_I_Q=cube_I_Q_background_subtracted,
+                                    cube_I_U=cube_I_U_background_subtracted,
+                                    cube_Q=cube_Q_background_subtracted,
+                                    cube_U=cube_U_background_subtracted,
+                                    annulus_star=annulus_star,
+                                    annulus_background=annulus_background)[:4]
 
         # Compute spread of q_star, u_star, DoLP_star and AoLP_star
-        sigma_q_star = np.std(q_star_HWP_cycle, ddof=1)
-        sigma_u_star = np.std(u_star_HWP_cycle, ddof=1)
-        sigma_DoLP_star = np.std(DoLP_star_HWP_cycle, ddof=1)
-        sigma_AoLP_star = np.std(AoLP_star_HWP_cycle, ddof=1)
+        std_q_star = np.std(q_star_HWP_cycle, ddof=1)
+        std_u_star = np.std(u_star_HWP_cycle, ddof=1)
+        std_DoLP_star = np.std(DoLP_star_HWP_cycle, ddof=1)
+        std_AoLP_star = np.std(AoLP_star_HWP_cycle, ddof=1)
 
         # Print resulting spread of star polarization
         printandlog('\nMeasured spread (standard deviation) of the star polarization with HWP cycle number:')
-        printandlog('sigma_q_star =    %.4f %%' % (100*sigma_q_star))
-        printandlog('sigma_u_star =    %.4f %%' % (100*sigma_u_star))
-        printandlog('sigma_DoLP_star = %.4f %%' % (100*sigma_DoLP_star))
-        printandlog('sigma_AoLP_star = %.2f deg' % sigma_AoLP_star)
+        printandlog('std_q_star =    %.4f %%' % (100*std_q_star))
+        printandlog('std_u_star =    %.4f %%' % (100*std_u_star))
+        printandlog('std_DoLP_star = %.4f %%' % (100*std_DoLP_star))
+        printandlog('std_AoLP_star = %.2f deg' % std_AoLP_star)
 
         # Plot q, u and DoLP from annulus as function of HWP cycle number
         plot_name_star_quDoLP = name_file_root + 'star_pol_quDoLP.png'
@@ -5778,6 +5900,7 @@ def run_pipeline(path_main_dir):
     global true_north_correction
     global pixel_scale
     global msd
+    global irdis_gain
     global path_raw_dir
     global path_flat_dir
     global path_bpm_dir
@@ -5807,6 +5930,9 @@ def run_pipeline(path_main_dir):
 
     # Define mean solar day (s)
     msd = 86400
+
+    # Define gain of IRDIS detector (e–/ADU) (SPHERE User Manual, 14th public release, P105 Phase 1)
+    irdis_gain = 1.75
 
     # Define paths of directories
     path_raw_dir = os.path.join(path_main_dir, 'raw')
