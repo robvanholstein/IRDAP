@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Usage instructions &mdash; IRDAP 1.1.0 documentation</title>
+  <title>Usage instructions &mdash; IRDAP 1.2.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.1.0
+                1.2.0
               </div>
             
           
@@ -245,6 +245,7 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 <li><code class="docutils literal notranslate"><span class="pre">reduced_pdi\no_star_pol_subtr</span></code>, containing the final images with the polarization of the star still present;</li>
 <li><code class="docutils literal notranslate"><span class="pre">reduced_pdi\star_pol_subtr</span></code>, containing the final images with the polarization of the star subtracted.</li>
 </ul>
+<p>Finally, if FLUX-files are included in the raw data, IRDAP creates contrast curves for the detection of polarized extended sources and polarized point sources.</p>
 <div class="admonition important">
 <p class="first admonition-title">Important</p>
 <p class="last">By default, the polarization of the star is determined with an annulus over the AO residuals. However, for the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. Therefore the user often needs to adjust the input parameter <a class="reference internal" href="configfile.html#basic-pdi-options"><span class="std std-ref">annulus_star</span></a> in the configuration file.</p>

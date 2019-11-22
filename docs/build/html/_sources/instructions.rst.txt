@@ -78,6 +78,8 @@ For the polarimetric differential imaging (PDI) part, IRDAP computes the double 
 - ``reduced_pdi\no_star_pol_subtr``, containing the final images with the polarization of the star still present;
 - ``reduced_pdi\star_pol_subtr``, containing the final images with the polarization of the star subtracted.
 
+Finally, if FLUX-files are included in the raw data, IRDAP creates contrast curves for the detection of polarized extended sources and polarized point sources. 
+
 .. important::
    By default, the polarization of the star is determined with an annulus over the AO residuals. However, for the most accurate results the annulus should only contain signal from the star, and no signal from for example a circumstellar disk, companion or background star. Therefore the user often needs to adjust the input parameter :ref:`annulus_star <Basic PDI options>` in the configuration file.
 

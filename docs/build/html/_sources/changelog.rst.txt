@@ -14,6 +14,10 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.2.0 November 2019, R.G. van Holstein
+ - Added computation of statistical uncertainty (photon and background noise) on measured star polarization in PDI part
+ - Added contrast curves for the detection of polarized extended sources and polarized point source with PDI
+ 
 v1.1.0 October 2019, R.G. van Holstein & J. Milli
  - Added angular differential imaging (ADI) including principal component analysis (PCA) of total intensity images for pupil-tracking observations
  - Added mean combination of ADI final images to command-line option :code:`irdap --meancombine`
@@ -43,10 +47,9 @@ v0.1.2 June 2019, R.G. van Holstein:
 To-do high priority
 -------------------
 
-   - Add possibility to not collapse data of pre-processing so that ADI can be done more accurately.
    - Add possibility to crop images when doing ADI to save time
    - Add possibility to use CENTER-frames with a different exposure time than the OBJECT-frames
-   - Create contrast curves of final PDI-and ADI-images 
+   - Create contrast curves of final ADI-images 
    - Add ADI+PCA for polarimetric data reduction of pupil-tracking observations
    - Add accurate (calibrated) model correction for narrowband filters
    - Add option to apply accurate plate scale and distortion correction for data (especially important for pupil-tracking and bright sources; do we need calibrations?)
