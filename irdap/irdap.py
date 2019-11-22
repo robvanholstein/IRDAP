@@ -39,6 +39,7 @@ import shutil
 import configparser
 import textwrap
 import urllib
+import photutils
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
@@ -1611,7 +1612,7 @@ def compute_fwhm_separation(filter_used):
         lambda_c = 2182e-9
         delta_lambda = 300e-9
 
-    # Compute theoretical full width half maximum
+    # Compute theoretical full width half maximum (pixels)
     fwhm = np.rad2deg((lambda_c + 0.5*delta_lambda) / D_telescope) * 3600 / pixel_scale
 
     return fwhm, separation
@@ -3934,7 +3935,7 @@ def compute_irdis_model_coefficient_matrix(p1, p2, a1, a2, theta_hwp1, theta_hwp
         theta_der1: array or list of mean derotator angles of the first measurements used to compute the double sum and double difference (theta_der^+)
         theta_der2: array or list of mean derotator angles of the second measurements used to compute the double sum and double difference (theta_der^-)
         dates: array or list of dates of observations (format 'YYYY-MM-DD', e.g.: '2018-09-30')
-        filter_used: string specifying filter used for observations ('FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H' or 'FILT_BBF_Ks')
+        filter_used: string specifying filter used for observations ('FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H' or 'FILT_BBF_Ks' or one of the NB filters)
 
     Output:
         X: coefficient matrix containing the double difference row vectors describing the measurements
@@ -4748,6 +4749,317 @@ def create_directories(list_path_dir):
             printandlog('{0:s}'.format(directory_sel), wrap=False)
 
 ###############################################################################
+# compute_contrast
+###############################################################################
+
+def compute_contrast(frame, filter_used, sigma_clip=True):
+    '''
+    Compute the contrast of an image frame using rings of apertures with size FWHM
+
+    Input:
+        frame: image frame of which contrast needs to be calculated
+        filter_used: string of filter from header 'ESO INS1 FILT ID' to determine FWHM for
+        sigma_clip: if True remove outliers before computing the mean and standard deviation
+
+    Output:
+        separation: separation of apertures used (pixels)
+        flux_mean: mean of fluxes in apertures
+        flux_std: standard deviation of fluxes in apertures (according to Mawet et al. 2014)
+        fwhm: full width half maximum used for the apertures (pixels)
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Compute the full width half maximum corresponding to the filter (pixels)
+    fwhm = compute_fwhm_separation(filter_used)[0]
+
+    # Define the image center and separations of apertures
+    x0, y0 = 511.5, 511.5
+    separation = np.arange(fwhm, 511.5, fwhm)
+
+    # For each separation, determine the fluxes in a ring of apertures
+    flux_mean = np.zeros_like(separation)
+    flux_std = np.zeros_like(separation)
+
+    for i, separation_sel in enumerate(separation):
+        # Determine the number of apertures at the separation
+        number_apertures = np.floor(2*np.pi*separation_sel / fwhm).astype(np.int)
+
+        # Compute the coordinates of the apertures
+        angle = np.linspace(0, 2*np.pi, number_apertures, endpoint=False)
+        x = x0 + separation_sel*np.cos(angle)
+        y = y0 + separation_sel*np.sin(angle)
+        coord_apertures = np.stack([x, y]).T
+
+        # Define the apertures and compute the flux in them
+        apertures = photutils.CircularAperture(coord_apertures, 0.5*fwhm)
+        flux = np.array(photutils.aperture_photometry(frame, apertures)['aperture_sum'])
+
+        if sigma_clip:
+            # Remove outliers from fluxes
+            flux = sigmaclip(flux, low=4.0, high=4.0)[0]
+
+        # Compute the mean and standard deviation of the fluxes (latter with correction from Mawet et al. 2014)
+        flux_mean[i] = np.mean(flux)
+        flux_std[i] = np.std(flux, ddof=1) * np.sqrt(1 + 1/(number_apertures-1))
+
+    return separation, flux_mean, flux_std, fwhm
+
+###############################################################################
+# plot_contrast_extended_source
+###############################################################################
+
+def plot_contrast_extended_source(path_table_star_flux, frame_I_Q, frame_I_U, frame_Q, frame_U,
+                                  filter_used, number_frames_Q, number_frames_U, QU_QUphi='QU',
+                                  sigma_clip=True, star_flux_in_jansky=None):
+    '''
+    Plot the contrast curve for an extended source in contrast/arcsec^2 or Jansky/arcsec^2
+
+    Input:
+        path_table_star_flux: path to CSV-file with star flux data
+        frame_I_Q: I_Q image frame
+        frame_I_U: I_U image frame
+        frame_Q: Q image frame
+        frame_U: U image frame
+        filter_used: string of filter from header 'ESO INS1 FILT ID' to determine FWHM for
+        number_frames_Q: number of frames that have been mean-combined to obtain the Q-frames
+        number_frames_U: number of frames that have been mean-combined to obtain the U-frames
+        QU_QUphi: if 'QU' the labels in the plot say 'Q' and U'; if 'QUphi', the labels say 'Qphi' and 'Uphi' (default = 'QU')
+        sigma_clip: if True remove outliers before computing the mean and standard deviation (default = True)
+        star_flux_in_jansky: the total star flux expressed in Jansky. If a value, express contrast curves
+            in Jansky/arcsec^2; If None, express contrast curve in contrast/arcsec^2 (default = None).
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Express frames in total number of electrons
+    frame_I_Q = frame_I_Q * irdis_gain * number_frames_Q
+    frame_I_U = frame_I_U * irdis_gain * number_frames_U
+    frame_Q = frame_Q * irdis_gain * number_frames_Q
+    frame_U = frame_U * irdis_gain * number_frames_U
+
+    # Compute mean and standard deviations as a function of separation
+    separation, I_Q_mean, _, fwhm = compute_contrast(frame=frame_I_Q, filter_used=filter_used, sigma_clip=sigma_clip)
+    _, I_U_mean, _, _ = compute_contrast(frame=frame_I_U, filter_used=filter_used, sigma_clip=sigma_clip)
+    _, _, Q_std, _ = compute_contrast(frame=frame_Q, filter_used=filter_used, sigma_clip=sigma_clip)
+    _, _, U_std, _ = compute_contrast(frame=frame_U, filter_used=filter_used, sigma_clip=sigma_clip)
+
+    # Set negative values to zero in means
+    I_Q_mean[I_Q_mean < 0] = 0
+    I_U_mean[I_U_mean < 0] = 0
+
+    # Determine number of pixels used in aperture
+    number_pixels_aperture = np.pi*(fwhm/2)**2
+
+    # Express mean and standard deviation values for a single pixel
+    I_Q_mean = I_Q_mean / number_pixels_aperture
+    I_U_mean = I_U_mean / number_pixels_aperture
+    Q_std = Q_std / np.sqrt(number_pixels_aperture)
+    U_std = U_std / np.sqrt(number_pixels_aperture)
+
+    # Retrieve reference star flux from CSV file as mean of reference flux left+right of the sequence of FLUX-files
+    reference_flux = np.mean(np.array(pd.read_csv(path_table_star_flux)['Reference flux left+right (ADU)']))
+
+    # Express reference flux in total number of electrons for Q and U
+    reference_flux_Q = reference_flux * irdis_gain * number_frames_Q
+    reference_flux_U = reference_flux * irdis_gain * number_frames_U
+
+    # Set star flux in Jansky and y-label of plot
+    if star_flux_in_jansky == None:
+        ylabel = 'Contrast / arcsec$^2$'
+        star_flux_in_jansky = 1
+    else:
+        ylabel = 'Jansky / arcsec$^2$'
+
+    # Compute photon noise in contrast (or Jansky) per arcsec^2
+    photon_noise_I_Q = np.sqrt(I_Q_mean) * star_flux_in_jansky / (reference_flux_Q * pixel_scale**2)
+    photon_noise_I_U = np.sqrt(I_U_mean) * star_flux_in_jansky / (reference_flux_U * pixel_scale**2)
+
+    # Express means and standard deviations in contrast (or Jansky) per arcsec^2
+    I_Q_mean = I_Q_mean * star_flux_in_jansky / (reference_flux_Q * pixel_scale**2)
+    I_U_mean = I_U_mean * star_flux_in_jansky / (reference_flux_U * pixel_scale**2)
+    Q_std = Q_std * star_flux_in_jansky / (reference_flux_Q * pixel_scale**2)
+    U_std = U_std * star_flux_in_jansky / (reference_flux_U * pixel_scale**2)
+
+    # Compute separation in arcseconds
+    separation_as = separation * pixel_scale
+
+    # Set label of Q(phi) and U(phi) curves
+    if QU_QUphi == 'QU':
+        label_Q = '$Q$'
+        label_U = '$U$'
+    elif QU_QUphi == 'QUphi':
+        label_Q = '$Q_\phi$'
+        label_U = '$U_\phi$'
+
+    # Determine limits of plot
+    xlim_max = 4
+    I_Q_min = np.min(photon_noise_I_Q[separation_as <= 4])
+    I_U_min = np.min(photon_noise_I_U[separation_as <= 4])
+    ylim_min = 10**np.floor(np.log10(np.min([I_Q_min, I_U_min])))
+    I_Q_max = np.max(I_Q_mean[separation_as <= 4])
+    I_U_max = np.max(I_U_mean[separation_as <= 4])
+    ylim_max = 10**np.ceil(np.log10(np.max([I_Q_max, I_U_max])))
+
+    # Plot contrast curve
+    plot_name = name_file_root + 'contrast_extended_source.png'
+    printandlog('\nCreating contrast curve for the detection of extended sources.')
+    plt.figure(figsize = (5.0, 5.0))
+    plt.plot(separation_as, I_Q_mean, 'b--', label=r'$I_Q$')
+    plt.plot(separation_as, I_U_mean, 'r--', label=r'$I_U$')
+    plt.plot(separation_as, Q_std, 'b-', label=r'$1\sigma$ ' + label_Q)
+    plt.plot(separation_as, U_std, 'r-', label=r'$1\sigma$ ' + label_U)
+    plt.plot(separation_as, photon_noise_I_Q, 'b:', label=r'photon noise $I_Q$')
+    plt.plot(separation_as, photon_noise_I_U, 'r:', label=r'photon noise $I_U$')
+    plt.yscale('log')
+    plt.xlabel('Separation (arcsec)')
+    plt.ylabel(ylabel)
+    plt.xlim([0, xlim_max])
+    plt.ylim([ylim_min, ylim_max])
+    plt.grid()
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig(os.path.join(path_pdi_figures_dir, plot_name), dpi=300, bbox_inches='tight')
+    plt.close()
+    printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
+
+###############################################################################
+# plot_contrast_point_source
+###############################################################################
+
+def plot_contrast_point_source(path_table_star_flux, path_flux_left, path_flux_right, frame_I_Q,
+                               frame_I_U, frame_Q, frame_U, filter_used, number_frames_Q,
+                               number_frames_U, QU_QUphi='QU', sigma_clip=True):
+    '''
+    Plot the contrast curve for a point source
+
+    Input:
+        path_table_star_flux: path to CSV-file with star flux data
+        path_flux_left: path to cube of preprocessed left FLUX-frames
+        path_flux_right: path to cube of preprocessed left FLUX-frames
+        frame_I_Q: I_Q image frame
+        frame_I_U: I_U image frame
+        frame_Q: Q image frame
+        frame_U: U image frame
+        filter_used: string of filter from header 'ESO INS1 FILT ID' to determine FWHM for
+        number_frames_Q: number of frames that have been mean-combined to obtain the Q-frames
+        number_frames_U: number of frames that have been mean-combined to obtain the U-frames
+        QU_QUphi: if 'QU' the labels in the plot say 'Q' and U'; if 'QUphi', the labels say 'Qphi' and 'Uphi' (default = 'QU')
+        sigma_clip: if True remove outliers before computing the mean and standard deviation (default = True)
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Express frames in total number of electrons
+    frame_I_Q = frame_I_Q * irdis_gain * number_frames_Q
+    frame_I_U = frame_I_U * irdis_gain * number_frames_U
+    frame_Q = frame_Q * irdis_gain * number_frames_Q
+    frame_U = frame_U * irdis_gain * number_frames_U
+
+    # Compute mean and standard deviations as a function of separation
+    separation, I_Q_mean, _, fwhm = compute_contrast(frame=frame_I_Q, filter_used=filter_used, sigma_clip=sigma_clip)
+    _, I_U_mean, _, _ = compute_contrast(frame=frame_I_U, filter_used=filter_used, sigma_clip=sigma_clip)
+    _, _, Q_std, _ = compute_contrast(frame=frame_Q, filter_used=filter_used, sigma_clip=sigma_clip)
+    _, _, U_std, _ = compute_contrast(frame=frame_U, filter_used=filter_used, sigma_clip=sigma_clip)
+
+    # Set negative values to zero in means
+    I_Q_mean[I_Q_mean < 0] = 0
+    I_U_mean[I_U_mean < 0] = 0
+
+    # Retrieve transmission and DIT ratios from CSV file
+    table_star_flux = pd.read_csv(path_table_star_flux)
+    transmission_ratio = np.array(table_star_flux['Transmission ratio (OBJECT/FLUX)'])
+    dit_ratio = np.array(table_star_flux['DIT ratio (OBJECT/FLUX)'])
+
+    # Define same aperture as used for contrast above to extract flux with
+    coord_aperture = (511.5, 511.5)
+    aperture = photutils.CircularAperture(coord_aperture, 0.5*fwhm)
+
+    # Determine star flux in left flux cubes
+    cube_flux_processed_left = pyfits.getdata(path_flux_left, header=True)[0]
+
+    reference_flux_left = 0
+    for frame, transmission_ratio_sel, dit_ratio_sel in zip(cube_flux_processed_left, transmission_ratio, dit_ratio):
+        flux = photutils.aperture_photometry(frame, aperture)['aperture_sum'][0]
+        reference_flux_left += flux * transmission_ratio_sel * dit_ratio_sel
+
+    # Divide by the number of frames because we actually need the mean of the different FLUX-files
+    reference_flux_left = reference_flux_left / cube_flux_processed_left.shape[0]
+
+    # Determine star flux in right flux cubes
+    cube_flux_processed_right = pyfits.getdata(path_flux_right, header=True)[0]
+
+    reference_flux_right = 0
+    for frame, transmission_ratio_sel, dit_ratio_sel in zip(cube_flux_processed_right, transmission_ratio, dit_ratio):
+        flux = photutils.aperture_photometry(frame, aperture)['aperture_sum'][0]
+        reference_flux_right += flux * transmission_ratio_sel * dit_ratio_sel
+
+    # Divide by the number of frames because we actually need the mean of the different FLUX-files
+    reference_flux_right = reference_flux_right / cube_flux_processed_right.shape[0]
+
+    # Compute reference star flux
+    reference_flux = reference_flux_left + reference_flux_right
+
+    # Express reference flux in total number of electrons for Q and U
+    reference_flux_Q = reference_flux * irdis_gain * number_frames_Q
+    reference_flux_U = reference_flux * irdis_gain * number_frames_U
+
+    # Compute photon noise as contrast
+    photon_noise_I_Q = np.sqrt(I_Q_mean) / reference_flux_Q
+    photon_noise_I_U = np.sqrt(I_U_mean) / reference_flux_U
+
+    # Express means and standard deviations as contrast
+    I_Q_mean = I_Q_mean / reference_flux_Q
+    I_U_mean = I_U_mean / reference_flux_U
+    Q_std = Q_std / reference_flux_Q
+    U_std = U_std / reference_flux_U
+
+    # Compute separation in arcseconds
+    separation_as = separation * pixel_scale
+
+    # Set label of Q(phi) and U(phi) curves
+    if QU_QUphi == 'QU':
+        label_Q = '$Q$'
+        label_U = '$U$'
+    elif QU_QUphi == 'QUphi':
+        label_Q = '$Q_\phi$'
+        label_U = '$U_\phi$'
+
+    # Determine limits of plot
+    xlim_max = 4
+    I_Q_min = np.min(photon_noise_I_Q[separation_as <= 4])
+    I_U_min = np.min(photon_noise_I_U[separation_as <= 4])
+    ylim_min = 10**np.floor(np.log10(np.min([I_Q_min, I_U_min])))
+    I_Q_max = np.max(I_Q_mean[separation_as <= 4])
+    I_U_max = np.max(I_U_mean[separation_as <= 4])
+    ylim_max = 10**np.ceil(np.log10(np.max([I_Q_max, I_U_max])))
+
+    # Plot contrast curve
+    plot_name = name_file_root + 'contrast_point_source.png'
+    printandlog('\nCreating contrast curve for the detection of polarized point sources.')
+    plt.figure(figsize = (5.0, 5.0))
+    plt.plot(separation_as, I_Q_mean, 'b--', label=r'$I_Q$')
+    plt.plot(separation_as, I_U_mean, 'r--', label=r'$I_U$')
+    plt.plot(separation_as, Q_std, 'b-', label=r'$1\sigma$ ' + label_Q)
+    plt.plot(separation_as, U_std, 'r-', label=r'$1\sigma$ ' + label_U)
+    plt.plot(separation_as, photon_noise_I_Q, 'b:', label=r'photon noise $I_Q$')
+    plt.plot(separation_as, photon_noise_I_U, 'r:', label=r'photon noise $I_U$')
+    plt.yscale('log')
+    plt.xlabel('Separation (arcsec)')
+    plt.ylabel('Point-source contrast')
+    plt.xlim([0, xlim_max])
+    plt.ylim([ylim_min, ylim_max])
+    plt.grid()
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.savefig(os.path.join(path_pdi_figures_dir, plot_name), dpi=300, bbox_inches='tight')
+    plt.close()
+    printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
+
+###############################################################################
 # apply_pdi
 ###############################################################################
 
@@ -5204,6 +5516,42 @@ def apply_pdi(cube_left_frames,
     # Write frames that show annuli used to retrieve star and background signals in reduced_star_pol_subtr directory
     write_fits_files(data=frame_annulus_star, path=os.path.join(path_pdi_subtr_dir, name_file_root + 'annulus_star.fits'), header=False)
     write_fits_files(data=frame_annulus_background, path=os.path.join(path_pdi_subtr_dir, name_file_root + 'annulus_background.fits'), header=False)
+
+    ###############################################################################
+    # Create contrast curves
+    ###############################################################################
+
+    printandlog('\n###############################################################################')
+    printandlog('# Creating contrast curves for detection of extended and point sources')
+    printandlog('###############################################################################')
+
+    # Define path to read CSV-file and processed FLUX-files from
+    path_table_star_flux = os.path.join(path_flux_dir, name_file_root + 'reference_flux.csv')
+    path_flux_left = os.path.join(path_flux_dir, name_file_root + 'cube_flux_processed_left.fits')
+    path_flux_right = os.path.join(path_flux_dir, name_file_root + 'cube_flux_processed_right.fits')
+
+    if all([os.path.exists(x) for x in [path_table_star_flux, path_flux_left, path_flux_right]]):
+        # Create contrast curve for extended sources
+        plot_contrast_extended_source(path_table_star_flux,
+                                      frame_I_Q_background_subtracted,
+                                      frame_I_U_background_subtracted,
+                                      frame_Q_phi_star_polarization_subtracted,
+                                      frame_U_phi_star_polarization_subtracted,
+                                      filter_used, number_frames_Q, number_frames_U, QU_QUphi='QUphi',
+                                      sigma_clip=True, star_flux_in_jansky=None)
+
+
+        # Create contrast curve for polarized point sources
+        plot_contrast_point_source(path_table_star_flux, path_flux_left, path_flux_right,
+                                   frame_I_Q_background_subtracted,
+                                   frame_I_U_background_subtracted,
+                                   frame_Q_star_polarization_subtracted,
+                                   frame_U_star_polarization_subtracted,
+                                   filter_used, number_frames_Q, number_frames_U, QU_QUphi='QU',
+                                   sigma_clip=True)
+
+    else:
+        printandlog('\nNot creating contrast curves because the processed flux files and/or the corresponding CSV-file do not exist.')
 
     printandlog('\nEnd of polarimetric differential imaging.')
 
