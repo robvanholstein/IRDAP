@@ -3724,7 +3724,7 @@ def determine_signal_uncertainty(cube, annulus_star, annulus_background, gain=1,
 def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star,
                                 annulus_background, number_frames_Q=1, number_frames_U=1):
     '''
-    Determine polarization of star and  the corresponding uncertainty in annulus
+    Determine polarization of star and the corresponding uncertainty in annulus
 
     Input:
         cube_I_Q: cube of I_Q-images
@@ -3751,12 +3751,8 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
     Output:
         q: normalized Stokes q measured in annulus
         u: normalized Stokes u measured in annulus
-        DoLP: degree of linear polarization measured in annulus
-        AoLP: angle of linear polarization measured in annulus
         sigma_q: uncertainty in normalized Stokes q
         sigma_u: uncertainty in normalized Stokes u
-        sigma_DoLP: uncertainty in degree of linear polarization
-        sigma_AoLP: uncertainty in angle of linear polarization
 
     File written by Rob van Holstein
     Function status: verified
@@ -3776,15 +3772,43 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
                                               annulus_background=annulus_background,
                                               gain=irdis_gain, number_frames=number_frames_U)
 
-    # Compute normalized Stokes q and u, DoLP and AoLP
+    # Compute normalized Stokes q and u
     q = Q / I_Q
     u = U / I_U
-    DoLP = np.sqrt(q**2 + u**2)
-    AoLP = np.mod(np.rad2deg(0.5 * np.arctan2(u, q)), 180)
 
     # Compute uncertainties in q, u using linear error propagation
     sigma_q = np.abs(q) * np.sqrt((sigma_Q / Q)**2 + (sigma_I_Q / I_Q)**2)
     sigma_u = np.abs(u) * np.sqrt((sigma_U / U)**2 + (sigma_I_U / I_U)**2)
+
+    return q, u, sigma_q, sigma_u
+
+###############################################################################
+# determine_polarization_degree_angle
+###############################################################################
+
+def determine_polarization_degree_angle(q, u, sigma_q, sigma_u):
+    '''
+    Determine the degree and angle of linear polarization and the corresponding uncertainties
+
+    Input:
+        q: normalized Stokes q measured in annulus
+        u: normalized Stokes u measured in annulus
+        sigma_q: uncertainty in normalized Stokes q
+        sigma_u: uncertainty in normalized Stokes u
+
+    Output:
+        DoLP: degree of linear polarization measured in annulus
+        AoLP: angle of linear polarization measured in annulus
+        sigma_DoLP: uncertainty in degree of linear polarization
+        sigma_AoLP: uncertainty in angle of linear polarization
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Compute DoLP and AoLP
+    DoLP = np.sqrt(q**2 + u**2)
+    AoLP = np.mod(np.rad2deg(0.5 * np.arctan2(u, q)), 180)
 
     # Compute uncertainties in DoLP and AoLP using linear error propagation
     error_term_DoLP = np.sqrt(q**2*sigma_q**2 + u**2*sigma_u**2)
@@ -3792,7 +3816,7 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
     error_term_AoLP = np.sqrt(u**2*sigma_q**2 + q**2*sigma_u**2)
     sigma_AoLP = np.rad2deg(1/(2*DoLP**2) * error_term_AoLP)
 
-    return q, u, DoLP, AoLP, sigma_q, sigma_u, sigma_DoLP, sigma_AoLP
+    return DoLP, AoLP, sigma_DoLP, sigma_AoLP
 
 ###############################################################################
 # compute_mean_angle
@@ -5287,7 +5311,7 @@ def apply_pdi(cube_left_frames,
     printandlog('\nRead number of frames in Q and U from ' + path_number_frames + '.')
 
     # Compute normalized Stokes q and u, DoLP and AoLP in an annulus on the star
-    q_star, u_star, DoLP_star, AoLP_star, sigma_q_star, sigma_u_star, sigma_DoLP_star, sigma_AoLP_star = \
+    q_star, u_star, sigma_q_star, sigma_u_star = \
     determine_star_polarization(cube_I_Q=frame_I_Q_background_subtracted,
                                 cube_I_U=frame_I_U_background_subtracted,
                                 cube_Q=frame_Q_background_subtracted,
@@ -5296,6 +5320,9 @@ def apply_pdi(cube_left_frames,
                                 annulus_background=annulus_background,
                                 number_frames_Q=number_frames_Q,
                                 number_frames_U=number_frames_U)
+
+    DoLP_star, AoLP_star, sigma_DoLP_star, sigma_AoLP_star = \
+    determine_polarization_degree_angle(q=q_star, u=u_star, sigma_q=sigma_q_star, sigma_u=sigma_u_star)
 
     # Print resulting star polarization
     printandlog('\nMeasured star polarization and statistical error (taking into account photon noise and background noise according to Newberry (1991)) in the background-subtracted I_Q-, I_U-, Q- and U-images:')
@@ -5343,13 +5370,18 @@ def apply_pdi(cube_left_frames,
         ###############################################################################
 
         # Compute normalized Stokes q and u, DoLP and AoLP in an annulus on the star as a function of HWP cycle number
-        q_star_HWP_cycle, u_star_HWP_cycle, DoLP_star_HWP_cycle, AoLP_star_HWP_cycle = \
+        q_star_HWP_cycle, u_star_HWP_cycle, sigma_q_star_HWP_cycle, sigma_u_star_HWP_cycle = \
         determine_star_polarization(cube_I_Q=cube_I_Q_background_subtracted,
                                     cube_I_U=cube_I_U_background_subtracted,
                                     cube_Q=cube_Q_background_subtracted,
                                     cube_U=cube_U_background_subtracted,
                                     annulus_star=annulus_star,
-                                    annulus_background=annulus_background)[:4]
+                                    annulus_background=annulus_background)
+
+        DoLP_star_HWP_cycle, AoLP_star_HWP_cycle = \
+        determine_polarization_degree_angle(q=q_star_HWP_cycle, u=u_star_HWP_cycle,
+                                            sigma_q=sigma_q_star_HWP_cycle,
+                                            sigma_u=sigma_u_star_HWP_cycle)[:2]
 
         # Compute spread of q_star, u_star, DoLP_star and AoLP_star
         std_q_star = np.std(q_star_HWP_cycle, ddof=1)
