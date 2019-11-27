@@ -14,6 +14,9 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.2.1 November 2019, R.G. van Holstein
+ - Corrected bug introduced in v1.2.0 with computation of DoLP and AoLP of star when there is an unequal number of Q and U measurements
+ 
 v1.2.0 November 2019, R.G. van Holstein
  - Added computation of statistical uncertainty (photon and background noise) on measured star polarization in PDI part
  - Added contrast curves for the detection of polarized extended sources and polarized point source with PDI

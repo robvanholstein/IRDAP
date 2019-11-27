@@ -3776,7 +3776,7 @@ def determine_star_polarization(cube_I_Q, cube_I_U, cube_Q, cube_U, annulus_star
     q = Q / I_Q
     u = U / I_U
 
-    # Compute uncertainties in q, u using linear error propagation
+    # Compute uncertainties in q and u using linear error propagation
     sigma_q = np.abs(q) * np.sqrt((sigma_Q / Q)**2 + (sigma_I_Q / I_Q)**2)
     sigma_u = np.abs(u) * np.sqrt((sigma_U / U)**2 + (sigma_I_U / I_U)**2)
 
