@@ -4476,9 +4476,15 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.close()
     printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
 
+    # Compute estimate of polarimetric efficiency (only Q in, only U in, equal Q and U in, mean of those)
+    poleff_Q = np.sqrt(QQ_Q**2 + QQ_U**2)
+    poleff_U = np.sqrt(UQ_Q**2 + UQ_U**2)
+    poleff_QU = np.sqrt(0.5*(QQ_Q + UQ_Q)**2 + 0.5*(QQ_U + UQ_U)**2)
+    poleff = np.mean([poleff_Q, poleff_U, poleff_QU], axis=0)
+
     # Plot elements Q->Q and U->Q from model as a function of HWP cycle number
-    plot_name = name_file_root + 'model_crosstalk_transmission.png'
-    printandlog('\nCreating plot showing the model-predicted polarized transmission and crosstalk/rotation elements vs. HWP cycle number.')
+    plot_name = name_file_root + 'model_poleff_crosstalk_transmission.png'
+    printandlog('\nCreating plot showing the model-predicted polarimetric efficiency and polarized transmission and crosstalk/rotation elements vs. HWP cycle number.')
     font_size = 10
     x_max = max([len(QQ_Q), len(QQ_U)])
     plt.figure(figsize = (5.9, 3.8))
@@ -4487,6 +4493,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.plot(np.arange(1, len(UQ_Q) + 1), UQ_Q, 'o-', color = (0.5, 0, 0.5), label = r'Uin $\rightarrow$ Q')
     plt.plot(np.arange(1, len(QQ_U) + 1), QQ_U, 'o-', color = (1, 0.5, 0), label = r'Qin $\rightarrow$ U')
     plt.plot(np.arange(1, len(UQ_U) + 1), UQ_U, 'o-r', label = r'Uin $\rightarrow$ U')
+    plt.plot(np.arange(1, len(poleff) + 1), poleff, 'o-k', label='pol. eff.')
     ax = plt.gca()
     ax.set_xlabel(r'HWP cycle', fontsize = font_size)
     ax.tick_params(axis = 'x', labelsize = font_size)
@@ -4500,6 +4507,15 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     plt.savefig(os.path.join(path_pdi_figures_dir, plot_name), dpi = 300, bbox_inches = 'tight')
     plt.close()
     printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
+
+    # Print range of polarimetric efficiency of observations
+    min_poleff = np.min(poleff)
+    max_poleff = np.max(poleff)
+    printandlog('\nThe polarimetric efficiency of the observations is in the range %.f - %.f %%.' % (100*min_poleff, 100*max_poleff))
+
+    # Show a warning if the minimum polarimetric efficiency is lower than 85%
+    if min_poleff < 0.85:
+        printandlog('\nWARNING, the polarimetric efficiency of the observations reaches values < 85 %. IRDAP corrects for the crosstalk, but the SNR may be degraded with respect to observations taken at a polarimetric efficiency close to 100 %.')
 
     ###############################################################################
     # Compute incident Q- and U-images by correcting for instrumental polarization effects
@@ -6130,8 +6146,12 @@ def mean_combine_adi_images(path_main_write_dir, path_read_dirs):
                         raise IOError('\n\nThe number of principal components and PCA radii of the ' + side + ' ADI+PCA-files differ among the read direcortories.')
 
             for paths_sel in array_paths:
-                # Read files and mean-combine them
-                frame_mean = np.mean(np.vstack(read_fits_files(paths_sel, silent=True)[0]), axis=0)
+                if reduced_dir == 'classical':
+                    # Read files and mean-combine them
+                    frame_mean = np.mean(np.vstack(read_fits_files(paths_sel, silent=True)[0]), axis=0)
+                elif reduced_dir == 'pca':
+                    # Read files and mean-combine frames (result is actually a cube)
+                    frame_mean = np.mean(read_fits_files(paths_sel, silent=True)[0], axis=0)
 
                 # Define file name and save file
                 if reduced_dir == 'classical':
@@ -6836,10 +6856,21 @@ def run_pipeline(path_main_dir):
             raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
         elif any([type(y) not in [int, float] for x in flux_annulus_star for y in x]):
             raise TypeError('\n\n\'flux_annulus_star\' should be \'automatic\', a length-6 tuple of floats or integers or a list of length-6 tuples of floats or integers.')
-        elif flux_annulus_star[2] != 0:
-            printandlog('\nWARNING, the aperture inner radius for the star photometry (3rd element of flux_annulus_star) is set to {0:.1f}. It should be set to 0 to encompass the star flux unless there are very specific circumstances'.format(flux_annulus_star[2]))
-        elif flux_annulus_star[3] > 140:
-            printandlog('\nWARNING, the aperture outer radius for the star photometry (4th element of flux_annulus_star) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star'.format(flux_annulus_star[3]))
+        inner_radii = []
+        outer_radii = []
+        for x in flux_annulus_star:
+            inner_radii.append(x[2])
+            outer_radii.append(x[3])
+        if not any([x == 0.0 for x in inner_radii]):
+            printandlog('\nWARNING, none of the inner radii of the annuli defined for the star photometry (3rd element of the tuples of flux_annulus_star) are set to 0. At least one of the inner radii should be set to 0 to encompass the star flux unless there are very specific circumstances.')
+        if any([x > 140 for x in outer_radii]):
+            printandlog('\nWARNING, at least one of the outer radii of the annuli defined for the star photometry (4th element of the tuples of flux_annulus_star) are set to a value higher than 140. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star.'.format(x[3]))
+
+    if type(flux_annulus_star) is tuple:
+        if flux_annulus_star[2] != 0:
+            printandlog('\nWARNING, the aperture inner radius for the star photometry (3rd element of flux_annulus_star) is set to {0:.1f}. It should be set to 0 to encompass the star flux unless there are very specific circumstances.'.format(flux_annulus_star[2]))
+        if flux_annulus_star[3] > 140:
+            printandlog('\nWARNING, the aperture outer radius for the star photometry (4th element of flux_annulus_star) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star.'.format(flux_annulus_star[3]))
 
     # combination_method_polarization
     if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
