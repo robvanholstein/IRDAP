@@ -14,6 +14,11 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.2.2 November 2019, R.G. van Holstein
+ - Added polarimetric efficiency to crosstalk/transmission plot, a print statement with the range of the polarimetric efficiency of the observations, and a warning in case of low polarimetric efficiency
+ - Corrected a bug in the checks of flux_annulus_star
+ - Corrected a bug that when mean combining ADI+PCA-images only the first frame of the cube was written to the FITS-files
+
 v1.2.1 November 2019, R.G. van Holstein
  - Corrected bug introduced in v1.2.0 with computation of DoLP and AoLP of star when there is an unequal number of Q and U measurements
  
@@ -65,11 +70,10 @@ To-do low priority
    - Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)	
    - Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)
    - Add option for 'stupid ADI' for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset
-   - Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number
    - Make figures with sub-images horizontal, or make multiple lines of left and right images in a single figure   
    - Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)
    - When rotating images, make complete frame still visible to not cut out any parts of the data
-   - Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images)
+   - Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images). Perhaps fit coordinates on each PSF, but do the actual shifts with the mean of these fitted values. This has proven to give a more accurate final result. 
    - Test finding of satellite spots of center files when waffle pattern is '+'
    - Add weighted least-squares as option for model correction (depending on image quality or polarimetric efficiency)	
    - Add multiprocessing for sigma filtering and centering of frames

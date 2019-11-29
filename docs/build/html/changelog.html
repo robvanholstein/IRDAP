@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &amp; to-do &mdash; IRDAP 1.2.1 documentation</title>
+  <title>Changelog &amp; to-do &mdash; IRDAP 1.2.2 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.2.1
+                1.2.2
               </div>
             
           
@@ -171,6 +171,13 @@
 <div class="section" id="changelog">
 <h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
+<dt>v1.2.2 November 2019, R.G. van Holstein</dt>
+<dd><ul class="first last simple">
+<li>Added polarimetric efficiency to crosstalk/transmission plot, a print statement with the range of the polarimetric efficiency of the observations, and a warning in case of low polarimetric efficiency</li>
+<li>Corrected a bug in the checks of flux_annulus_star</li>
+<li>Corrected a bug that when mean combining ADI+PCA-images only the first frame of the cube was written to the FITS-files</li>
+</ul>
+</dd>
 <dt>v1.2.1 November 2019, R.G. van Holstein</dt>
 <dd><ul class="first last simple">
 <li>Corrected bug introduced in v1.2.0 with computation of DoLP and AoLP of star when there is an unequal number of Q and U measurements</li>
@@ -243,11 +250,10 @@
 <li>Add images and plots aimed at analysis of polarimetric data (R^2 scaling, AoLP arrows in polarized intensity or DoLP images, contrast curves etc.)</li>
 <li>Add option to subtract DARK,BACKGROUND-frames if sky files are lacking (especially important for Ks; test effect first before completely implementing)</li>
 <li>Add option for ‘stupid ADI’ for field-tracking data with derotator offset and option to subtract 180 deg rotated image if no derotator offset</li>
-<li>Add warning if (part of the) data is taken at a low polarimetric efficiency, and perhaps make plot of efficiency vs file number</li>
 <li>Make figures with sub-images horizontal, or make multiple lines of left and right images in a single figure</li>
 <li>Add options for various methods to shift and rotate images (interpolate, ndimage-fourier, sci-image functions; similar to VIP)</li>
 <li>When rotating images, make complete frame still visible to not cut out any parts of the data</li>
-<li>Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images)</li>
+<li>Improve centering of non-coronagraphic data (center found depends a lot on first PSF and affects Qphi and Uphi images). Perhaps fit coordinates on each PSF, but do the actual shifts with the mean of these fitted values. This has proven to give a more accurate final result.</li>
 <li>Test finding of satellite spots of center files when waffle pattern is ‘+’</li>
 <li>Add weighted least-squares as option for model correction (depending on image quality or polarimetric efficiency)</li>
 <li>Add multiprocessing for sigma filtering and centering of frames</li>
