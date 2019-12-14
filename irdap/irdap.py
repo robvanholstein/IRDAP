@@ -2533,14 +2533,14 @@ def process_object_frames(path_object_files,
 
             # Print mean center coordinates with error
             separator = ' '*max([len('%.2f' % x) for x in np.append(x_center_std, y_center_std)])
-            printandlog('\nMean center coordinates (pixels):')
+            printandlog('\nMean and standard deviation of fitted center coordinates (pixels):')
             printandlog('x_left' + separator + '         y_left' + separator + '         x_right' + separator + '         y_right')
             printandlog('%.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f    %.2f +/- %.2f'
                         % (x_center_mean[0] + 1, x_center_std[0], y_center_mean[0] + 1, y_center_std[0], x_center_mean[1] + 1, x_center_std[1], y_center_mean[1] + 1, y_center_std[1]))
 
             # Print warning if there is significant deviation among the center coordinates found
             if any(np.append(x_center_std, y_center_std) > 0.5):
-                printandlog('\nWARNING, for at least one of the fitted center coordinates the standard deviation is larger than 0.5 pixels.')
+                printandlog('\nWARNING, for at least one of the fitted center coordinates the standard deviation is larger than 0.5 pixels. A large standard deviation is often caused by a significant variation in the position of the star during the observing sequence, but can in some cases indicate bad centering.')
         else:
             # Print mean center coordinates without error
             printandlog('\nCenter coordinates (pixels):')
@@ -3938,6 +3938,7 @@ def compute_polarizer_mueller_matrix(d):
     M = np.zeros((4,4))
     M[0,0] = M[1,1] = 0.5
     M[0,1] = M[1,0] = 0.5*d
+    M[2,2] = M[3,3] = np.sqrt(1 - d**2)
 
     return M
 
@@ -4214,7 +4215,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     for i, header_sel in enumerate(header):
         p[i] = compute_mean_angle([header_sel['ESO TEL PARANG START'], header_sel['ESO TEL PARANG END']])
         a_start[i] = header_sel['ESO TEL ALT']
-        theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 BEGIN'] - 152.15, 180), np.mod(header_sel['ESO INS4 DROT3 END'] - 152.15, 180)]), 180)
+        theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 BEGIN'] - 152.15, 360), np.mod(header_sel['ESO INS4 DROT3 END'] - 152.15, 360)]), 180)
         if tracking_mode_used == 'FIELD':
             theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 BEGIN'], header_sel['ESO INS4 DROT2 END']]), 360)
         elif tracking_mode_used == 'PUPIL':
@@ -4320,6 +4321,15 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     UQ_Q = X_QU[indices_Q, 1]
     QQ_U = X_QU[indices_U, 0]
     UQ_U = X_QU[indices_U, 1]
+
+    # Add NaN's to shortest array of efficiencies
+    len_indices_diff = len(indices_Q) - len(indices_U)
+    if len_indices_diff > 0:
+        QQ_U = np.append(QQ_U, np.nan*np.ones(len_indices_diff))
+        UQ_U = np.append(UQ_U, np.nan*np.ones(len_indices_diff))
+    elif len_indices_diff < 0:
+        QQ_Q = np.append(QQ_Q, np.nan*np.ones(-len_indices_diff))
+        UQ_Q = np.append(UQ_Q, np.nan*np.ones(-len_indices_diff))
 
     ###############################################################################
     # Compute rotation angles of images
@@ -4509,8 +4519,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     printandlog(os.path.join(path_pdi_figures_dir, plot_name), wrap=False)
 
     # Print range of polarimetric efficiency of observations
-    min_poleff = np.min(poleff)
-    max_poleff = np.max(poleff)
+    min_poleff = np.nanmin(poleff)
+    max_poleff = np.nanmax(poleff)
     printandlog('\nThe polarimetric efficiency of the observations is in the range %.f - %.f %%.' % (100*min_poleff, 100*max_poleff))
 
     # Show a warning if the minimum polarimetric efficiency is lower than 85%
@@ -4938,6 +4948,10 @@ def plot_contrast_extended_source(path_table_star_flux, frame_I_Q, frame_I_U, fr
     xlim_max = 4
     I_Q_min = np.min(photon_noise_I_Q[separation_as <= 4])
     I_U_min = np.min(photon_noise_I_U[separation_as <= 4])
+    if I_Q_min == 0.0:
+        I_Q_min = 1e-16
+    if I_U_min == 0.0:
+        I_U_min = 1e-16
     ylim_min = 10**np.floor(np.log10(np.min([I_Q_min, I_U_min])))
     I_Q_max = np.max(I_Q_mean[separation_as <= 4])
     I_U_max = np.max(I_U_mean[separation_as <= 4])
@@ -5072,6 +5086,10 @@ def plot_contrast_point_source(path_table_star_flux, path_flux_left, path_flux_r
     xlim_max = 4
     I_Q_min = np.min(photon_noise_I_Q[separation_as <= 4])
     I_U_min = np.min(photon_noise_I_U[separation_as <= 4])
+    if I_Q_min == 0.0:
+        I_Q_min = 1e-16
+    if I_U_min == 0.0:
+        I_U_min = 1e-16
     ylim_min = 10**np.floor(np.log10(np.min([I_Q_min, I_U_min])))
     I_Q_max = np.max(I_Q_mean[separation_as <= 4])
     I_U_max = np.max(I_U_mean[separation_as <= 4])
@@ -5411,6 +5429,10 @@ def apply_pdi(cube_left_frames,
         printandlog('std_u_star =    %.4f %%' % (100*std_u_star))
         printandlog('std_DoLP_star = %.4f %%' % (100*std_DoLP_star))
         printandlog('std_AoLP_star = %.2f deg' % std_AoLP_star)
+
+        # Print warning and suggestion to use normalized double difference when spread is large
+        if std_q_star > 0.0025 or std_u_star > 0.0025:
+            printandlog('\nWARNING, the spread of the star polarization in q and/or u is larger than 0.25%. Please check whether the annulus used to determine the star polarization contains sufficient flux from the star and/or see if better results are obtained when repeating the PDI part with \'double_difference_type\' set to \'normalized\'.')
 
         # Plot q, u and DoLP from annulus as function of HWP cycle number
         plot_name_star_quDoLP = name_file_root + 'star_pol_quDoLP.png'
@@ -6322,7 +6344,7 @@ def run_pipeline(path_main_dir):
     # Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     pupil_offset = 135.99
 
-    # Define true North correction (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
+    # Define true North correction (deg) (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     true_north_correction = -1.75
 
     # Define pixel scale in arcsec/px from Maire et al. 2016 (average value valid between all filters)

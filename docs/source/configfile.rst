@@ -54,8 +54,8 @@ Basic pre-processing options
 
    Method to center the OBJECT-frames. If ``center frames``, center the OBJECT-frames with the center coordinates determined from the CENTER-frames. If ``gaussian``, center the OBJECT-frames by fitting a 2D Gaussian to each frame. If ``cross-correlation``, perform the centering by fitting a 2D Gaussian to the first frame and then using cross-correlation to align (register) the other frames onto the centered first frame. Generally ``gaussian`` yields more accurate results than ``cross-correlation``. For ``gaussian`` and ``cross-correlation`` the determined center coordinates are plotted for each image. If ``manual``, use fixed coordinates as defined with object_center_coordinates_ to center the OBJECT-frames. If ``automatic``, center the OBJECT-frames using the CENTER-files if they exist, and fit a 2D Gaussian to each OBJECT-frame if there are no CENTER-files.
 
-   In case the centering is not accurate, the advanced parameters center_subtract_object_, center_param_centering_, object_center_coordinates_ and object_param_centering_ can be adapted. 
-
+   .. attention::
+      In case the centering is not accurate, the advanced parameters center_subtract_object_, center_param_centering_, object_center_coordinates_ and object_param_centering_ can be adapted. In addition, if the shifts among the frames are small when centering using ``gaussian`` or ``cross-correlation``, the quality of the final images can sometimes be improved by repeating the pre-processing with object_centering_method_ set to ``manual`` and object_center_coordinates_ equal to the mean center coordinates found earlier with the Gaussian fitting or cross-correlation (see the log file).
 
 .. py:function:: frames_to_remove:
 
@@ -298,7 +298,7 @@ Advanced PDI options
 
    ``conventional``, ``normalized`` (default = ``conventional``)
 
-   Type of double difference to be computed. In almost all cases one would use ``conventional``. When there are large variations in atmospheric seeing and sky transparency among the measurements, using ``normalized`` can suppress spurious polarization signals and improve the quality of the final images (see `van Holstein et al. 2019 <https://arxiv.org/abs/1909.13108>`_).
+   Type of double difference to be computed. In almost all cases one would use ``conventional``. When there are large variations in atmospheric seeing and/or sky transparency among the measurements (often resulting in a large spread of the measured star polarization as a function of HWP cycle number), using ``normalized`` can suppress spurious polarization signals and improve the quality of the final images (see `van Holstein et al. 2019 <https://arxiv.org/abs/1909.13108>`_). 
 
 .. _single_posang_north_up:
 
