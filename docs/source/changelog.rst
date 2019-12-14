@@ -14,6 +14,12 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.2.3 December 2019, R.G. van Holstein
+ - Clarified meaning of standard deviation of fitted center coordinates in log file
+ - Very minor correction to computation of HWP angle from headers
+ - Corrected minor bug when computing polarimetric efficiency when the number of Q and U cycles is unequal
+ - Added warning when spread of star polarization per HWP cycle is large and suggest to try normalized double difference
+ 
 v1.2.2 November 2019, R.G. van Holstein
  - Added polarimetric efficiency to crosstalk/transmission plot, a print statement with the range of the polarimetric efficiency of the observations, and a warning in case of low polarimetric efficiency
  - Corrected a bug in the checks of flux_annulus_star
