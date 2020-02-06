@@ -19,8 +19,8 @@
 .. |license| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
     :target: https://github.com/robvanholstein/IRDAP/blob/master/LICENSE
 
-.. |ads1| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2019)-blueviolet
-	:target: https://arxiv.org/abs/1909.13108
+.. |ads1| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2020)-blueviolet
+	:target: https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract
 
 .. |ads2| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2017)-blueviolet.svg
 	:target: https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V
@@ -42,6 +42,6 @@ Full documentation: https://irdap.readthedocs.io
 
 Feedback, questions, comments: send an e-mail to `Rob van Holstein <vanholstein@strw.leidenuniv.nl>`_.
 
-When publishing data reduced with IRDAP, please cite `van Holstein et al. (2019) <https://arxiv.org/abs/1909.13108>`_. For data in pupil-tracking mode please additionally cite `van Holstein et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
+When publishing data reduced with IRDAP, please cite `van Holstein et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract>`_. For data in pupil-tracking mode please additionally cite `van Holstein et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
                                                 
 IRDAP is distributed under the GNU General Public License v3. See the `LICENSE file <https://github.com/robvanholstein/IRDAP/blob/master/LICENSE>`_ for the precise terms and conditions.

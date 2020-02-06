@@ -8,7 +8,7 @@ Full documentation: https://irdap.readthedocs.io
 Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
 
 When publishing data reduced with IRDAP, please cite van Holstein et al.
-(2019): https://arxiv.org/abs/1909.13108.
+(2020): https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract.
 For data in pupil-tracking mode please additionally cite van Holstein et al.
 (2017): https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V.
 
@@ -1849,7 +1849,7 @@ def fit_2d_gaussian(frame, x0=None, y0=None, x_stddev=1.0, y_stddev=1.0, theta=0
     else:
         # Cut out sub-image around center
         sub_image = np.copy(frame[y0 - crop_radius:y0 + crop_radius, \
-                          x0 - crop_radius:x0 + crop_radius])
+                                  x0 - crop_radius:x0 + crop_radius])
 
     # Create grid of x- and y-coordinates
     y, x = np.mgrid[:sub_image.shape[-2], :sub_image.shape[-1]]
@@ -3560,7 +3560,7 @@ def compute_double_sum_double_difference(cube_single_sum, cube_single_difference
         cube_single_difference: cube of single-difference Q^+, Q^-, U^+ and U^- images
         header: list of FITS-headers of raw science frames
         double_difference_type: type of double difference to be computed, either
-        'conventional' or 'normalized' (see van Holstein et al. 2019; default = 'conventional')
+        'conventional' or 'normalized' (see van Holstein et al. 2020; default = 'conventional')
 
     Output:
         cube_I_Q_double_sum: cube of double-sum I_Q-images
@@ -4643,7 +4643,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
 def compute_azimuthal_stokes_parameters(frame_Q, frame_U, rotation_angle=0, center_coordinates=None):
     '''
     Compute images of azimuthal stokes parameters Q_phi and U_phi using defintions of
-    van Holstein et al. (2019)
+    de Boer et al. (2020)
 
     Input:
         frame_Q: Stokes Q-image
@@ -5169,7 +5169,7 @@ def apply_pdi(cube_left_frames,
             located far away from the star with an inner radius of 360 pixels
             and an outer radius of 420 pixels (default = 'large annulus').
         double_difference_type: type of double difference to be computed, either
-        'conventional' or 'normalized' (see van Holstein et al. 2019; default = 'conventional')
+        'conventional' or 'normalized' (see van Holstein et al. 2020; default = 'conventional')
         remove_vertical_band_detector_artefact: If True remove the vertical band detector artefact seen in
             the double-difference Q- and U-images. If False don't remove it (default = True).
         combination_method_polarization: method to be used to produce the incident Q- and U-images,
@@ -5869,7 +5869,7 @@ def apply_adi(cube_left_frames, cube_right_frames,header, principal_components='
 def run_demo(path_main_dir):
     '''
     Run example reduction with data from T Cha as published in Pohl et al.
-    (2017) and  and used in van Holstein et al. (2019)
+    (2017) and  and used in van Holstein et al. (2020)
 
     Input:
         path_main_dir: string specifying path to main directory
@@ -5880,7 +5880,7 @@ def run_demo(path_main_dir):
 
     print_wrap('\nStarting example reduction using data of the circumstellar ' +
                'disk of T Cha (1 HWP cycle) as published in Pohl et al. (2017) ' +
-               'and used in van Holstein et al. (2019).')
+               'and used in van Holstein et al. (2020).')
 
     # Define path of raw directory
     path_raw_dir = os.path.join(path_main_dir, 'raw')
@@ -6482,7 +6482,7 @@ def run_pipeline(path_main_dir):
     printandlog('# Important notice')
     printandlog('###############################################################################')
     printandlog('\nWhen publishing data reduced with IRDAP, please cite van Holstein et al.')
-    printandlog('(2019): https://arxiv.org/abs/1909.13108.')
+    printandlog('(2020): https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract.')
     printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
     printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
     printandlog('\nFull documentation: https://irdap.readthedocs.io')
@@ -7141,7 +7141,7 @@ def run_pipeline(path_main_dir):
     printandlog('# Important notice')
     printandlog('###############################################################################')
     printandlog('\nWhen publishing data reduced with IRDAP, please cite van Holstein et al.')
-    printandlog('(2019): https://arxiv.org/abs/1909.13108.')
+    printandlog('(2020): https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract.')
     printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
     printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
     printandlog('\nFull documentation: https://irdap.readthedocs.io')
