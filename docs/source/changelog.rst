@@ -14,6 +14,11 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.2.4 February 2020, R.G. van Holstein
+ - Put temporal uncertainty as uncertainty of the star polarization in the log file, added the accuracy of the Mueller matrix model and clarified which uncertainty to quote in papers.
+ - Made IRDAP check for updates when run
+ - Implemented correct link to ADS of van Holstein et al. (2020) in program and documentation
+
 v1.2.3 December 2019, R.G. van Holstein
  - Clarified meaning of standard deviation of fitted center coordinates in log file
  - Very minor correction to computation of HWP angle from headers
