@@ -244,6 +244,9 @@
 <li>Make the data reduction work for data taken before approximately May 2015 that do not contain the header keyword indicating the Stokes parameter (using the HWP angle instead)</li>
 <li>Make IRDAP throw out less files when the order of the Stokes parameters of the files is not Qplus, Qminus, Uplus, Uminus</li>
 <li>Add possibility to use CENTER-frames with a different exposure time than the OBJECT-frames</li>
+<li>Add possibility to express contrast curves of extended sources in Jansky/arcsec^2</li>
+<li>Remove bad pixels in frames by setting them to NaN, and when frames are rotating (in PT and FT with derotator offsets) use nanmean to filter bad pixels out</li>
+<li>Make an overview of the warnings at the end of the log file</li>
 <li>Add possibility to crop images when doing ADI to save time</li>
 <li>Create contrast curves of final ADI-images</li>
 <li>Add ADI+PCA for polarimetric data reduction of pupil-tracking observations</li>

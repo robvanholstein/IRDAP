@@ -15,9 +15,9 @@
 
 .. |pohl| replace:: *(Pohl et al. 2017;*
 
-.. _vanholstein: https://arxiv.org/abs/1909.13108
+.. _vanholstein: https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract
 
-.. |vanholstein| replace:: *van Holstein et al. 2019).*
+.. |vanholstein| replace:: *van Holstein et al. 2020).*
 
 .. |stars| image:: https://img.shields.io/github/stars/robvanholstein/IRDAP.svg?style=social&label=Stars
    :target: https://github.com/robvanholstein/IRDAP/
@@ -40,8 +40,8 @@
 .. |license| image:: https://img.shields.io/badge/License-GPLv3-blue.svg
     :target: https://github.com/robvanholstein/IRDAP/blob/master/LICENSE
 
-.. |ads1| image:: https://img.shields.io/badge/ADS-%3CADS%20link%3E-blueviolet.svg
-	:target: <ADS link> ALSO CHANGE IN README!!!
+.. |ads1| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2020)-blueviolet
+	:target: https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract
 
 .. |ads2| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2017)-blueviolet.svg
 	:target: https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V
@@ -56,7 +56,7 @@ IRDAP
 .. 
    |pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
 
-IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data using polarimetric differential imaging (PDI). Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2019) <https://arxiv.org/abs/1909.13108>`_. IRDAP handles data taken both in field- and pupil-tracking mode and using the broadband filters Y, J, H and K\ :sub:`s`. Data taken with the narrowband filters can be reduced as well, although with a somewhat worse accuracy. For pupil-tracking observations IRDAP can additionally apply angular differential imaging.
+IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data using polarimetric differential imaging (PDI). Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract>`_. IRDAP handles data taken both in field- and pupil-tracking mode and using the broadband filters Y, J, H and K\ :sub:`s`. Data taken with the narrowband filters can be reduced as well, although with a somewhat worse accuracy. For pupil-tracking observations IRDAP can additionally apply angular differential imaging.
 
 Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs a complete data reduction from raw data to final data products.
 
