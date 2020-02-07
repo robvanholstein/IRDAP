@@ -4636,6 +4636,78 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
 
     return frame_I_Q_incident, frame_I_U_incident, frame_Q_incident, frame_U_incident, cube_I_Q_incident, cube_I_U_incident, cube_Q_incident, cube_U_incident
 
+####################################################################################################
+# compute_model_accuracy
+####################################################################################################
+
+def compute_model_accuracy(q, u, filter_used, date_obs):
+    '''
+    Compute total polarimetric accuracy of Mueller matrix model following van Holstein et al. (2020).
+
+    Input:
+        q: measured normalized Stokes q
+        u: measured normalized Stokes u
+        filter_used: string specifying filter used for observations ('FILT_BBF_Y', 'FILT_BBF_J', 'FILT_BBF_H' or 'FILT_BBF_Ks' or one of the NB filters)
+        date_obs: string specifying date of observations retrieved from header 'DATE'
+
+    Output:
+        s_abs: absolute polarimetric accuracy
+        s_q: total polarimetric accuracy in normalized Stokes q
+        s_u: total polarimetric accuracy in normalized Stokes u
+        s_DoLP: total polarimetric accuracy in degree of linear polarization
+        s_AoLP: total polarimetric accuracy in angle of linear polarization
+
+    File written by Rob van Holstein
+    Function status: verified
+    '''
+
+    # Define date of recoating of M1 and M3 and transform format of date of observations
+    date_recoating = time.strptime('2017-04-16', '%Y-%m-%d')
+    date_obs = time.strptime(date_obs, '%Y-%m-%d')
+
+    # Select model accuracies based on filter and observation date
+    if filter_used in ['FILT_BBF_Y', 'FILT_NBF_HeI']:
+        s_rel = 0.0073
+        if date_obs < date_recoating:
+            s_abs = 0.00062
+        else:
+            s_abs = 0.00068
+
+    elif filter_used in ['FILT_BBF_J', 'FILT_NBF_ContJ', 'FILT_NBF_PaB']:
+        s_rel = 0.0041
+        if date_obs < date_recoating:
+            s_abs = 0.00047
+        else:
+            s_abs = 0.00072
+
+    elif filter_used in ['FILT_BBF_H', 'FILT_NBF_ContH', 'FILT_NBF_FeII']:
+        s_rel = 0.0058
+        if date_obs < date_recoating:
+            s_abs = 0.00026
+        else:
+            s_abs = 0.00030
+
+    elif filter_used in ['FILT_BBF_Ks', 'FILT_NBF_ContK1', 'FILT_NBF_H2', 'FILT_NBF_BrG', 'FILT_NBF_CntK2', 'FILT_NBF_CO']:
+        s_rel = 0.0054
+        if date_obs < date_recoating:
+            s_abs = 0.0010
+        else:
+            s_abs = 0.00093
+
+    # Compute accuracies of q and u
+    s_q = s_abs + s_rel*np.abs(q)
+    s_u = s_abs + s_rel*np.abs(u)
+
+    # Compute accuracies of DoLP and AoLP (latter in deg)
+    DoLP = np.sqrt(q**2 + u**2)
+    error_term_DoLP = np.sqrt(q**2*s_q**2 + u**2*s_u**2)
+    s_DoLP = 1/DoLP * error_term_DoLP
+
+    error_term_AoLP = np.sqrt(u**2*s_q**2 + q**2*s_u**2)
+    s_AoLP = np.rad2deg(1/(2*DoLP**2) * error_term_AoLP)
+
+    return s_abs, s_q, s_u, s_DoLP, s_AoLP
+
 ###############################################################################
 # compute_azimuthal_stokes_parameters
 ###############################################################################
@@ -5206,9 +5278,10 @@ def apply_pdi(cube_left_frames,
     printandlog('# Defining the annulus for star polarization and background')
     printandlog('###############################################################################')
 
-    # Determine filter and coronagraph used
+    # Determine filter and coronagraph used, and date of the observations
     filter_used = header[0]['ESO INS1 FILT ID']
     coronagraph_used = header[0]['ESO INS COMB ICOR']
+    date_obs = header[0]['DATE'][:10]
 
     # If annulus_star is 'automatic', set to 'ao residuals' for coronagraphic data and to 'star aperture' for non-coronagraphic data
     if annulus_star == 'automatic':
@@ -5358,17 +5431,13 @@ def apply_pdi(cube_left_frames,
     DoLP_star, AoLP_star, sigma_DoLP_star, sigma_AoLP_star = \
     determine_polarization_degree_angle(q=q_star, u=u_star, sigma_q=sigma_q_star, sigma_u=sigma_u_star)
 
-    # Print resulting star polarization
-    printandlog('\nMeasured star polarization and statistical error (taking into account photon noise and background noise according to Newberry (1991)) in the background-subtracted I_Q-, I_U-, Q- and U-images:')
-    printandlog('q_star =    %.4f +/- %.4f %%' % (100*q_star, 100*sigma_q_star))
-    printandlog('u_star =    %.4f +/- %.4f %%' % (100*u_star, 100*sigma_u_star))
-    printandlog('DoLP_star = %.4f +/- %.4f %%' % (100*DoLP_star, 100*sigma_DoLP_star))
-    printandlog('AoLP_star = %.2f +/- %.2f deg' % (AoLP_star, sigma_AoLP_star))
-    printandlog('\nThe measured star polarization should be very similar to that fitted above when correcting the instrumental polarization effects. The difference in q, u and DoLP should be < 0.1% or << 0.1% depending on the noise in images.')
+    # Compute accuracy of the Mueller matrix model for this stellar polarization signal
+    s_q_star, s_u_star, s_DoLP_star, s_AoLP_star = compute_model_accuracy(q_star, u_star, filter_used, date_obs)[1:]
 
     # Subtract star polarization
     frame_Q_star_polarization_subtracted = frame_Q_background_subtracted - q_star*frame_I_Q_background_subtracted
     frame_U_star_polarization_subtracted = frame_U_background_subtracted - u_star*frame_I_U_background_subtracted
+    printandlog('\nDetermined the star polarization (see below) and created star-polarization-subtracted Q- and U-images.')
 
     # Subtract very small residual background
     frame_Q_star_polarization_subtracted, background_frame_Q_star_polarization_subtracted = subtract_background(cube=frame_Q_star_polarization_subtracted,
@@ -5423,12 +5492,28 @@ def apply_pdi(cube_left_frames,
         std_DoLP_star = np.std(DoLP_star_HWP_cycle, ddof=1)
         std_AoLP_star = np.std(AoLP_star_HWP_cycle, ddof=1)
 
-        # Print resulting spread of star polarization
-        printandlog('\nMeasured spread (standard deviation) of the star polarization with HWP cycle number:')
-        printandlog('std_q_star =    %.4f %%' % (100*std_q_star))
-        printandlog('std_u_star =    %.4f %%' % (100*std_u_star))
-        printandlog('std_DoLP_star = %.4f %%' % (100*std_DoLP_star))
-        printandlog('std_AoLP_star = %.2f deg' % std_AoLP_star)
+        # Print resulting star polarization with time-varying uncertainty
+        printandlog('\nMeasured star polarization and TEMPORAL uncertainty:')
+        printandlog('q_star =    %.4f +/- %.4f %%' % (100*q_star, 100*std_q_star))
+        printandlog('u_star =    %.4f +/- %.4f %%' % (100*u_star, 100*std_u_star))
+        printandlog('DoLP_star = %.4f +/- %.4f %%' % (100*DoLP_star, 100*std_DoLP_star))
+        printandlog('AoLP_star = %.2f +/- %.2f deg' % (AoLP_star, std_AoLP_star))
+        printandlog('\nATTENTION, the temporal uncertainty, i.e. the standard deviation of the stellar polarization signal with HWP cycle number, is caused by time-varying atmospheric conditions and is generally much higher than the statistical uncertainty (photon noise and background noise) and the accuracy of the Mueller matrix model (used to correct the instrumental polarization effects). Therefore generally the temporal uncertainty should be quoted as the uncertainty on the star polarization.')
+        printandlog('\nThe measured star polarization should be very similar to that fitted above when correcting the instrumental polarization effects. The difference in q, u and DoLP should be < 0.1% or << 0.1% depending on the noise in images.')
+
+        # Print statistical uncertainty on star polarization
+        printandlog('\nSTATISTICAL uncertainty for comparison (only takes into account photon noise and background noise following Newberry (1991)):')
+        printandlog('sigma_q_star =    %.4f %%' % (100*sigma_q_star))
+        printandlog('sigma_u_star =    %.4f %%' % (100*sigma_u_star))
+        printandlog('sigma_DoLP_star = %.4f %%' % (100*sigma_DoLP_star))
+        printandlog('sigma_AoLP_star = %.2f deg' % sigma_AoLP_star)
+
+        # Print accuracy of the Mueller matrix model for this stellar polarization signal
+        printandlog('\nACCURACY of the Mueller matrix model for comparison (used to correct the instrumental polarization effects):')
+        printandlog('s_q_star =    %.4f %%' % (100*s_q_star))
+        printandlog('s_u_star =    %.4f %%' % (100*s_u_star))
+        printandlog('s_DoLP_star = %.4f %%' % (100*s_DoLP_star))
+        printandlog('s_AoLP_star = %.2f deg' % s_AoLP_star)
 
         # Print warning and suggestion to use normalized double difference when spread is large
         if std_q_star > 0.0025 or std_u_star > 0.0025:
@@ -5486,7 +5571,24 @@ def apply_pdi(cube_left_frames,
         printandlog('\n1) the observations are taken with a sufficiently large range of parallactic and altitude angles,')
         printandlog('2) the observations are taken with a sufficiently high signal-to-noise ratio, and,')
         printandlog('3) the annulus for the star is placed in a region where there is only starlight.')
-        printandlog('\nA non-zero measured star polarization (i.e. >0.1%) then indicates the star is truly polarized, which is often caused by the presence micron-sized particles in the line of sight. This star polarization can therefore indicate the presence of an unresolved (inner) circumstellar disk, starlight passing through a resolved (outer) part of a circumstellar disk or the presence of interstellar dust between the star and the Earth.')
+        printandlog('\nA non-zero measured star polarization (i.e. generally > 0.1%, but depending on the uncertainties) then indicates the star is truly polarized, which is often caused by the presence micron-sized particles in the line of sight. This star polarization can therefore indicate the presence of an unresolved (inner) circumstellar disk, starlight passing through a resolved (outer) part of a circumstellar disk or the presence of interstellar dust between the star and the Earth.')
+    else:
+        # Print resulting star polarization with accuracy of the Mueller matrix model for this stellar polarization signal
+        printandlog('\nMeasured star polarization and ACCURACY of the Mueller matrix model:')
+        printandlog('q_star =    %.4f +/- %.4f %%' % (100*q_star, 100*s_q_star))
+        printandlog('u_star =    %.4f +/- %.4f %%' % (100*u_star, 100*s_u_star))
+        printandlog('DoLP_star = %.4f +/- %.4f %%' % (100*DoLP_star, 100*s_DoLP_star))
+        printandlog('AoLP_star = %.2f +/- %.2f deg' % (AoLP_star, s_AoLP_star))
+
+        printandlog('\nATTENTION, the accuracy of the Mueller matrix model is the lower limit on the accuracy with which the instrumental polarization effects are corrected. This accuracy generally has a larger value than the statistical uncertainty (photon noise and background noise). However, due to time-varying atmospheric conditions the actual uncertainty on the star polarization is generally much larger than the accuracy of the Mueller matrix model, but this cannot be measured for this single HWP cycle.')
+        printandlog('\nThe measured star polarization should be very similar to that fitted above when correcting the instrumental polarization effects. The difference in q, u and DoLP should be < 0.1% or << 0.1% depending on the noise in images.')
+
+        # Print statistical uncertainty on star polarization
+        printandlog('\nSTATISTICAL uncertainty for comparison (only takes into account photon noise and background noise following Newberry (1991)):')
+        printandlog('sigma_q_star =    %.4f %%' % (100*sigma_q_star))
+        printandlog('sigma_u_star =    %.4f %%' % (100*sigma_u_star))
+        printandlog('sigma_DoLP_star = %.4f %%' % (100*sigma_DoLP_star))
+        printandlog('sigma_AoLP_star = %.2f deg' % sigma_AoLP_star)
 
     ###############################################################################
     # Compute final images

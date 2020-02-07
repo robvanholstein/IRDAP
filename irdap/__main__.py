@@ -31,6 +31,7 @@ import sys
 import os
 import argparse
 import webbrowser
+import urllib
 from argparse import RawTextHelpFormatter
 from .version import __version__
 from .irdap import run_demo
@@ -120,10 +121,10 @@ def main(args=None):
         # Print the current version
         print('\nIRDAP version %s' % __version__)
 
-    if args.website:
+    elif args.website:
         webbrowser.open_new_tab('https://irdap.readthedocs.io')
 
-    if args.demo:
+    elif args.demo:
         # Run example reduction
         run_demo(path_main_dir)
 
@@ -147,6 +148,20 @@ def main(args=None):
             print('\nPlease provide at least two absolute paths to directories containing reduced data to be combined.')
         else:
             mean_combine_images(path_main_dir, path_read_dirs)
+
+    # Check if latest version of IRDAP is used and if not suggest updating it
+    url_github_version = 'https://raw.githubusercontent.com/robvanholstein/IRDAP/master/irdap/version.py'
+    try:
+        version_string = str(urllib.request.urlopen(url_github_version).readlines()[0], 'utf-8')
+        version_github = version_string[version_string.rfind('=') + 1:].replace(' ', '').replace('\'', '')
+    except:
+        version_github = ''
+
+    if version_github != '':
+        if __version__ != version_github:
+            print('\n\n\nA newer version of IRDAP is available (v' + __version__ + ' --> v' + version_github +
+                  '). Please consider\n' +
+                  'updating IRDAP by typing "pip install irdap --upgrade" in the terminal.')
 
 ###############################################################################
 # Run the function main
