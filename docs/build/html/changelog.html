@@ -248,10 +248,18 @@
 <h2>To-do high priority<a class="headerlink" href="#to-do-high-priority" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
+<li>Add option to do median combination or trimmed mean of Q and U cubes. Then the automatic forcing of LSQ for different number of Q and U files should be stored somehow in case you skip the preprocessing later</li>
+<li>Add computation of mean stellar polarization and uncertainty when mean-combining data sets</li>
+<li>Improve computation of stellar DoLP and AoLP and corresponding uncertainties (standard error of mean) by sampling from Gaussian distributions with Monte Carlo</li>
+<li>Correct error in computation of photon noise for Q and U images that uses signal in Q and U rather than I_Q and I_U.</li>
+<li>Add tool to create plots of I_pol and AoLP from terminal.</li>
+<li>Add centering method that minimizes the SSR of the left minus right frames in an aperture centered on the star</li>
 <li>Make the data reduction work for data taken before approximately May 2015 that do not contain the header keyword indicating the Stokes parameter (using the HWP angle instead)</li>
 <li>Make IRDAP throw out less files when the order of the Stokes parameters of the files is not Qplus, Qminus, Uplus, Uminus</li>
 <li>Add possibility to use CENTER-frames with a different exposure time than the OBJECT-frames</li>
 <li>Add possibility to express contrast curves of extended sources in Jansky/arcsec^2</li>
+<li>Improve computation of stellar DoLP and AoLP and corresponding uncertainties by sampling from Gaussian distributions with Monte Carlo</li>
+<li>Make PDI part more memory efficient by re-using names of cubes</li>
 <li>Remove bad pixels in frames by setting them to NaN, and when frames are rotating (in PT and FT with derotator offsets) use nanmean to filter bad pixels out</li>
 <li>Make an overview of the warnings at the end of the log file</li>
 <li>Add possibility to crop images when doing ADI to save time</li>

@@ -16,7 +16,7 @@ Because IRDAP is being actively developed, it is recommended to regularly check 
 
 ::
 
-   pip install --upgrade irdap
+   pip install irdap --upgrade
    
 and install the latest version. To be kept up-to-date via e-mail, sign up to the :ref:`mailing list <Mailing list>`.
 
