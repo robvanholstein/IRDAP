@@ -404,18 +404,13 @@ def check_own_programs(header):
     Function status: verified
     '''
 
-    own_programs = ['098.C-0790(A)',
-                    '0101.C-0502(A)',
-                    '0101.C-0502(B)',
-                    '0102.C-0871(A)',
-                    '0102.C-0916(A)',
-                    '0102.C-0916(B)',
-                    '0102.C-0916(C)',
-                    '2102.C-5016(B)']
-
+    own_programs = ['0101.C-0502(B)']
+    own_targets = ['GQ_Lup']
+    
     program_id = [x['ESO OBS PROG ID'] for x in header]
+    target_name = [x['ESO OBS TARG NAME'] for x in header]
 
-    if any([x in own_programs for x in program_id]):
+    if any([x in own_programs for x in program_id]) and any([x in own_targets for x in target_name]):
         printandlog('\nTerminating reduction.')
         for i in range(20):
             printandlog('\n')
@@ -4601,10 +4596,6 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     ###############################################################################
     # Compute incident I_Q- and I_U-images
     ###############################################################################
-
-#TODO: remove simple total intensity cADI below
-#    cube_I_Q_double_sum -= np.median(cube_I_Q_double_sum, axis=0)
-#    cube_I_U_double_sum -= np.median(cube_I_U_double_sum, axis=0)
 
     # Derotate I_Q- and I_U-images
     cube_I_Q_incident = np.zeros(cube_I_Q_double_sum.shape)
