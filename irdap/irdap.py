@@ -54,6 +54,8 @@ from scipy import ndimage
 from scipy.interpolate import interp1d
 from scipy.stats import trim_mean
 from scipy.stats import sigmaclip
+from scipy.stats import t as student
+from scipy.stats import norm
 from astropy.modeling import models, fitting
 from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
@@ -1270,9 +1272,12 @@ def remove_bad_pixels(cube, frame_master_bpm, sigma_filtering=True):
     # Round filter size up to nearest odd number for a symmetric filter kernel
     filter_size_median = 2*(filter_size_median // 2) + 1
 
+    # Define filter kernel, omitting the center value itself and compute the median filtered cube
+    footprint = np.ones((1, filter_size_median, filter_size_median))
+    footprint[0, filter_size_median // 2, filter_size_median // 2] = 0.0
+    cube_median = ndimage.filters.median_filter(cube, footprint=footprint)
+
     # Remove bad pixels using the bad pixel map
-    cube_median = ndimage.filters.median_filter(cube, size=(1, filter_size_median, \
-                                                            filter_size_median))
     cube_filtered = cube_median + frame_master_bpm * (cube - cube_median)
 
     if sigma_filtering == True:
@@ -4922,9 +4927,18 @@ def compute_contrast(frame, filter_used, sigma_clip=True):
             # Remove outliers from fluxes
             flux = sigmaclip(flux, low=4.0, high=4.0)[0]
 
-        # Compute the mean and standard deviation of the fluxes (latter with correction from Mawet et al. 2014)
+        # Compute the mean and standard deviation of the fluxes
         flux_mean[i] = np.mean(flux)
-        flux_std[i] = np.std(flux, ddof=1) * np.sqrt(1 + 1/(number_apertures-1))
+        std = np.std(flux, ddof=1)
+
+        # Compute the small-sample-corrected standard deviation from a Student distribution with
+        # Gaussian 1-sigma confidence interval (Mawet et al. 2014)
+        n2 = number_apertures - 1
+        std_corr = std * np.sqrt(1 + 1/n2)
+        dof = n2 - 1
+        sigma = 1
+        interval_sigma = 2*(norm.cdf(sigma, loc=0, scale=1) - 0.5)
+        flux_std[i] = student.interval(interval_sigma, dof, flux_mean[i], std_corr)[1] - flux_mean[i]
 
     return separation, flux_mean, flux_std, fwhm
 
@@ -6375,9 +6389,18 @@ def create_overview_headers_main(path_main_dir):
             print_wrap('\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
         else:
             # Define the base of the name of each file to be generated
-            header_first_file = pyfits.getheader(path_raw_files[0])
-            target_name = header_first_file['ESO OBS TARG NAME']
-            date_obs = header_first_file['DATE-OBS']
+            headers = [pyfits.getheader(x) for x in path_raw_files]
+            target_name = ''
+            i = 0
+
+            while target_name == '':
+                header_sel = headers[i]
+                try:
+                    target_name = header_sel['ESO OBS TARG NAME']
+                except KeyError:
+                    pass
+                i += 1
+            date_obs = header_sel['DATE-OBS']
 
             name_file_root = target_name.replace(' ', '_') + '_' + date_obs[:10].replace(' ', '_') + '_'
 
