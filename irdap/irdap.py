@@ -99,7 +99,7 @@ def read_config_file(path_config_file):
             return x
 
     def config_float_int(x):
-        if all(character.isdigit() for character in x):
+        if all(character.isdigit() or character == '.' for character in x):
             return literal_eval(x)
         else:
             return x
@@ -154,6 +154,14 @@ def read_config_file(path_config_file):
     # Get parameters from [Advanced PDI options] section
     double_difference_type          = config.get('Advanced PDI options', 'double_difference_type')
     single_posang_north_up          = config_true_false(config.get('Advanced PDI options', 'single_posang_north_up'))
+    try:
+        combination_method_polarization = config_float_int(config.get('Advanced PDI options', 'combination_method_polarization'))
+    except:
+        combination_method_polarization = 'least squares'
+    try:
+        combination_method_intensity    = config_float_int(config.get('Advanced PDI options', 'combination_method_intensity'))
+    except:
+        combination_method_intensity    = 'mean'        
 
     return perform_preprocessing, \
            sigma_filtering, \
@@ -177,7 +185,9 @@ def read_config_file(path_config_file):
            flux_annulus_background, \
            flux_annulus_star, \
            double_difference_type, \
-           single_posang_north_up
+           single_posang_north_up, \
+           combination_method_polarization, \
+           combination_method_intensity
 
 ###############################################################################
 # wrapstr
@@ -438,7 +448,6 @@ def check_own_programs(header):
 ###############################################################################
 
 def check_sort_data_create_directories(frames_to_remove=[],
-                                       combination_method_polarization='least squares',
                                        object_centering_method='automatic',
                                        save_preprocessed_data=True,
                                        show_images_center_coordinates=True,
@@ -454,11 +463,6 @@ def check_sort_data_create_directories(frames_to_remove=[],
             file can be removed by specifying its integer index, while a frame
             of specific file can be removed by specifying a tuple
             (file_index, frame_index) (default = []).
-        combination_method_polarization: method to be used to produce the
-            incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'.
-            In this function, if combination_method_polarization is forced
-            to 'least squares' in case there is an unequal number of Q- and
-            U-measurements (default = 'least squares').
         object_centering_method: method to center the OBJECT-frames. In this
             function, if object_centering_method is 'automatic', it is set to
             'center frames' if there are CENTER-files, and is set to '
@@ -482,9 +486,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
         perform_adi: If True, perform angular differential imaging on pre-
             processed data (default = True).
 
-    Note that combination_method_polarization, object_centering_method,
-    save_preprocessed_data and show_images_center_coordinates are input to this
-    function as they are required for the sorting of the data or preparing the
+    Note that object_centering_method, save_preprocessed_data and show_images_center_coordinates 
+    are input to this function as they are required for the sorting of the data or preparing the
     pre-processing, not to actually perform centering for example.
 
     Note that path_raw_dir, path_flat_dir, path_bpm_dir, path_sky_dir,
@@ -524,8 +527,6 @@ def check_sort_data_create_directories(frames_to_remove=[],
         file_index_flux: list of file indices of FLUX-files (0-based)
         object_centering_method: method to center the OBJECT-frames, 'center frames',
             'gaussian', cross-correlation' or 'manual'.
-        combination_method_polarization: method to be used to produce the
-            incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
         perform_adi: If True, perform angular differential imaging on pre-
             processed data (default = True).
 
@@ -981,12 +982,6 @@ def check_sort_data_create_directories(frames_to_remove=[],
         if any([x in stokes_parameter for x in ['Uplus', 'Uminus']]):
             raise IOError('\n\nThe data has no Q-measurements and therefore cannot be reduced.')
 
-    # Force 'least squares' for combining the polarization images if the number of Q- and U-measurements is unequal
-    if combination_method_polarization != 'least squares':
-        if stokes_parameter.count('Qplus') != stokes_parameter.count('Uplus'):
-            combination_method_polarization = 'least squares'
-            printandlog('\nWARNING, combination_method_polarization is forced to \'least squares\' because the number of Q- and U-measurements are unequal. The plots showing the measured star polarization as a function of HWP cycle number will only show the complete HWP cycles.')
-
     ###############################################################################
     # Determine number of Q- and U-frames for computation of photon noise
     ###############################################################################
@@ -1125,7 +1120,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
            indices_to_remove_dark, indices_to_remove_flat, indices_to_remove_object, \
            indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, \
            indices_to_remove_flux, indices_to_remove_sky_flux, file_index_object, \
-           file_index_flux, object_centering_method, combination_method_polarization, perform_adi
+           file_index_flux, object_centering_method, perform_adi
 
 ###############################################################################
 # read_fits_files
@@ -3062,8 +3057,7 @@ def preprocess_data(frames_to_remove=[],
                     flux_param_centering=(60, None, 30000),
                     flux_annulus_background='large annulus',
                     flux_annulus_star='automatic',
-                    save_preprocessed_data=True,
-                    combination_method_polarization='least squares'):
+                    save_preprocessed_data=True):
     '''
     Perform pre-processing of OBJECT, CENTER, SKY and FLUX-files, i.e. sorting data,
     background subtraction, flat-fielding, bad pixel removal, centering and compution
@@ -3222,17 +3216,12 @@ def preprocess_data(frames_to_remove=[],
             and single-difference images in the 'preprocessed' folder so that
             the preprocessing can be skipped when re-running the pipeline
             (default = True).
-        combination_method_polarization: method to be used to produce the
-            incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
-            (default = 'least squares')
 
     Output:
         cube_left_frames: cube of pre-processed left frames
         cube_right_frames: cube of pre-processed right frames
         header: list of FITS-headers of raw science frames
         file_index_object: list of file indices of OBJECT-files (0-based)
-        combination_method_polarization: method to be used to produce the
-            incident Q- and U-images, 'least squares', 'trimmed mean' or 'median'
         perform_adi: If True, perform angular differential imaging on pre-
             processed data (default = True).
 
@@ -3255,9 +3244,8 @@ def preprocess_data(frames_to_remove=[],
     indices_to_remove_dark, indices_to_remove_flat, indices_to_remove_object, \
     indices_to_remove_sky, indices_to_remove_center, indices_to_remove_object_center, \
     indices_to_remove_flux, indices_to_remove_sky_flux, file_index_object, \
-    file_index_flux, object_centering_method, combination_method_polarization, perform_adi \
+    file_index_flux, object_centering_method, perform_adi \
     = check_sort_data_create_directories(frames_to_remove=frames_to_remove,
-                                         combination_method_polarization=combination_method_polarization,
                                          object_centering_method=object_centering_method,
                                          save_preprocessed_data=save_preprocessed_data,
                                          show_images_center_coordinates=show_images_center_coordinates,
@@ -3544,8 +3532,7 @@ def preprocess_data(frames_to_remove=[],
 
     printandlog('\nEnd of pre-processing.')
 
-    return cube_left_frames, cube_right_frames, header, file_index_object, \
-            combination_method_polarization, perform_adi
+    return cube_left_frames, cube_right_frames, header, file_index_object, perform_adi
 
 ###############################################################################
 # compute_double_sum_double_difference
@@ -4568,6 +4555,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     if combination_method_polarization == 'least squares':
         # Obtain incident Q- and U-images from the least squares solution
         printandlog('\nComputing the incident Q- and U-images using least squares.')
+        if len(cube_Q_derotated) != len(cube_U_derotated):
+            printandlog('\nWARNING, the number of Q- and U-measurements are unequal, with ' + str(len(cube_Q_derotated)) + ' Q-measurements and ' + str(len(cube_U_derotated)) + ' U-measurements. Although the incident Q- and U-images are computed using all measurements, the plots showing the measured star polarization as a function of HWP cycle number will only show the ' + str(min(len(cube_Q_derotated), len(cube_U_derotated))) + ' complete HWP cycles.')
 
         # Create cube Y with Q/U measurements in order of HWP cycles
         Y = np.zeros(((len(p1),) + cube_Q_derotated.shape[-2:]))
@@ -4584,12 +4573,16 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     elif combination_method_polarization == 'trimmed mean':
         # Compute incident Q- and U-images from the trimmed mean of incident cubes
         printandlog('\nComputing the incident Q- and U-images using the trimmed mean with a proportion to cut equal to ' + str(trimmed_mean_prop_to_cut_polar) + '.')
+        if len(cube_Q_derotated) != len(cube_U_derotated):
+            printandlog('\nWARNING, the number of Q- and U-measurements are unequal, with ' + str(len(cube_Q_derotated)) + ' Q-measurements and ' + str(len(cube_U_derotated)) + ' U-measurements. The incident Q- and U-images are computed using only ' + str(min(len(cube_Q_derotated), len(cube_U_derotated))) + ' Q- and U-measurements, while the remaining measurements are discarded. To use all measurements, set \'combination_method_polarization\' to \'least squares\' in the configuration file. Also note that the plots showing the measured star polarization as a function of HWP cycle number will only show the ' + str(min(len(cube_Q_derotated), len(cube_U_derotated))) + ' complete HWP cycles.')
         frame_Q_incident = trim_mean(cube_Q_incident, proportiontocut=trimmed_mean_prop_to_cut_polar, axis=0)
         frame_U_incident = trim_mean(cube_U_incident, proportiontocut=trimmed_mean_prop_to_cut_polar, axis=0)
 
     elif combination_method_polarization == 'median':
         # Compute incident Q- and U-images from the median of incident cubes
         printandlog('\nComputing the incident Q- and U-images using the median.')
+        if len(cube_Q_derotated) != len(cube_U_derotated):
+            printandlog('\nWARNING, the number of Q- and U-measurements are unequal, with ' + str(len(cube_Q_derotated)) + ' Q-measurements and ' + str(len(cube_U_derotated)) + ' U-measurements. The incident Q- and U-images are computed using only ' + str(min(len(cube_Q_derotated), len(cube_U_derotated))) + ' Q- and U-measurements, while the remaining measurements are discarded. To use all measurements, set \'combination_method_polarization\' to \'least squares\' in the configuration file. Also note that the plots showing the measured star polarization as a function of HWP cycle number will only show the ' + str(min(len(cube_Q_derotated), len(cube_U_derotated))) + ' complete HWP cycles.')
         frame_Q_incident = np.median(cube_Q_incident, axis=0)
         frame_U_incident = np.median(cube_U_incident, axis=0)
 
@@ -6644,17 +6637,15 @@ def run_pipeline(path_main_dir):
     flux_annulus_background, \
     flux_annulus_star, \
     double_difference_type, \
-    single_posang_north_up \
+    single_posang_north_up, \
+    combination_method_polarization, \
+    combination_method_intensity \
     = read_config_file(path_config_file)
 
     # Define some fixed input parameters
     save_preprocessed_data = True
     show_images_center_coordinates = True
     remove_vertical_band_detector_artefact = True
-    combination_method_polarization = 'least squares'
-    combination_method_intensity = 'mean'
-    trimmed_mean_prop_to_cut_polar = 0.1
-    trimmed_mean_prop_to_cut_intens = 0.1
 
     # Check validity of input of perform_preprocessing, perform_pdi and perform_adi
     if perform_preprocessing not in [True, False]:
@@ -7011,26 +7002,24 @@ def run_pipeline(path_main_dir):
             printandlog('\nWARNING, the aperture outer radius for the star photometry (4th element of flux_annulus_star) is set to {0:.1f}. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star.'.format(flux_annulus_star[3]))
 
     # combination_method_polarization
-    if combination_method_polarization not in ['least squares', 'trimmed mean', 'median']:
-        raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'trimmed mean\' or \'median\'.')
+    if type(combination_method_polarization) not in [str, float]:
+        raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'median\' or a float in the range 0 < combination_method_polarization < 0.5.')
 
-    # trimmed_mean_prop_to_cut_polar
-    if type(trimmed_mean_prop_to_cut_polar) not in [int, float]:
-        raise TypeError('\n\n\'trimmed_mean_prop_to_cut_polar\' should be of type int or float.')
+    if type(combination_method_polarization) is str and combination_method_polarization not in ['least squares', 'median']: 
+        raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'median\' or a float in the range 0 < combination_method_polarization < 0.5.')
 
-    if not 0 <= trimmed_mean_prop_to_cut_polar < 0.5:
-        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_polar\' should be in range 0 <= trimmed_mean_prop_to_cut_polar < 0.5.')
+    if type(combination_method_polarization) is float and not 0 < combination_method_polarization < 0.5:
+        raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'median\' or a float in the range 0 < combination_method_polarization < 0.5.')
 
     # combination_method_intensity
-    if combination_method_intensity not in ['mean', 'trimmed mean', 'median']:
-        raise ValueError('\n\n\'combination_method_intensity\' should be \'mean\', \'trimmed mean\' or \'median\'.')
+    if type(combination_method_intensity) not in [str, float]:
+        raise ValueError('\n\n\'combination_method_intensity\' should be \'mean\', \'median\' or a float in the range 0 < combination_method_intensity < 0.5.')
 
-    # trimmed_mean_prop_to_cut_intens
-    if type(trimmed_mean_prop_to_cut_intens) not in [int, float]:
-        raise TypeError('\n\n\'trimmed_mean_prop_to_cut_intens\' should be of type int or float.')
+    if type(combination_method_intensity) is str and combination_method_intensity not in ['mean', 'median']: 
+        raise ValueError('\n\n\'combination_method_intensity\' should be \'mean\', \'median\' or a float in the range 0 < combination_method_intensity < 0.5.')
 
-    if not 0 <= trimmed_mean_prop_to_cut_intens < 0.5:
-        raise ValueError('\n\n\'trimmed_mean_prop_to_cut_intens\' should be in range 0 <= trimmed_mean_prop_to_cut_intens < 0.5.')
+    if type(combination_method_intensity) is float and not 0 < combination_method_intensity < 0.5:
+        raise ValueError('\n\n\'combination_method_intensity\' should be \'mean\', \'median\' or a float in the range 0 < combination_method_intensity < 0.5.')
 
     # single_posang_north_up
     if single_posang_north_up not in [True, False]:
@@ -7116,6 +7105,23 @@ def run_pipeline(path_main_dir):
     annulus_background = annulus_1_to_0_based(annulus_background)
 
     ###############################################################################
+    # Define parameters for image combination methods based on input from config
+    ###############################################################################
+
+    # If combination method is a number, use trimmed mean with the proportion to cut equal to the number
+    if type(combination_method_polarization) is float:
+        trimmed_mean_prop_to_cut_polar = combination_method_polarization
+        combination_method_polarization = 'trimmed mean'
+    else:
+        trimmed_mean_prop_to_cut_polar = 0.1
+
+    if type(combination_method_intensity) is float:
+        trimmed_mean_prop_to_cut_intens = combination_method_intensity
+        combination_method_intensity = 'trimmed mean'
+    else:
+        trimmed_mean_prop_to_cut_intens = 0.1
+    
+    ###############################################################################
     # Run pre-processing and PDI and ADI functions
     ###############################################################################
 
@@ -7126,8 +7132,7 @@ def run_pipeline(path_main_dir):
         printandlog('###############################################################################')
         printandlog('\nStarting pre-processing of raw data.')
 
-        cube_left_frames, cube_right_frames, header, file_index_object,\
-        combination_method_polarization, perform_adi \
+        cube_left_frames, cube_right_frames, header, file_index_object, perform_adi \
         = preprocess_data(frames_to_remove=frames_to_remove,
                           sigma_filtering=sigma_filtering,
                           object_collapse_ndit=object_collapse_ndit,
@@ -7143,8 +7148,7 @@ def run_pipeline(path_main_dir):
                           flux_param_centering=flux_param_centering,
                           flux_annulus_background=flux_annulus_background,
                           flux_annulus_star = flux_annulus_star,
-                          save_preprocessed_data=save_preprocessed_data,
-                          combination_method_polarization=combination_method_polarization)
+                          save_preprocessed_data=save_preprocessed_data)
 
     elif perform_preprocessing == False:
         # Write lines from pre-processing of previous log file
