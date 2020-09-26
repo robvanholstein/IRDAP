@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Configuration file &mdash; IRDAP 1.2.4 documentation</title>
+  <title>Configuration file &mdash; IRDAP 1.3.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.2.4
+                1.3.0
               </div>
             
           
@@ -214,6 +214,8 @@
 
 <span class="n">double_difference_type</span>          <span class="o">=</span> <span class="n">conventional</span>
 <span class="n">single_posang_north_up</span>          <span class="o">=</span> <span class="kc">True</span>
+<span class="n">combination_method_polarization</span> <span class="o">=</span> <span class="n">least</span> <span class="n">squares</span>
+<span class="n">combination_method_intensity</span>    <span class="o">=</span> <span class="n">mean</span>
 </pre></div>
 </div>
 <p>The input parameters are divided into five groups:</p>
@@ -486,6 +488,22 @@
 <code class="descname">single_posang_north_up:</code></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code> (default = <code class="docutils literal notranslate"><span class="pre">True</span></code>)</p>
 <p>For observations taken in field-tracking mode with a single derotator position angle (header keyword <code class="docutils literal notranslate"><span class="pre">INS4.DROT2.POSANG</span></code> either 0 or with a fixed offset), the final images are rotated with North up if <code class="docutils literal notranslate"><span class="pre">True</span></code>, and kept in the orientation of the raw frames if <code class="docutils literal notranslate"><span class="pre">False</span></code>. In the latter case, the images are more accurate as they suffer less from interpolation errors caused by image rotation. This is useful when for example extracting the polarized surface brightness distribution of a circumstellar disk. Parameter is ignored for field-tracking observations with more than one derotator position angle or observations taken in pupil-tracking mode. In these cases the final images produced are always oriented with North up.</p>
+</dd></dl>
+
+<span class="target" id="combination-method-polarization"></span><dl class="function">
+<dt>
+<code class="descname">combination_method_polarization:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">least</span> <span class="pre">squares</span></code>, <code class="docutils literal notranslate"><span class="pre">median</span></code>, <cite>float</cite> (default = <code class="docutils literal notranslate"><span class="pre">least</span> <span class="pre">squares</span></code>)</p>
+<blockquote>
+<div>Method to be used to produce the incident <em>Q</em>- and <em>U</em>-images, i.e. the images that are corrected for the instrumental polarization effects. If <code class="docutils literal notranslate"><span class="pre">least</span> <span class="pre">squares</span></code>, the images are obtained by solving for every pixel the system of equations describing the measurements using linear least squares (see Eq. 35 of <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract">van Holstein et al. 2020</a>). If <code class="docutils literal notranslate"><span class="pre">median</span></code>, the images are obtained by solving the system of equations for each pair of double-difference <em>Q</em>- and <em>U</em>-images (each HWP cycle) separately, and then computing the median over all resulting images. If a float in the range 0 &lt; value &lt; 0.5 is supplied, the system of equations is solved for each pair of double-difference images (similar to <code class="docutils literal notranslate"><span class="pre">median</span></code>), after which the trimmed mean is computed over the resulting images. In that case the fraction to be cut from both tails of the distribution is equal to the supplied float. <code class="docutils literal notranslate"><span class="pre">least</span> <span class="pre">squares</span></code> yields the most accurate images with the highest signal-to-noise ratio and is therefore the recommended option. Using <code class="docutils literal notranslate"><span class="pre">median</span></code> may suppress image artifacts (e.g. the spider diffraction patterns), but the images have a lower signal-to-noise ratio and are less accurate. Using the trimmed mean (by suppling a float) may produce images with a signal-to-noise ratio close to that of the images produced with <code class="docutils literal notranslate"><span class="pre">least</span> <span class="pre">squares</span></code> while also suppressing image artefacts. When using <code class="docutils literal notranslate"><span class="pre">median</span></code> or a float, some <em>Q</em>- and <em>U</em>-images may be discarded in case the number of <em>Q</em>- and <em>U</em>-images are unequal (see the log file for details).</div></blockquote>
+</dd></dl>
+
+<span class="target" id="combination-method-intensity"></span><dl class="function">
+<dt>
+<code class="descname">combination_method_intensity:</code></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">mean</span></code>, <code class="docutils literal notranslate"><span class="pre">median</span></code>, <cite>float</cite> (default = <code class="docutils literal notranslate"><span class="pre">mean</span></code>)</p>
+<blockquote>
+<div>Method to be used to produce the incident <em>I</em><sub>Q</sub>- and <em>I</em><sub>U</sub>-images. If <code class="docutils literal notranslate"><span class="pre">mean</span></code> or <code class="docutils literal notranslate"><span class="pre">median</span></code>, the images are obtained by computing the mean or median, respectively, over the <em>I</em><sub>Q</sub>- and <em>I</em><sub>U</sub>-images of all HWP cycles. If a float in the range 0 &lt; value &lt; 0.5 is supplied, the images are obtained by computing the trimmed mean over the images. In that case the fraction to be cut from both tails of the distribution is equal to the supplied float. <code class="docutils literal notranslate"><span class="pre">mean</span></code> yields the most accurate images with the highest signal-to-noise ratio and is therefore the recommended option. Using <code class="docutils literal notranslate"><span class="pre">median</span></code> may suppress image artifacts (e.g. the spider diffraction patterns), but the images have a lower signal-to-noise ratio and are less accurate. Using the trimmed mean (by suppling a float) may produce images with a signal-to-noise ratio close to that of the images produced with <code class="docutils literal notranslate"><span class="pre">mean</span></code> while also suppressing image artefacts.</div></blockquote>
 </dd></dl>
 
 </div>

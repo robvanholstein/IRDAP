@@ -14,6 +14,11 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.3.0 September 2020, R.G. van Holstein
+ - Implemented two new configuration parameters for the computation of the final *Q*-, *U*-, *I*\ :sub:`Q`- and *I*\ :sub:`U`-images. The *Q*- and *U*-images can now be computed using least squares (as was previously the only option), the median and the trimmed mean. The *I*\ :sub:`Q`- and *I*\ :sub:`U`-images can be computed from the mean (as was previously the only option), the median and the trimmed mean
+ - Old configuration files that do not have these parameters can still be used: IRDAP automatically uses the default least squares and mean options if these new configuration parameters are missing from the configuration file
+ - Some minor additional improvements
+
 v1.2.4 February 2020, R.G. van Holstein
  - Put temporal uncertainty as uncertainty of the star polarization in the log file, added the accuracy of the Mueller matrix model and clarified which uncertainty to quote in papers
  - Made IRDAP check for updates when run
@@ -66,7 +71,6 @@ v0.1.2 June 2019, R.G. van Holstein:
 To-do high priority
 -------------------
 
-   - Add option to do median combination or trimmed mean of Q and U cubes. Then the automatic forcing of LSQ for different number of Q and U files should be stored somehow in case you skip the preprocessing later
    - Add computation of mean stellar polarization and uncertainty when mean-combining data sets
    - Improve computation of stellar DoLP and AoLP and corresponding uncertainties (standard error of mean) by sampling from Gaussian distributions with Monte Carlo
    - Correct error in computation of photon noise for Q and U images that uses signal in Q and U rather than I_Q and I_U.

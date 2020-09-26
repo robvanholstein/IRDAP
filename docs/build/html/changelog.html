@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Changelog &amp; to-do &mdash; IRDAP 1.2.4 documentation</title>
+  <title>Changelog &amp; to-do &mdash; IRDAP 1.3.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                1.2.4
+                1.3.0
               </div>
             
           
@@ -171,6 +171,13 @@
 <div class="section" id="changelog">
 <h2>Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h2>
 <dl class="docutils">
+<dt>v1.3.0 September 2020, R.G. van Holstein</dt>
+<dd><ul class="first last simple">
+<li>Implemented two new configuration parameters for the computation of the final <em>Q</em>-, <em>U</em>-, <em>I</em><sub>Q</sub>- and <em>I</em><sub>U</sub>-images. The <em>Q</em>- and <em>U</em>-images can now be computed using least squares (as was previously the only option), the median and the trimmed mean. The <em>I</em><sub>Q</sub>- and <em>I</em><sub>U</sub>-images can be computed from the mean (as was previously the only option), the median and the trimmed mean</li>
+<li>Old configuration files that do not have these parameters can still be used: IRDAP automatically uses the default least squares and mean options if these new configuration parameters are missing from the configuration file</li>
+<li>Some minor additional improvements</li>
+</ul>
+</dd>
 <dt>v1.2.4 February 2020, R.G. van Holstein</dt>
 <dd><ul class="first last simple">
 <li>Put temporal uncertainty as uncertainty of the star polarization in the log file, added the accuracy of the Mueller matrix model and clarified which uncertainty to quote in papers</li>
@@ -248,7 +255,6 @@
 <h2>To-do high priority<a class="headerlink" href="#to-do-high-priority" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
-<li>Add option to do median combination or trimmed mean of Q and U cubes. Then the automatic forcing of LSQ for different number of Q and U files should be stored somehow in case you skip the preprocessing later</li>
 <li>Add computation of mean stellar polarization and uncertainty when mean-combining data sets</li>
 <li>Improve computation of stellar DoLP and AoLP and corresponding uncertainties (standard error of mean) by sampling from Gaussian distributions with Monte Carlo</li>
 <li>Correct error in computation of photon noise for Q and U images that uses signal in Q and U rather than I_Q and I_U.</li>

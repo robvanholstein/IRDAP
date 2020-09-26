@@ -308,25 +308,18 @@ Advanced PDI options
 
    For observations taken in field-tracking mode with a single derotator position angle (header keyword ``INS4.DROT2.POSANG`` either 0 or with a fixed offset), the final images are rotated with North up if ``True``, and kept in the orientation of the raw frames if ``False``. In the latter case, the images are more accurate as they suffer less from interpolation errors caused by image rotation. This is useful when for example extracting the polarized surface brightness distribution of a circumstellar disk. Parameter is ignored for field-tracking observations with more than one derotator position angle or observations taken in pupil-tracking mode. In these cases the final images produced are always oriented with North up.
 
+.. _combination_method_polarization:
 
+.. py:function:: combination_method_polarization:
 
+   ``least squares``, ``median``, `float` (default = ``least squares``)
 
+	Method to be used to produce the incident *Q*- and *U*-images, i.e. the images that are corrected for the instrumental polarization effects. If ``least squares``, the images are obtained by solving for every pixel the system of equations describing the measurements using linear least squares (see Eq. 35 of `van Holstein et al. 2020 <https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract>`_). If ``median``, the images are obtained by solving the system of equations for each pair of double-difference *Q*- and *U*-images (each HWP cycle) separately, and then computing the median over all resulting images. If a float in the range 0 < value < 0.5 is supplied, the system of equations is solved for each pair of double-difference images (similar to ``median``), after which the trimmed mean is computed over the resulting images. In that case the fraction to be cut from both tails of the distribution is equal to the supplied float. ``least squares`` yields the most accurate images with the highest signal-to-noise ratio and is therefore the recommended option. Using ``median`` may suppress image artifacts (e.g. the spider diffraction patterns), but the images have a lower signal-to-noise ratio and are less accurate. Using the trimmed mean (by suppling a float) may produce images with a signal-to-noise ratio close to that of the images produced with ``least squares`` while also suppressing image artefacts. When using ``median`` or a float, some *Q*- and *U*-images may be discarded in case the number of *Q*- and *U*-images are unequal (see the log file for details).  
+	
+.. _combination_method_intensity:
 
+.. py:function:: combination_method_intensity:
 
-
-
-
-..
-   Variables not used anymore
-
-..
-   py:function:: combination_method_polarization (``least squares`` or ``trimmed mean`` or ``median``): Method to be used to produce the incident Q- and U-images, i.e. the images that are corrected for the instrumental polarization effects. Valid values are ``least squares``, ``trimmed mean`` or ``median``. The recommended option is ``trimmed mean``. With ``least squares`` the images are obtained by solving for every pixel the system of equations describing the measurements using linear least squares (see Eq. 35 of `van Holstein et al. 2020 <https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract>`_). With ``trimmed mean`` or ``median`` the images are obtained by solving the system of equations for each pair of double-difference Q- and U-images (each HWP cycle) separately, and then computing the trimmed mean or median over all resulting images. ``least squares`` is the most accurate option, but any unremoved bad pixels will still be visible in the images. Using ``median`` will remove these bad pixels, but is the least accurate option and also yields images with a lower signal-to-noise ratio as is clear from images of circumstellar disks. Using ``trimmed mean`` will yield images that have essentially the same accuracy and signal-to-noise ratio images produced using ``least squares``, but without the bad pixels. Therefore ``trimmed mean`` is the recommended option.
-
-..
-   py:function:: combination_method_intensity (``mean`` or ``trimmed mean`` or ``median``): Method to be used to produce the incident I_Q- and I_U-images. These images are computed by combining the I_Q- or I_U-images of all HWP cycles using the ``mean``, ``trimmed mean`` or ``median``. ``mean`` yields the most accurate images, but any unremoved bad pixels will still be visible in the images. Using ``median`` will remove these bad pixels, but is the least accurate option. ``trimmed mean`` produces images similar to ``mean``, but without the bad pixels. When using ``trimmed mean``, also check the input parameter **trimmed_mean_prop_to_cut_intens**. It is generally recommended to use either ``trimmed mean`` or ``mean``.
+   ``mean``, ``median``, `float` (default = ``mean``)
    
-.. 
-   py:function:: trimmed_mean_prop_to_cut_polar (`float`): Fraction to cut off of both tails of the distribution if ``trimmed mean`` is used for **combination_method_polarization**. Parameter is ignored in case ``least squares`` or ``median`` is used. Value should be in range 0 <= *trimmed_mean_prop_to_cut_polar* <= 1. In most cases a value of 0.1 or 0.15 removes the bad pixels well while producing images very similar to those obtained with ``least squares``.
-
-.. 
-   py:function:: trimmed_mean_prop_to_cut_intens (`float`): Fraction to cut off of both tails of the distribution if ``trimmed mean`` is used for **combination_method_intensity**. Parameter is ignored in case ``mean`` or ``median`` is used. Value should be in range 0 <= *trimmed_mean_prop_to_cut_intens* <= 1. In most cases a value of 0.1 or 0.15 removes the bad pixels well while producing images similar to those obtained with ``mean``.
+	Method to be used to produce the incident *I*\ :sub:`Q`- and *I*\ :sub:`U`-images. If ``mean`` or ``median``, the images are obtained by computing the mean or median, respectively, over the *I*\ :sub:`Q`- and *I*\ :sub:`U`-images of all HWP cycles. If a float in the range 0 < value < 0.5 is supplied, the images are obtained by computing the trimmed mean over the images. In that case the fraction to be cut from both tails of the distribution is equal to the supplied float. ``mean`` yields the most accurate images with the highest signal-to-noise ratio and is therefore the recommended option. Using ``median`` may suppress image artifacts (e.g. the spider diffraction patterns), but the images have a lower signal-to-noise ratio and are less accurate. Using the trimmed mean (by suppling a float) may produce images with a signal-to-noise ratio close to that of the images produced with ``mean`` while also suppressing image artefacts.
