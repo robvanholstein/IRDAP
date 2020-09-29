@@ -14,6 +14,9 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.3.1 September 2020, R.G. van Holstein
+ - Added command-line option (irdap \\-\\-print) to toggle printing of log statements in the terminal
+
 v1.3.0 September 2020, R.G. van Holstein
  - Implemented two new configuration parameters (combination_method_polarization and combination_method_intensity) for the computation of the final *Q*-, *U*-, *I*\ :sub:`Q`- and *I*\ :sub:`U`-images. The *Q*- and *U*-images can now be computed using least squares (as was previously the only option), the median and the trimmed mean. The *I*\ :sub:`Q`- and *I*\ :sub:`U`-images can be computed from the mean (as was previously the only option), the median and the trimmed mean
  - Old configuration files that do not have these parameters can still be used: IRDAP automatically uses the default least squares and mean options if these new configuration parameters are missing from the configuration file

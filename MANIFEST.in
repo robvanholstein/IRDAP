@@ -1,6 +1,7 @@
 include LICENSE
 exclude MANIFEST.in
 recursive-include irdap *.conf
+recursive-include irdap *.txt
 recursive-include irdap/static_calibs *
 recursive-include docs/build *
 recursive-include docs/index.html
