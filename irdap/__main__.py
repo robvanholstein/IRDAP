@@ -97,6 +97,8 @@ def main(args=None):
                         help='show program\'s version number')
     parser.add_argument('-w', '--website', action='store_true',
                         help='open IRDAP online documentation in web browser')
+    parser.add_argument('-p', '--print', action='store_true',
+                        help='toggle printing of log statements in the terminal')
     parser.add_argument('-d', '--demo', action='store_true',
                         help='run pipeline in current working directory with example\ndata of the circumstellar disk of T Cha (1 HWP cycle)')
     parser.add_argument('-o', '--headers', action='store_true',
@@ -123,6 +125,25 @@ def main(args=None):
 
     elif args.website:
         webbrowser.open_new_tab('https://irdap.readthedocs.io')
+
+    if args.print:
+        # Toggle printing in terminal
+        path_file = os.path.join(os.path.dirname(__file__), 'print_in_terminal.txt')
+        f = open(path_file, 'r')
+        current_value = f.read()
+        f.close()
+        if current_value == 'True':
+            print('\nIRDAP will not print log statements in the terminal.')
+            f = open(path_file, 'w')
+            f.write('False')
+            f.close()
+        elif current_value == 'False':
+            print('\nIRDAP will print log statements in the terminal.')
+            f = open(path_file, 'w')
+            f.write('True')
+            f.close()
+        else:
+            print('\nThe file ' + path_file + ' should contain either the word \'True\' or \'False\'.')
 
     elif args.demo:
         # Run example reduction

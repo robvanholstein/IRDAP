@@ -280,9 +280,10 @@ def printandlog(single_object, wrap=True):
     if type(single_object) == str and wrap == True:
         single_object = wrapstr(single_object)
 
-    # Print object in log file and on screen
+    # Print object in log file and on screen if selected as such
     print(single_object, file=open(path_log_file, 'a'))
-    print(single_object)
+    if print_in_terminal:
+        print(single_object)
 
 ###############################################################################
 # create_overview_headers
@@ -6427,6 +6428,7 @@ def run_pipeline(path_main_dir):
     ###############################################################################
 
     # Define which variables should be global
+    global print_in_terminal
     global pupil_offset
     global true_north_correction
     global pixel_scale
@@ -6450,6 +6452,12 @@ def run_pipeline(path_main_dir):
     global path_overview
     global path_static_calib_dir
 
+    # Determine whether to print in terminal
+    path_file = os.path.join(os.path.dirname(__file__), 'print_in_terminal.txt')
+    f = open(path_file, 'r')
+    print_in_terminal = f.read() == 'True'
+    f.close()
+    
     # Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     pupil_offset = 135.99
 
