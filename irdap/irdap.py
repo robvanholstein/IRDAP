@@ -419,7 +419,8 @@ def check_own_programs(header):
     own_targets = ['GQ_Lup']
     
     program_id = [x['ESO OBS PROG ID'] for x in header]
-    target_name = [x['ESO OBS TARG NAME'] for x in header]
+    # if statement in case file does not have 'ESO OBS TARG NAME', e.g. FLATS and DARKS
+    target_name = [x['ESO OBS TARG NAME'] for x in header if 'ESO OBS TARG NAME' in x] 
 
     if any([x in own_programs for x in program_id]) and any([x in own_targets for x in target_name]):
         printandlog('\nTerminating reduction.')

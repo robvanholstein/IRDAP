@@ -180,7 +180,7 @@ def main(args=None):
 
     if version_github != '':
         if __version__ != version_github:
-            print('\n\n\nA newer version of IRDAP is available (v' + __version__ + ' --> v' + version_github +
+            print('\n\n\n\n\n\n\n\nA newer version of IRDAP is available (v' + __version__ + ' --> v' + version_github +
                   '). Please consider\n' +
                   'updating IRDAP by typing "pip install irdap --upgrade" in the terminal.')
 

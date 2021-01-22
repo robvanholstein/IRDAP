@@ -73,7 +73,7 @@ v0.1.2 June 2019, R.G. van Holstein:
  
 To-do high priority
 -------------------
-
+   - Automatically optimize the annulus for star polarization subtraction by iterativey updating the annulus by excluding disk signal and companions etc.
    - Improve computation of stellar DoLP and AoLP and corresponding uncertainties (standard error of mean) by sampling from Gaussian distributions with Monte Carlo
    - Correct error in computation of photon noise for Q and U images that uses signal in Q and U rather than I_Q and I_U.
    - Make the data reduction work for data taken before approximately May 2015 that do not contain the header keyword indicating the Stokes parameter (using the HWP angle instead)
