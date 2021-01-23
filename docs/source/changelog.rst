@@ -14,6 +14,9 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.3.2 January 2021, R.G. van Holstein
+ - Corrected a bug that prevented reductions to be performed when dark and flat files are included in the raw subdirectory
+
 v1.3.1 September 2020, R.G. van Holstein
  - Added a command-line option (irdap \\-\\-print) to toggle printing of log statements in the terminal
 
