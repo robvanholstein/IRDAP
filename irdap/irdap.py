@@ -6376,11 +6376,11 @@ def create_overview_headers_main(path_main_dir):
         else:
             # Define the base of the name of each file to be generated
             headers = [pyfits.getheader(x) for x in path_raw_files]
-            target_name = ''
+            target_name = 'NO_NAME'
             n_files = len(headers)
             i = 0
 
-            while target_name == '' and i < n_files:
+            while target_name == 'NO_NAME' and i < n_files:
                 header_sel = headers[i]
                 try:
                     target_name = header_sel['ESO OBS TARG NAME']
