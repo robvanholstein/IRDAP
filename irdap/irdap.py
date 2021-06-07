@@ -363,8 +363,15 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
                 # If header exists, include it in overview
                 print_array[i+1, j+2] = header_sel[header_name_sel]
             else:
-                # If header does note exist, keep element of overview empty
-                print_array[i+1, j+2] = ''
+                if header_name_sel == 'ESO INS4 DROT2 BEGIN' and 'ESO INS4 DROT2 START' in header_sel:
+                    # If header is derotator angle at start, try alternative name as implemented in 2021
+                    print_array[i+1, j+2] = header_sel['ESO INS4 DROT2 START']
+                elif header_name_sel == 'ESO INS4 DROT3 BEGIN' and 'ESO INS4 DROT3 START' in header_sel:
+                    # If header is HWP angle at start, try alternative name as implemented in 2021
+                    print_array[i+1, j+2] = header_sel['ESO INS4 DROT3 START']
+                else:
+                    # If header does note exist, keep element of overview empty
+                    print_array[i+1, j+2] = ''
 
             if type(print_array[i+1, j+2]) is float:
                 # Include string with 4 decimal places
@@ -3526,7 +3533,7 @@ def preprocess_data(frames_to_remove=[],
 
         printandlog('\nWrote file ' + os.path.join(path_flux_dir, name_file_root + 'reference_flux.csv') +
                     ' showing for each FLUX-file the ratios of the transmission and DIT of the OBJECT- and FLUX-files, and the measured' +
-                    ' star total flux in ADU of the left and right frame halves and the left + right frame halves. The file ' +
+                    ' star total flux in ADU of the left and right frame halves and the left + right frame halves. The file' +
                     ' also shows the reference fluxes which are the products star_total_flux * transmission_ratio * dit_ratio.' +
                     ' To express the final images produced by IRDAP (e.g. the I_Q-, Qphi- or summed ADI images) in Jansky per arcsec^2,' +
                     ' determine the star flux in Jansky in the corresponding filter, and multiply the final images by the factor' +
@@ -4204,11 +4211,20 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
     for i, header_sel in enumerate(header):
         p[i] = compute_mean_angle([header_sel['ESO TEL PARANG START'], header_sel['ESO TEL PARANG END']])
         a_start[i] = header_sel['ESO TEL ALT']
-        theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 BEGIN'] - 152.15, 360), np.mod(header_sel['ESO INS4 DROT3 END'] - 152.15, 360)]), 180)
+        try:
+            theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 BEGIN'] - 152.15, 360), np.mod(header_sel['ESO INS4 DROT3 END'] - 152.15, 360)]), 180)
+        except:
+            theta_hwp[i] = np.mod(compute_mean_angle([np.mod(header_sel['ESO INS4 DROT3 START'] - 152.15, 360), np.mod(header_sel['ESO INS4 DROT3 END'] - 152.15, 360)]), 180)
         if tracking_mode_used == 'FIELD':
-            theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 BEGIN'], header_sel['ESO INS4 DROT2 END']]), 360)
+            try:
+                theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 BEGIN'], header_sel['ESO INS4 DROT2 END']]), 360)
+            except:
+                theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 START'], header_sel['ESO INS4 DROT2 END']]), 360)
         elif tracking_mode_used == 'PUPIL':
-            theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 BEGIN'], header_sel['ESO INS4 DROT2 END']]) + 0.5*pupil_offset, 360)
+            try:
+                theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 BEGIN'], header_sel['ESO INS4 DROT2 END']]) + 0.5*pupil_offset, 360)
+            except:
+                theta_der[i] = np.mod(compute_mean_angle([header_sel['ESO INS4 DROT2 START'], header_sel['ESO INS4 DROT2 END']]) + 0.5*pupil_offset, 360)
         mjd[i] = header_sel['MJD-OBS']
         exposure_time[i] = header_sel['ESO DET SEQ1 DIT']
         NDIT[i] = header_sel['ESO DET NDIT']

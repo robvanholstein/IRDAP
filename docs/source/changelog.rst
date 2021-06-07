@@ -14,6 +14,9 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.3.3 June 2021, R.G. van Holstein
+ - Updated code so that it correctly handles the change of the header names INS4 DROT2 BEGIN and INS4 DROT3 BEGIN to INS4 DROT2 START and INS4 DROT3 START in the FITS files
+ 
 v1.3.2 January 2021, R.G. van Holstein
  - Corrected a bug that prevented reductions to be performed when dark and flat files are included in the raw subdirectory
 
@@ -76,6 +79,7 @@ v0.1.2 June 2019, R.G. van Holstein:
  
 To-do high priority
 -------------------
+   - Add possibility to reduce data with center frames having a different DIT than the object frames (i.e. automatically scale object frames to DIT and ND filter of center frames before subtracting it; test with data of HD142527)
    - Automatically optimize the annulus for star polarization subtraction by iterativey updating the annulus by excluding disk signal and companions etc.
    - Improve computation of stellar DoLP and AoLP and corresponding uncertainties (standard error of mean) by sampling from Gaussian distributions with Monte Carlo
    - Correct error in computation of photon noise for Q and U images that uses signal in Q and U rather than I_Q and I_U.
