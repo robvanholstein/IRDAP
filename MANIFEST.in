@@ -10,5 +10,6 @@ recursive-exclude docs/source *
 exclude docs/.nojekyll
 exclude docs/make.bat
 exclude docs/Makefile
+exclude to_do
 recursive-exclude mailing_list.txt
 recursive-exclude update_procedure.txt

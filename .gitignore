@@ -2,6 +2,7 @@ __pycache__/
 build/
 dist/
 irdap.egg-info/
+to_do/
 mailing_list.txt
 update_procedure.txt
 rdi_in_irdap.txt
