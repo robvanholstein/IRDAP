@@ -3340,9 +3340,12 @@ def preprocess_data(frames_to_remove=[],
             # Determine coronagraph used and set center coordinates
             coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
 
-            if coronagraph_used == 'N_ALC_Ks':
+            if coronagraph_used == '': #if 'ESO INS COMB ICOR' was not written, find the 'ESO INS1 FILT ID' keyword instead
+                coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+
+            if coronagraph_used == 'N_ALC_Ks' or coronagraph_used == 'FILT_BBF_Ks':
                 object_center_coordinates = (477, 534, 1503, 523)
-                printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is N_ALC_Ks.')
+                printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is ' + coronagraph_used + '.')
             else:
                 object_center_coordinates = (477, 521, 1503, 511)
                 printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is not N_ALC_Ks.')
@@ -3383,9 +3386,12 @@ def preprocess_data(frames_to_remove=[],
         # Determine coronagraph used and set center coordinates
         coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
 
-        if coronagraph_used == 'N_ALC_Ks':
+        if coronagraph_used == '': #if 'ESO INS COMB ICOR' was not written, find the 'ESO INS1 FILT ID' keyword instead
+            coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+
+        if coronagraph_used == 'N_ALC_Ks' or coronagraph_used == 'FILT_BBF_Ks':
             object_center_coordinates = (477, 534, 1503, 523)
-            printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is N_ALC_Ks.')
+            printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is ' + coronagraph_used + '.')
         else:
             object_center_coordinates = (477, 521, 1503, 511)
             printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is not N_ALC_Ks.')
