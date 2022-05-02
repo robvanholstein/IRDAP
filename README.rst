@@ -40,7 +40,7 @@ Copyright (C) 2019 R.G. van Holstein
 
 Full documentation: https://irdap.readthedocs.io
 
-Feedback, questions, comments: send an e-mail to `Rob van Holstein <vanholstein@strw.leidenuniv.nl>`_.
+Feedback, questions, comments: send an e-mail to `Rob van Holstein <rob.vanholstein@eso.org>`_.
 
 When publishing data reduced with IRDAP, please cite `van Holstein et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract>`_. For data in pupil-tracking mode please additionally cite `van Holstein et al. (2017) <https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V>`_.
                                                 

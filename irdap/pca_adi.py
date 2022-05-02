@@ -1,12 +1,12 @@
 '''
 This file contains all ADI+PCA auxiliary functions used by IRDAP.
-File written by Julien Milli (julien.milli@mines-paris.org).
+File written by Julien Milli (julien.milli@univ-grenoble-alpes.fr).
 
 IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
 Full documentation: https://irdap.readthedocs.io
-Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
+Feedback, questions, comments: rob.vanholstein@eso.org
 
 When publishing data reduced with IRDAP, please cite van Holstein et al.
 (2020): https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract.

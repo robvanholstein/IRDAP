@@ -5,7 +5,7 @@ IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
 Full documentation: https://irdap.readthedocs.io
-Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
+Feedback, questions, comments: rob.vanholstein@eso.org
 
 https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract
 
@@ -40,7 +40,7 @@ setup(
    name='irdap',
    version=version['__version__'],
    author='R.G. van Holstein',
-   author_email='vanholstein@strw.leidenuniv.nl',
+   author_email='rob.vanholstein@eso.org',
    packages=['irdap'],
    url='https://irdap.readthedocs.io',
    download_url='https://github.com/robvanholstein/IRDAP/archive/master.zip',
@@ -53,7 +53,7 @@ setup(
       "matplotlib >= 3.0.1",
       "scipy >= 1.2.1",
       "astropy >= 3.1.1",
-      "scikit_image >= 0.14.2",
+      "scikit_image >= 0.19.2",
       "pandas >= 0.23.4",
       "photutils >= 0.7.1"
    ],

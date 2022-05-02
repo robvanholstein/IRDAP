@@ -14,4 +14,4 @@ new issue on the GitHub repository
 detail as possible (error message, operating system, Python version, etc.).
 
 If you have feedback, questions or comments you can also send an e-mail to
-`Rob van Holstein <vanholstein@strw.leidenuniv.nl>`_. 
+`Rob van Holstein <rob.vanholstein@eso.org>`_. 

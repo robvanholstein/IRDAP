@@ -14,6 +14,9 @@ Changelog & to-do
 Changelog
 ---------
 
+v1.3.4 May 2022, R.G. van Holstein
+ - Corrected an error due to a scikit-image function being deprecated
+
 v1.3.3 June 2021, R.G. van Holstein
  - Updated code so that it correctly handles the change of the header names INS4 DROT2 BEGIN and INS4 DROT3 BEGIN to INS4 DROT2 START and INS4 DROT3 START in the FITS files
  

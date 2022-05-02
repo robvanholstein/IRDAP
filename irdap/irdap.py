@@ -5,7 +5,7 @@ IRDAP is a Python package to accurately reduce SPHERE-IRDIS polarimetric data.
 Copyright (C) 2019 R.G. van Holstein
 
 Full documentation: https://irdap.readthedocs.io
-Feedback, questions, comments: vanholstein@strw.leidenuniv.nl
+Feedback, questions, comments: rob.vanholstein@eso.org
 
 When publishing data reduced with IRDAP, please cite van Holstein et al.
 (2020): https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract.
@@ -60,7 +60,7 @@ from astropy.modeling import models, fitting
 from astropy.io import ascii
 from astropy.stats import sigma_clipped_stats
 from skimage.transform import rotate as rotateskimage
-from skimage.feature import register_translation
+from skimage.registration import phase_cross_correlation
 from .version import __version__
 from .pca_adi import pca_adi
 
@@ -370,7 +370,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
                     # If header is HWP angle at start, try alternative name as implemented in 2021
                     print_array[i+1, j+2] = header_sel['ESO INS4 DROT3 START']
                 else:
-                    # If header does note exist, keep element of overview empty
+                    # If header does not exist, keep element of overview empty
                     print_array[i+1, j+2] = ''
 
             if type(print_array[i+1, j+2]) is float:
@@ -438,7 +438,7 @@ def check_own_programs(header):
         printandlog('###############################################################################')
         printandlog('\nDear colleague,')
         printandlog('\nThe data you are trying to reduce comes from one of my observing programs. ' +
-                    'In case you are interested in this data, please contact me at \'vanholstein@strw.leidenuniv.nl\'. ' +
+                    'In case you are interested in this data, please contact me at \'rob.vanholstein@eso.org\'. ' +
                     'I am always more than happy to collaborate on projects!')
         printandlog('\nPlease note that the calibration of the IRDIS ' +
                     'polarimetric mode (which is the core of IRDAP) and the development of IRDAP itself have taken 4 years ' +
@@ -2438,8 +2438,8 @@ def process_object_frames(path_object_files,
                     sub_image = create_sub_image(frame=frame_half, x0=x_center_0_sel + x_dith, y0=y_center_0_sel + y_dith, crop_radius=crop_radius)
 
                     # Determine required shift of image by cross-correlation with template
-                    x_shift_fit, y_shift_fit = register_translation(list_sub_image_template[k], sub_image, upsample_factor=10)[0]
-
+                    x_shift_fit, y_shift_fit = phase_cross_correlation(list_sub_image_template[k], sub_image, upsample_factor=10)[0]
+                    
                     # Compute shift in x- and y-directions
                     list_shift_x[k].append(511.5 - x_fit_template[k] + x_shift_fit - x_dith)
                     list_shift_y[k].append(511.5 - y_fit_template[k] + y_shift_fit - y_dith)
@@ -6621,7 +6621,7 @@ def run_pipeline(path_main_dir):
     printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
     printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
     printandlog('\nFull documentation: https://irdap.readthedocs.io')
-    printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl')
+    printandlog('Feedback, questions, comments: rob.vanholstein@eso.org')
     printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein')
     printandlog('\n###############################################################################')
     printandlog('# Starting IRDAP')
@@ -7019,7 +7019,7 @@ def run_pipeline(path_main_dir):
         if not any([x == 0.0 for x in inner_radii]):
             printandlog('\nWARNING, none of the inner radii of the annuli defined for the star photometry (3rd element of the tuples of flux_annulus_star) are set to 0. At least one of the inner radii should be set to 0 to encompass the star flux unless there are very specific circumstances.')
         if any([x > 140 for x in outer_radii]):
-            printandlog('\nWARNING, at least one of the outer radii of the annuli defined for the star photometry (4th element of the tuples of flux_annulus_star) are set to a value higher than 140. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star.'.format(x[3]))
+            printandlog('\nWARNING, at least one of the outer radii of the annuli defined for the star photometry (4th element of the tuples of flux_annulus_star) are set to a value higher than 140. A cluster of bad pixels is present between 140px and 160px that might bias the photometry of the star.')
 
     if type(flux_annulus_star) is tuple:
         if flux_annulus_star[2] != 0:
@@ -7291,5 +7291,5 @@ def run_pipeline(path_main_dir):
     printandlog('For data in pupil-tracking mode please additionally cite van Holstein et al.')
     printandlog('(2017): http://adsabs.harvard.edu/abs/2017SPIE10400E..15V.')
     printandlog('\nFull documentation: https://irdap.readthedocs.io')
-    printandlog('Feedback, questions, comments: vanholstein@strw.leidenuniv.nl')
+    printandlog('Feedback, questions, comments: rob.vanholstein@eso.org')
     printandlog('\nIRDAP Copyright (C) 2019 R.G. van Holstein')
