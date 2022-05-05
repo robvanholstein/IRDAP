@@ -2604,7 +2604,16 @@ def process_object_frames(path_object_files,
             plt.savefig(path_plot, dpi=300, bbox_inches='tight')
             plt.close(fig)
 
+    cube_left_frames = geometric_distortion_correction_cubes(cube_left_frames) #geometric correction code from Christian Ginski; line 1/5
+    cube_right_frames = geometric_distortion_correction_cubes(cube_right_frames) #geometric correction code from Christian Ginski; line 2/5
+
     return cube_left_frames, cube_right_frames, header
+
+def geometric_distortion_correction_cubes(in_cube): #geometric correction code from Christian Ginski; line 3/5
+
+    zoom_cube = ndimage.zoom(in_cube,[1.0,1.006,1.0]) #geometric correction code from Christian Ginski; line 4/5
+
+    return zoom_cube[:,3:1027,:] #geometric correction code from Christian Ginski; line 5/5
 
 ###############################################################################
 # compute_annulus_values
