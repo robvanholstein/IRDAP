@@ -3341,7 +3341,7 @@ def preprocess_data(frames_to_remove=[],
             coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
 
             if coronagraph_used == '': #if 'ESO INS COMB ICOR' was not written, find the 'ESO INS1 FILT ID' keyword instead
-                 coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+                coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
 
             if coronagraph_used == 'N_ALC_Ks' or coronagraph_used == 'FILT_BBF_Ks':
                 object_center_coordinates = (477, 534, 1503, 523)
@@ -3387,7 +3387,7 @@ def preprocess_data(frames_to_remove=[],
         coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
 
         if coronagraph_used == '': #if 'ESO INS COMB ICOR' was not written, find the 'ESO INS1 FILT ID' keyword instead
-             coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+            coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
 
         if coronagraph_used == 'N_ALC_Ks' or coronagraph_used == 'FILT_BBF_Ks':
             object_center_coordinates = (477, 534, 1503, 523)
