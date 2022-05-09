@@ -6538,7 +6538,10 @@ def run_pipeline(path_main_dir):
         raise IOError('\n\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
 
     # Define the base of the name of each file to be generated
-    header_target_name = [pyfits.getheader(x) for x in path_raw_files if 'ESO OBS TARG NAME' in pyfits.getheader(x)]
+    header_target_name = [pyfits.getheader(x) for x in path_raw_files if ('ESO OBS TARG NAME' in pyfits.getheader(x) and pyfits.getheader(x)['ESO DPR TYPE'] == 'OBJECT')]
+    # Update by Bin Ren on 2022-05-09: second condition in the "if" command above is used to make sure only target is taken into account
+    # Update by Bin Ren on 2022-05-09: Code updated in case people use SKY frames that have different names than the target
+    
     if len(header_target_name) == 0:
         raise IOError('\n\nThe target name has not been found in the headers. There is likely no on-sky data in the raw directory {0:s}.'.format(path_raw_dir))
     else:
