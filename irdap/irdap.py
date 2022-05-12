@@ -64,6 +64,8 @@ from skimage.registration import phase_cross_correlation
 from .version import __version__
 from .pca_adi import pca_adi
 
+from . import utils_parallactic_angles
+
 # to avoid some warning from pandas and matplotlib
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -2347,7 +2349,10 @@ def process_object_frames(path_object_files,
     for i, (path_sel, indices_sel) in enumerate(zip(path_object_files, indices_to_remove_object)):
         # Read data and header from file
         cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
-
+        
+        # Bin Ren: Calculate and correct parallactic angles for start and end values, save in memory
+        header_sel = utils_parallactic_angles.parallactic_angles_IRDIS_correct(header_sel)
+        
         # Create list of indices of frames
         frame_index = [x for x in range(0, cube_sel.shape[0])]
 
@@ -4145,7 +4150,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                               trimmed_mean_prop_to_cut_polar=0.1,
                                               combination_method_intensity='mean',
                                               trimmed_mean_prop_to_cut_intens=0.1,
-                                              single_posang_north_up=True):
+                                              single_posang_north_up=True,
+                                              save_parang_angles = True):
     '''
     Calculate incident I_Q-, I_U-, Q- and U-images by correcting for the instrumental polarization effects of IRDIS using the polarimetric instrument model
 
@@ -4182,6 +4188,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more
             than one derotator position angle, because in these cases the final images produced always have North up
+        save_parang_angles: if True the parallactic angles are saved in the preprocessed data folder                
 
     Output:
         frame_I_Q_incident: polarimetric model-corrected incident I_Q-image
@@ -4246,6 +4253,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         derotator_position_angle[i] = header_sel['ESO INS4 DROT2 POSANG']
         dates[i] = header_sel['DATE'][:10]
 
+    if save_parang_angles: #Written by Bin Ren
+        write_fits_files(data=p, path=os.path.join(path_preprocessed_dir, name_file_root + 'parangs.fits'), header=False, silent=False)
+    
     # Define a Julian date with respect to noon at Paranal and round it to night number
     # (Paranal is 70 deg in longitude or a fraction 0.2 away from Greenwich and mjd is
     # defined with respect to midnight at Greenwich)
