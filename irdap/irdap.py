@@ -623,14 +623,19 @@ def check_sort_data_create_directories(frames_to_remove=[],
     if not any(header_on_sky):
         raise IOError('\n\nThere is no on-sky data.')
 
+    header_on_sky_nosky = [x for x in header if x['ESO DPR TYPE'] in ['OBJECT', 'OBJECT,CENTER', 'OBJECT,FLUX']] #added by Bin Ren to enable shared SKY frames in star hopping observations
+
     if len(set([x['ESO OBS TARG NAME'] for x in header_on_sky])) != 1:
-        different_targets = input_wrap('\nThe on-sky data provided have different targets. Continue anyway? (y/n) ')
-        if different_targets == 'y':
-            printandlog('\nWARNING, continuing reduction although the on-sky data provided have different targets.')
-        elif different_targets == 'n':
-            raise IOError('\n\nThe on-sky data provided have different targets.')
+        if len(set([x['ESO OBS TARG NAME'] for x in header_on_sky_nosky])) == 1:
+            printandlog('\nWARNING, found a single target but SKY frame is from other star(s).')
         else:
-            raise IOError('\n\nThe provided input \'' + str(different_targets) + '\' is not valid.')
+            different_targets = input_wrap('\nThe on-sky data provided have different targets. Continue anyway? (y/n) ')
+            if different_targets == 'y':
+                printandlog('\nWARNING, continuing reduction although the on-sky data provided have different targets.')
+            elif different_targets == 'n':
+                raise IOError('\n\nThe on-sky data provided have different targets.')
+            else:
+                raise IOError('\n\nThe provided input \'' + str(different_targets) + '\' is not valid.')
 
     if len(set([x['ESO INS4 COMB ROT'] for x in header_on_sky])) != 1:
         raise IOError('\n\nThe on-sky data provided use different tracking modes.')
