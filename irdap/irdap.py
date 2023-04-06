@@ -359,6 +359,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
     print_array[1:, 1] = [os.path.basename(x) for x in path_raw_files]
 
     # Iterate over headers and header names to fill overview
+    identifier_fill_header_Stokes = False # fill Stokes header if needed (B. Ren, Update 2023-04-06)
     for i, header_sel in enumerate(header):
         for j, header_name_sel in enumerate(header_names):
             if header_name_sel in header_sel:
@@ -374,6 +375,26 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
                 else:
                     # If header does not exist, keep element of overview empty
                     print_array[i+1, j+2] = ''
+            
+            if header_name_sel == 'ESO OCS DPI H2RT STOKES' and header_sel['ESO DPR TYPE'] == 'OBJECT':
+                #Update by B. Ren for data without Stokes params (Update 2023-04-06)
+                try:
+                    if header_sel['ESO OCS DPI H2RT STOKES'] == '':
+                        pass #means read was good
+                except: #means no Stokes parameters in raw data, now editing
+                    stokes_this = None
+                    if abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 56:
+                        stokes_this = 'Qplus'
+                    elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 34:
+                        stokes_this = 'Qminus'
+                    elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 11:
+                        stokes_this = 'Uplus'
+                    elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 79:
+                        stokes_this = 'Uminus'
+                    header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    header[i]['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    print_array[i+1, j+2] = header_sel[header_name_sel] #update header
+                    identifier_fill_header_Stokes = True
 
             if type(print_array[i+1, j+2]) is float:
                 # Include string with 4 decimal places
@@ -381,7 +402,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
             elif type(print_array[i+1, j+2]) is int:
                 # Include string as an integer
                 print_array[i+1, j+2] = '%s' % print_array[i+1, j+2]
-
+        
     # Vectorize the function len()
     lenvec = np.vectorize(len)
 
@@ -740,7 +761,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     if any(header_center):
         if not all([x['ESO DET SEQ1 DIT'] == object_exposure_time for x in header_center]):
-            raise IOError('\n\nOne or more CENTER-files have an exposure time different from that of the OBJECT-files.')
+            pass #changed by Bin Ren on 2023-03-20 for DG CrA reduction (20210904 data)
+            # raise IOError('\n\nOne or more CENTER-files have an exposure time different from that of the OBJECT-files.')
 
         if not all([x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header_center]):
             raise IOError('\n\nOne or more CENTER-files use a NIR neutral density filter different from that of the OBJECT-files.')
@@ -873,6 +895,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
     mjd_half_center = []
 
     # Sort file paths and indices of frames to be removed according to file type
+    identifier_no_Stokes_header = False #identifier used to tell if there is no Stokes header (B. Ren, Update 2023-04-06)
     for file_sel, header_sel, file_index_sel, NDIT_sel, indices_sel in zip(path_raw_files, header, file_index, NDIT, indices_to_remove):
 
         if header_sel['ESO DPR TYPE'] in ['DARK', 'DARK,BACKGROUND']:
@@ -890,7 +913,22 @@ def check_sort_data_create_directories(frames_to_remove=[],
             NDIT_object.append(NDIT_sel)
 
             # Append Stokes parameter to list
-            stokes_parameter.append(header_sel['ESO OCS DPI H2RT STOKES'])
+            try:
+                stokes_parameter.append(header_sel['ESO OCS DPI H2RT STOKES'])
+            except: # "Keyword 'ESO OCS DPI H2RT STOKES' not found."
+                #Edited by B. Ren for when this header is not availble in early obs (Update 2023-04-06)
+                stokes_this = None
+                if abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 56:
+                    stokes_this = 'Qplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 34:
+                    stokes_this = 'Qminus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 11:
+                    stokes_this = 'Uplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 79:
+                    stokes_this = 'Uminus'
+                header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                identifier_no_Stokes_header = True
+                stokes_parameter.append(stokes_this)
 
             # Calculate mean Julian date halfway the exposure
             mjd = header_sel['MJD-OBS']
@@ -954,23 +992,26 @@ def check_sort_data_create_directories(frames_to_remove=[],
     files_to_remove_stokes = []
     n = len(stokes_parameter)
 
-    for i in range(n):
-        if stokes_parameter[i] == 'Qplus':
-            if i + 1 == n:
-                files_to_remove_stokes.append(i)
-            elif stokes_parameter[i + 1] != 'Qminus':
-                files_to_remove_stokes.append(i)
-        if stokes_parameter[i] == 'Qminus':
-            if stokes_parameter[i - 1] != 'Qplus':
-                files_to_remove_stokes.append(i)
-        if stokes_parameter[i] == 'Uplus':
-            if i + 1 == n:
-                files_to_remove_stokes.append(i)
-            elif stokes_parameter[i + 1] != 'Uminus':
-                files_to_remove_stokes.append(i)
-        if stokes_parameter[i] == 'Uminus':
-            if stokes_parameter[i - 1] != 'Uplus':
-                files_to_remove_stokes.append(i)
+    if identifier_no_Stokes_header is False:
+        for i in range(n):
+            if stokes_parameter[i] == 'Qplus':
+                if i + 1 == n:
+                    files_to_remove_stokes.append(i)
+                elif stokes_parameter[i + 1] != 'Qminus':
+                    files_to_remove_stokes.append(i)
+            if stokes_parameter[i] == 'Qminus':
+                if stokes_parameter[i - 1] != 'Qplus':
+                    files_to_remove_stokes.append(i)
+            if stokes_parameter[i] == 'Uplus':
+                if i + 1 == n:
+                    files_to_remove_stokes.append(i)
+                elif stokes_parameter[i + 1] != 'Uminus':
+                    files_to_remove_stokes.append(i)
+            if stokes_parameter[i] == 'Uminus':
+                if stokes_parameter[i - 1] != 'Uplus':
+                    files_to_remove_stokes.append(i)
+    else: # do not remove the files for those without Stokes header (B. Ren, Update 2023-04-06), mainly older observations
+        printandlog('\nWARNING, some of the FITS-file(s) are not in "Qplus, Qminus, Uplus, Uminus" sequence')
 
     # Print which object-files will be removed because they lack a Q/U^+/- counterpart; do not change len() != 0 to any() because any([0]) = False and then it doesn't work
     if len(files_to_remove_stokes) != 0:
@@ -2354,6 +2395,24 @@ def process_object_frames(path_object_files,
     for i, (path_sel, indices_sel) in enumerate(zip(path_object_files, indices_to_remove_object)):
         # Read data and header from file
         cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
+                    
+        try: #Add 'ESO OCS DPI H2RT STOKES' header if necessary for those without it (B. Ren, Update 2023-04-06)
+            if header_sel['ESO OCS DPI H2RT STOKES'] == '': #placeholder comparison
+                pass #means read was good, if reading succeeded
+        except: #means no Stokes parameters in raw data, now editing
+            if header_sel['ESO DPR TYPE'] == 'OBJECT':
+                stokes_this = None
+                if abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 56:
+                    stokes_this = 'Qplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 34:
+                    stokes_this = 'Qminus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 11:
+                    stokes_this = 'Uplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 79:
+                    stokes_this = 'Uminus'
+                # header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                identifier_fill_header_Stokes = True
         
         # Bin Ren: Calculate and correct parallactic angles for start and end values, save in memory
         header_sel = utils_parallactic_angles.parallactic_angles_IRDIS_correct(header_sel)
@@ -7247,7 +7306,31 @@ def run_pipeline(path_main_dir):
 
             # Read headers
             header = [pyfits.getheader(x.rstrip('\n')) for x in open(path_object_files_text, 'r')]
+            #
+            identifier_fill_header_Stokes = False # fill Stokes header if needed (B. Ren, Update 2023-04-06)
+            for i in range(len(header)):
+                if header[i]['ESO DPR TYPE'] != 'OBJECT':
+                    continue
+                try:
+                    if header[i]['ESO OCS DPI H2RT STOKES'] == '': #placeholder comparison
+                        pass #means read was good, if reading succeeded
+                except: #means no Stokes parameters in raw data, now editing
+                    stokes_this = None
+                    if abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 56:
+                        stokes_this = 'Qplus'
+                    elif abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 34:
+                        stokes_this = 'Qminus'
+                    elif abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 11:
+                        stokes_this = 'Uplus'
+                    elif abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 79:
+                        stokes_this = 'Uminus'
+                    # header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    header[i]['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    identifier_fill_header_Stokes = True
+
             printandlog('Read headers from OBJECT-files specified in ' + path_object_files_text + '.')
+            if identifier_fill_header_Stokes:
+                printandlog('Stokes header inferred from "ESO INS4 DROT3 POSANG".')
 
             # Read indices of OBJECT-files
             file_index_object = literal_eval([x for x in open(path_file_index_object, 'r')][0])
