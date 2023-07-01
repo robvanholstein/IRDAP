@@ -2,7 +2,7 @@
 Installation
 ============
 
-To run IRDAP the user needs to have Python 3.6 or 3.7 installed. 
+To run IRDAP the user needs to have Python 3.6 or higher installed. 
 
 Installing IRDAP
 ----------------

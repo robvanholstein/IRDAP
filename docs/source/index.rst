@@ -21,19 +21,19 @@
 
 .. |stars| image:: https://img.shields.io/github/stars/robvanholstein/IRDAP.svg?style=social&label=Stars
    :target: https://github.com/robvanholstein/IRDAP/
-   
+
 .. |watch| image:: https://img.shields.io/github/watchers/robvanholstein/IRDAP.svg?style=social&label=Watch
    :target: https://github.com/robvanholstein/IRDAP/
-   
+
 .. |pypi| image:: https://img.shields.io/pypi/v/irdap.svg?colorB=<brightgreen>
     :target: https://pypi.python.org/pypi/irdap/
-	
+
 .. |python| image:: https://img.shields.io/badge/Python-3.6%2C%203.7-yellow.svg?style=flat
     :target: https://pypi.python.org/pypi/irdap/
 
 .. |github| image:: https://img.shields.io/github/release/robvanholstein/IRDAP.svg
-   :target: https://github.com/robvanholstein/IRDAP/ 
-   
+   :target: https://github.com/robvanholstein/IRDAP/
+
 .. |last-commit| image:: https://img.shields.io/github/last-commit/robvanholstein/IRDAP.svg?colorB=e6c000
    :target: https://github.com/robvanholstein/IRDAP/
 
@@ -45,20 +45,20 @@
 
 .. |ads2| image:: https://img.shields.io/badge/ADS-van%20Holstein%20et%20al.%20(2017)-blueviolet.svg
 	:target: https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V
-	
+
 .. Made ads-link above on https://shields.io/ with "your badge"
-	
+
 .. IRDAP |stars| |watch|
 
 IRDAP
 =================================
 
-.. 
+..
    |pypi| |python| |github| |last-commit| |license| |ads1| |ads2|
 
 IRDAP (IRDIS Data reduction for Accurate Polarimetry) is a highly-automated end-to-end pipeline to reduce `SPHERE-IRDIS <https://www.eso.org/sci/facilities/paranal/instruments/sphere.html>`_ polarimetric data using polarimetric differential imaging (PDI). Its core feature is the model-based correction method of the instrumental polarization effects as described in `van Holstein et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract>`_. IRDAP handles data taken both in field- and pupil-tracking mode and using the broadband filters Y, J, H and K\ :sub:`s`. Data taken with the narrowband filters can be reduced as well, although with a somewhat worse accuracy. For pupil-tracking observations IRDAP can additionally apply angular differential imaging.
 
-Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and 3.7). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs a complete data reduction from raw data to final data products.
+Reducing data with IRDAP is very straightforward and does not require the user to do any coding or have knowledge of Python (IRDAP is written for Python 3.6 and higher). IRDAP is simply run from a terminal with only a few commands and uses a configuration file with a limited number of input parameters. Within several minutes, IRDAP performs a complete data reduction from raw data to final data products.
 
 .. note::
    If you use IRDAP for your publication, please :ref:`cite our papers <Citing IRDAP>`.
@@ -74,14 +74,14 @@ Contents
 ---------
 .. toctree::
    :maxdepth: 1
-   
+
    Home <self>
    installation
    example
    instructions
    configfile
    citing
-   contributing    
+   contributing
    changelog
    mailinglist
    acknowledgements
@@ -90,14 +90,14 @@ Contents
 ----
 
 Copyright notice:
- 
-The IRDAP Python module is free software: you can redistribute it and/or modify it under 
-the terms of the GNU General Public License as published by the Free Software Foundation, 
+
+The IRDAP Python module is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software Foundation,
 version 3 of the License.
- 
-The IRDAP Python module is distributed in the hope that it will be useful, but without 
-any warranty; without even the implied warranty of merchantability or fitness for a 
+
+The IRDAP Python module is distributed in the hope that it will be useful, but without
+any warranty; without even the implied warranty of merchantability or fitness for a
 particular purpose. See the GNU General Public License for more details.
- 
-You should have received a copy of the GNU General Public License along with the IRDAP 
+
+You should have received a copy of the GNU General Public License along with the IRDAP
 Python module. If not, see http://www.gnu.org/licenses/.
