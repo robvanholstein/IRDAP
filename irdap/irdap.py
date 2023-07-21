@@ -47,7 +47,7 @@ import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
 import astropy.time
 from ast import literal_eval
-from scipy.ndimage.interpolation import rotate
+from scipy.ndimage import rotate
 from scipy import interpolate
 from scipy import optimize
 from scipy import ndimage
@@ -163,7 +163,7 @@ def read_config_file(path_config_file):
     try:
         combination_method_intensity    = config_float_int(config.get('Advanced PDI options', 'combination_method_intensity'))
     except:
-        combination_method_intensity    = 'mean'        
+        combination_method_intensity    = 'mean'
 
     return perform_preprocessing, \
            sigma_filtering, \
@@ -447,10 +447,10 @@ def check_own_programs(header):
 
     own_programs = ['0101.C-0502(B)']
     own_targets = ['GQ_Lup']
-    
+
     program_id = [x['ESO OBS PROG ID'] for x in header]
     # if statement in case file does not have 'ESO OBS TARG NAME', e.g. FLATS and DARKS
-    target_name = [x['ESO OBS TARG NAME'] for x in header if 'ESO OBS TARG NAME' in x] 
+    target_name = [x['ESO OBS TARG NAME'] for x in header if 'ESO OBS TARG NAME' in x]
 
     if any([x in own_programs for x in program_id]) and any([x in own_targets for x in target_name]):
         printandlog('\nTerminating reduction.')
@@ -518,7 +518,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
         perform_adi: If True, perform angular differential imaging on pre-
             processed data (default = True).
 
-    Note that object_centering_method, save_preprocessed_data and show_images_center_coordinates 
+    Note that object_centering_method, save_preprocessed_data and show_images_center_coordinates
     are input to this function as they are required for the sorting of the data or preparing the
     pre-processing, not to actually perform centering for example.
 
@@ -579,7 +579,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     # Extract headers
     header = [pyfits.getheader(x) for x in path_raw_files]
-    check_own_programs(header)
+    # check_own_programs(header)
 
     # Sort raw files and headers based on observation date in headers
     date_obs = [x['DATE-OBS'] for x in header]
@@ -843,7 +843,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
         raise ValueError('\n\nOne or more of the frame numbers to be removed are negative or zero.')
 
     # Create list of arrays with indices of frames to remove for each file
-    indices_to_remove = [np.sort(frames_to_remove_per_file[files_to_remove_frames_from == x]).astype(np.int) for x in file_index]
+    indices_to_remove = [np.sort(frames_to_remove_per_file[files_to_remove_frames_from == x]).astype(int) for x in file_index]
 
     # Extract NDIT of each file
     NDIT = [x['ESO DET NDIT'] for x in header]
@@ -1685,7 +1685,7 @@ def process_center_frames(path_center_files,
                           sigma_filtering=True):
     '''
     Process the CENTER frames by subtracting the background, flat-fielding,
-    removing bad pixels and computing the mean over the NDIT's
+    removing bad pixels and computing the mean over the NDITs
 
     Input:
         path_center_files: list of paths to raw CENTER-files
@@ -2034,7 +2034,7 @@ def find_center_coordinates(list_frame_center_processed,
     fwhm, separation = compute_fwhm_separation(filter_used)
 
     # Set NaN-vales in color map to gray
-    cmap = mpl.cm.viridis
+    cmap = mpl.cm.get_cmap('viridis').copy()
     cmap.set_bad(color='gray')
 
     # Create zero arrays to save fitted center coordinates in
@@ -2096,7 +2096,7 @@ def find_center_coordinates(list_frame_center_processed,
                 x_stddev=1.1*fwhm, y_stddev=0.63*fwhm, theta=angle, crop_radius=crop_radius, sigfactor=sigfactor, saturation_level=saturation_level)
 
                 # Plot sub-images used
-                axs[sub_image_position[j][k]].imshow(sub_image, cmap=cmap, origin='lower',interpolation='nearest')
+                axs[sub_image_position[j][k]].imshow(sub_image, cmap=cmap, origin='lower', interpolation='nearest')
                 axs[sub_image_position[j][k]].plot(x_fit_sub_image, y_fit_sub_image, 'rx', markersize=60/crop_radius)
                 axs[sub_image_position[j][k]].set_title(titles_sub_image[k])
 
@@ -2147,7 +2147,7 @@ def find_center_coordinates(list_frame_center_processed,
         f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 1] + 1, y_fit[1, 1] + 1))
         f.write('circle({0:8.2f}, {1:8.2f}, 1.0)\n'.format(x_fit[1, 3] + 1, y_fit[1, 3] + 1))
         f.close()
-        printandlog('\nWrote file ' + path_reg_file + ' which can be loaded as a region in DS9 (in the top bar: Region --> Load Regions) and shows the fitted coordinates of the satellite spots and the center.')
+        printandlog('\nWrote file ' + path_reg_file + ' which can be loaded as a region in DS9 (in the top bar: Region --> Open Regions...) and shows the fitted coordinates of the satellite spots and the center.')
 
     # Print center coordinates found
     max_path_length = max([len(os.path.basename(x)) for x in path_processed_center_files])
@@ -2248,7 +2248,7 @@ def create_sub_image(frame, x0, y0, crop_radius):
     else:
         # Cut out sub-image around center
         sub_image = np.copy(frame[y0 - crop_radius:y0 + crop_radius, \
-                          x0 - crop_radius:x0 + crop_radius])
+                                  x0 - crop_radius:x0 + crop_radius])
     return sub_image
 
 ###############################################################################
@@ -2269,7 +2269,7 @@ def process_object_frames(path_object_files,
                           show_images_center_coordinates=True):
     '''
     Process the OBJECT frames by subtracting the background, flat-fielding,
-    removing bad pixels, centering and computing the mean over the NDIT's
+    removing bad pixels, centering and computing the mean over the NDITs
 
     Input:
         path_object_files: list of paths to raw OBJECT-files
@@ -2508,7 +2508,7 @@ def process_object_frames(path_object_files,
 
                     # Determine required shift of image by cross-correlation with template
                     x_shift_fit, y_shift_fit = phase_cross_correlation(list_sub_image_template[k], sub_image, upsample_factor=10)[0]
-                    
+
                     # Compute shift in x- and y-directions
                     list_shift_x[k].append(511.5 - x_fit_template[k] + x_shift_fit - x_dith)
                     list_shift_y[k].append(511.5 - y_fit_template[k] + y_shift_fit - y_dith)
@@ -2542,7 +2542,7 @@ def process_object_frames(path_object_files,
         # Print which file has been processed
         printandlog('Processed file ' + str(i + 1) + '/' + str(len(path_object_files)) + ': {0:s}'.format(os.path.basename(path_sel)))
 
-    # Convert lists of single sum and difference images to image cubes
+    # Convert lists of left and right images to image cubes
     cube_left_frames = np.stack(list_left_frames)
     cube_right_frames = np.stack(list_right_frames)
 
@@ -2633,15 +2633,12 @@ def process_object_frames(path_object_files,
         height_figure = number_rows*height_frame
 
         # Plot sub-images used to determine center coordinates
-        cmap = mpl.cm.viridis
+        cmap = mpl.cm.get_cmap('viridis').copy()
         cmap.set_bad(color='gray')
 
         printandlog('\nCreating plot(s) showing the sub-images of each frame and the center coordinates fitted:')
         for i in range(number_figures):
-            if number_figures == 1:
-                plot_name = name_file_root + 'centering_sub_images.png'
-            else:
-                plot_name = name_file_root + 'centering_sub_images_' + str(i + 1) + '.png'
+            plot_name = name_file_root + 'centering_sub_images_' + str(i + 1) + '.png'
             path_plot = os.path.join(path_plots_dir, plot_name)
             printandlog(path_plot, wrap=False)
             fig, axs = plt.subplots(nrows=number_rows[i], ncols=2, sharex=True, sharey=True, \
@@ -2746,8 +2743,8 @@ def compute_annulus_values(cube, param):
             coord_y, coord_x = np.hstack([coord_y1, coord_y2]), np.hstack([coord_x1, coord_x2])
 
         # Append coordinates to final coordinate arrays
-        coord_x_tot = np.append(coord_x_tot, coord_x).astype(np.int)
-        coord_y_tot = np.append(coord_y_tot, coord_y).astype(np.int)
+        coord_x_tot = np.append(coord_x_tot, coord_x).astype(int)
+        coord_y_tot = np.append(coord_y_tot, coord_y).astype(int)
 
     # Determine values
     values_annulus = cube[..., coord_y_tot, coord_x_tot]
@@ -2801,7 +2798,8 @@ def subtract_background(cube, annulus_background):
 def process_flux_frames(path_flux_files,
                         file_index_flux,
                         indices_to_remove_flux,
-                        frame_master_flat, frame_master_bpm,
+                        frame_master_flat,
+                        frame_master_bpm,
                         frame_master_sky_flux,
                         annulus_background,
                         sigma_filtering=True,
@@ -2812,7 +2810,7 @@ def process_flux_frames(path_flux_files,
                         show_images_center_coordinates=True):
     '''
     Process FLUX-files by subtracting the background, flat-fielding,
-    removing bad pixels, centering and computing the mean over the NDIT's.
+    removing bad pixels, centering and computing the mean over the NDITs.
     Function performs the same steps as process_object_frames and additionally
     subtracts the background in an annulus.
 
@@ -2938,7 +2936,7 @@ def process_flux_frames(path_flux_files,
 
 def determine_star_flux(cube_flux_processed, path_flux_files, path_object_files, flux_annulus_star):
     '''
-    Determine flux of star in master flux frame using aperture photometry
+    Determine flux of star in cube of left or right processed FLUX-frames
 
     Input:
         cube_flux_processed: cube of left or right processed FLUX-frames
@@ -3455,7 +3453,7 @@ def preprocess_data(frames_to_remove=[],
     # Creating processed and centered cubes of left and right OBJECT-frames
     ###############################################################################
 
-    # Create reduced and centerd single-sum and -difference images
+    # Create processed and centered cubes of left and right OBJECT-frames
     printandlog('\n###############################################################################')
     printandlog('# Processing OBJECT-files')
     printandlog('###############################################################################')
@@ -3488,7 +3486,7 @@ def preprocess_data(frames_to_remove=[],
                                                                         show_images_center_coordinates=show_images_center_coordinates)
 
     if save_preprocessed_data == True:
-        # Write preprocessed cubes of single-sum and single-difference images
+        # Write preprocessed left and right cubes
         printandlog('\nSaving pre-processed data so that pre-processing can be skipped the next time.')
         printandlog('')
         write_fits_files(data=cube_left_frames, path=os.path.join(path_preprocessed_dir, name_file_root + 'cube_left_frames.fits'), header=False, silent=False)
@@ -3670,14 +3668,14 @@ def compute_double_sum_double_difference(cube_single_sum, cube_single_difference
     cube_I_U_double_sum = 0.5*(cube_single_sum[indices_Uplus, :, :] + cube_single_sum[indices_Uminus, :, :])
 
     if double_difference_type == 'conventional':
-        # Compute Q- and U-cubes using standard double difference
-        printandlog('\nUsing the standard double difference to compute the Q- and U-images.')
+        # Compute Q- and U-cubes using conventional double difference
+        printandlog('\nUsing the conventional double difference to compute the Q- and U-images.')
         cube_Q_double_difference = 0.5*(cube_single_difference[indices_Qplus, :, :] - cube_single_difference[indices_Qminus, :, :])
         cube_U_double_difference = 0.5*(cube_single_difference[indices_Uplus, :, :] - cube_single_difference[indices_Uminus, :, :])
 
     elif double_difference_type == 'normalized':
         # Compute Q- and U-cubes using normalized double difference
-        printandlog('\nUsing the normalized double difference to compute the Q- and U-images')
+        printandlog('\nUsing the normalized double difference to compute the Q- and U-images.')
         cube_qplus = cube_single_difference[indices_Qplus, :, :] / cube_single_sum[indices_Qplus, :, :]
         cube_qminus = cube_single_difference[indices_Qminus, :, :] / cube_single_sum[indices_Qminus, :, :]
         cube_uplus = cube_single_difference[indices_Uplus, :, :] / cube_single_sum[indices_Uplus, :, :]
@@ -3718,7 +3716,7 @@ def remove_detector_artefact(cube, number_pixels):
 
     # Remove the vertical band artefact
     indices = np.r_[0:number_pixels, (cube.shape[-2] - number_pixels):cube.shape[-2]]
-    median_columns = np.median(cube[:, indices, :], axis = 1)
+    median_columns = np.median(cube[:, indices, :], axis=1)
     cube_artefact_removed = cube - median_columns[:, np.newaxis, :]
 
     # If the input is a frame turn the resulting cube back into a frame
@@ -4893,6 +4891,7 @@ def compute_final_images(frame_I_Q, frame_I_U, frame_Q, frame_U, header, single_
     # Compute total intensity image
     frame_I_tot = 0.5*(frame_I_Q + frame_I_U)
 
+    # Compute Qphi and Uphi images
     if header != None:
         # Determine tracking mode used
         tracking_mode_used = header[0]['ESO INS4 COMB ROT']
@@ -5002,7 +5001,7 @@ def compute_contrast(frame, filter_used, sigma_clip=True):
 
     for i, separation_sel in enumerate(separation):
         # Determine the number of apertures at the separation
-        number_apertures = np.floor(2*np.pi*separation_sel / fwhm).astype(np.int)
+        number_apertures = np.floor(2*np.pi*separation_sel / fwhm).astype(int)
 
         # Compute the coordinates of the apertures
         angle = np.linspace(0, 2*np.pi, number_apertures, endpoint=False)
@@ -6564,7 +6563,7 @@ def run_pipeline(path_main_dir):
     f = open(path_file, 'r')
     print_in_terminal = f.read() == 'True'
     f.close()
-    
+
     # Define pupil-offset (deg) in pupil-tracking mode (SPHERE User Manual P99.0, 6th public release, P99 Phase 1)
     pupil_offset = 135.99
 
@@ -6705,6 +6704,13 @@ def run_pipeline(path_main_dir):
 
     # Start writing log file
     time_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Temporarily show a warning message until the telescope polarization has been recalibrated (shown at the beginning and end of the log)
+    printandlog('\n###############################################################################')
+    printandlog('# WARNING on correction of instrumental polarization')
+    printandlog('###############################################################################')
+    printandlog( '\nIn the beginning of September 2022, the M1 and M3 of UT3 were re-aluminized. As a result, the instrumental polarization created by the telescope has most likely changed and therefore the Mueller matrix model with which IRDAP corrects the data is not completely accurate for observations taken after 2022-09-12. However, looking at data taken after this date, the change in instrumental polarization is likely small and is probably only relevant for accurate measurements of the polarization of companions. I foresee to re-calibrate the instrumental polarization of the telescope by October 2023, after which I will update IRDAP.')
+
     printandlog('\n###############################################################################')
     printandlog('# Important notice')
     printandlog('###############################################################################')
@@ -7123,7 +7129,7 @@ def run_pipeline(path_main_dir):
     if type(combination_method_polarization) not in [str, float]:
         raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'median\' or a float in the range 0 < combination_method_polarization < 0.5.')
 
-    if type(combination_method_polarization) is str and combination_method_polarization not in ['least squares', 'median']: 
+    if type(combination_method_polarization) is str and combination_method_polarization not in ['least squares', 'median']:
         raise ValueError('\n\n\'combination_method_polarization\' should be \'least squares\', \'median\' or a float in the range 0 < combination_method_polarization < 0.5.')
 
     if type(combination_method_polarization) is float and not 0 < combination_method_polarization < 0.5:
@@ -7133,7 +7139,7 @@ def run_pipeline(path_main_dir):
     if type(combination_method_intensity) not in [str, float]:
         raise ValueError('\n\n\'combination_method_intensity\' should be \'mean\', \'median\' or a float in the range 0 < combination_method_intensity < 0.5.')
 
-    if type(combination_method_intensity) is str and combination_method_intensity not in ['mean', 'median']: 
+    if type(combination_method_intensity) is str and combination_method_intensity not in ['mean', 'median']:
         raise ValueError('\n\n\'combination_method_intensity\' should be \'mean\', \'median\' or a float in the range 0 < combination_method_intensity < 0.5.')
 
     if type(combination_method_intensity) is float and not 0 < combination_method_intensity < 0.5:
@@ -7238,7 +7244,7 @@ def run_pipeline(path_main_dir):
         combination_method_intensity = 'trimmed mean'
     else:
         trimmed_mean_prop_to_cut_intens = 0.1
-    
+
     ###############################################################################
     # Run pre-processing and PDI and ADI functions
     ###############################################################################
@@ -7300,7 +7306,7 @@ def run_pipeline(path_main_dir):
                 printandlog('\nSkipping pre-processing and reading pre-processed data and headers.')
                 printandlog('')
 
-            # Read pre-processed single-sum and difference- images
+            # Read pre-processed left and right frames
             cube_left_frames = read_fits_files(path=path_cube_left_frames, silent=False)[0]
             cube_right_frames = read_fits_files(path=path_cube_right_frames, silent=False)[0]
 
@@ -7397,6 +7403,12 @@ def run_pipeline(path_main_dir):
     time_end = time.time()
     d = datetime.datetime(1, 1, 1) + datetime.timedelta(seconds = time_end - time_start)
     printandlog('\nTime elapsed: %d h %d min %d s' % (d.hour, d.minute, d.second))
+
+    # Temporarily show a warning message until the telescope polarization has been recalibrated (shown at the beginning and end of the log)
+    printandlog('\n###############################################################################')
+    printandlog('# WARNING on correction of instrumental polarization')
+    printandlog('###############################################################################')
+    printandlog( '\nIn the beginning of September 2022, the M1 and M3 of UT3 were re-aluminized. As a result, the instrumental polarization created by the telescope has most likely changed and therefore the Mueller matrix model with which IRDAP corrects the data is not completely accurate for observations taken after 2022-09-12. However, looking at data taken after this date, the change in instrumental polarization is likely small and is probably only relevant for accurate measurements of the polarization of companions. I foresee to re-calibrate the instrumental polarization of the telescope by October 2023, after which I will update IRDAP.')
 
     # Print request to cite IRDAP
     printandlog('\n###############################################################################')

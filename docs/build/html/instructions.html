@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Usage instructions &mdash; IRDAP 1.3.4 documentation</title>
+  <title>Usage instructions &mdash; IRDAP 1.3.5 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
         <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -28,15 +29,19 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html">
-            <img src="_static/irdap_logo_blue.png" class="logo" alt="Logo"/>
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/irdap_logo_blue.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.3.4
+                1.3.5
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -76,8 +81,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Usage instructions</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Usage instructions</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/instructions.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -88,7 +93,7 @@
            <div itemprop="articleBody">
              
   <section id="usage-instructions">
-<h1>Usage instructions<a class="headerlink" href="#usage-instructions" title="Permalink to this headline"></a></h1>
+<h1>Usage instructions<a class="headerlink" href="#usage-instructions" title="Permalink to this heading"></a></h1>
 <p>The usage instructions are divided into five sections:</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="#running-irdap"><span class="std std-ref">Running IRDAP</span></a></p></li>
@@ -98,7 +103,7 @@
 <li><p><a class="reference internal" href="#combining-multiple-data-sets"><span class="std std-ref">Combining multiple data sets</span></a></p></li>
 </ul>
 <section id="running-irdap">
-<h2>Running IRDAP<a class="headerlink" href="#running-irdap" title="Permalink to this headline"></a></h2>
+<h2>Running IRDAP<a class="headerlink" href="#running-irdap" title="Permalink to this heading"></a></h2>
 <p>Reducing data with IRDAP is very straightforward and only requires two commands to be entered in the terminal. First, create a directory (e.g. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20</span></code>) containing a subdirectory called <code class="file docutils literal notranslate"><span class="pre">raw</span></code> (i.e. <code class="file docutils literal notranslate"><span class="pre">/home/T_Cha_2016-02-20/raw</span></code>) in which you place the raw FITS-files.</p>
 <div class="admonition attention">
 <p class="admonition-title">Attention</p>
@@ -125,7 +130,7 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </div>
 </section>
 <section id="pre-processing-in-a-nutshell">
-<h2>Pre-processing in a nutshell<a class="headerlink" href="#pre-processing-in-a-nutshell" title="Permalink to this headline"></a></h2>
+<h2>Pre-processing in a nutshell<a class="headerlink" href="#pre-processing-in-a-nutshell" title="Permalink to this heading"></a></h2>
 <p>The data reduction is divided into a pre-processing, polarimetric differential imaging (PDI) and angular differential imaging (ADI) part.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -158,7 +163,7 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </div>
 </section>
 <section id="pdi-in-a-nutshell">
-<h2>PDI in a nutshell<a class="headerlink" href="#pdi-in-a-nutshell" title="Permalink to this headline"></a></h2>
+<h2>PDI in a nutshell<a class="headerlink" href="#pdi-in-a-nutshell" title="Permalink to this heading"></a></h2>
 <p>For the polarimetric differential imaging (PDI) part, IRDAP computes the double sum and double difference from the pre-processed OBJECT-files. It then applies the model-based correction method as described in <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2020A%26A...633A..64V/abstract">van Holstein et al. (2020)</a> to remove the instrumental polarization and cross-talk. The correction method for pupil-tracking observations has some differences compared to that of field-tracking observations (see <a class="reference external" href="https://ui.adsabs.harvard.edu/abs/2017SPIE10400E..15V">van Holstein et al. 2017</a>). Subsequently, the background in the images is subtracted and the polarization of the star determined. The FITS-files of the final images are then written to two subdirectories:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">reduced_pdi\no_star_pol_subtr</span></code>, containing the final images with the polarization of the star still present;</p></li>
@@ -187,7 +192,7 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </div>
 </section>
 <section id="adi-in-a-nutshell">
-<h2>ADI in a nutshell<a class="headerlink" href="#adi-in-a-nutshell" title="Permalink to this headline"></a></h2>
+<h2>ADI in a nutshell<a class="headerlink" href="#adi-in-a-nutshell" title="Permalink to this heading"></a></h2>
 <p>With the angular differential imaging (ADI) part, IRDAP enables the detection of companions and disk signal in total intensity by performing both a classical ADI reduction and a reduction combining ADI with principal component analysis (ADI+PCA). IRDAP performs separate reductions for the frames on the left and right halves of the detector. The resulting images, plus an image of their sum, are written to the subdirectories <code class="docutils literal notranslate"><span class="pre">reduced_adi\classical</span></code> and <code class="docutils literal notranslate"><span class="pre">reduced_adi\pca</span></code>. For the ADI+PCA reduction, the user can set the number of principal components to be subtracted and the annuli over which the reduction needs to be optimized (see the <a class="reference internal" href="configfile.html#basic-adi-options"><span class="std std-ref">Basic ADI options</span></a> of the configuration file).</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -207,7 +212,7 @@ editor (see <a class="reference internal" href="configfile.html#configuration-fi
 </div>
 </section>
 <section id="combining-multiple-data-sets">
-<h2>Combining multiple data sets<a class="headerlink" href="#combining-multiple-data-sets" title="Permalink to this headline"></a></h2>
+<h2>Combining multiple data sets<a class="headerlink" href="#combining-multiple-data-sets" title="Permalink to this heading"></a></h2>
 <p>If a target was observed using multiple observation blocks (OBs), it is recommended to first reduce each OB separately. After that, the final images of the PDI and ADI reductions can be mean-combined by using the terminal to navigate to a directory of your choice and typing:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">irdap</span> <span class="o">--</span><span class="n">meancombine</span> <span class="n">path1</span> <span class="n">path2</span> <span class="o">...</span> <span class="n">pathx</span>
 </pre></div>
