@@ -64,6 +64,8 @@ from skimage.registration import phase_cross_correlation
 from .version import __version__
 from .pca_adi import pca_adi
 
+from . import utils_parallactic_angles
+
 # to avoid some warning from pandas and matplotlib
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
@@ -357,6 +359,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
     print_array[1:, 1] = [os.path.basename(x) for x in path_raw_files]
 
     # Iterate over headers and header names to fill overview
+    identifier_fill_header_Stokes = False # fill Stokes header if needed (B. Ren, Update 2023-04-06)
     for i, header_sel in enumerate(header):
         for j, header_name_sel in enumerate(header_names):
             if header_name_sel in header_sel:
@@ -372,6 +375,26 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
                 else:
                     # If header does not exist, keep element of overview empty
                     print_array[i+1, j+2] = ''
+            
+            if header_name_sel == 'ESO OCS DPI H2RT STOKES' and header_sel['ESO DPR TYPE'] == 'OBJECT':
+                #Update by B. Ren for data without Stokes params (Update 2023-04-06)
+                try:
+                    if header_sel['ESO OCS DPI H2RT STOKES'] == '':
+                        pass #means read was good
+                except: #means no Stokes parameters in raw data, now editing
+                    stokes_this = None
+                    if abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 56:
+                        stokes_this = 'Qplus'
+                    elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 34:
+                        stokes_this = 'Qminus'
+                    elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 11:
+                        stokes_this = 'Uplus'
+                    elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 79:
+                        stokes_this = 'Uminus'
+                    header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    header[i]['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    print_array[i+1, j+2] = header_sel[header_name_sel] #update header
+                    identifier_fill_header_Stokes = True
 
             if type(print_array[i+1, j+2]) is float:
                 # Include string with 4 decimal places
@@ -379,7 +402,7 @@ def create_overview_headers(path_raw_dir, path_overview, log=True):
             elif type(print_array[i+1, j+2]) is int:
                 # Include string as an integer
                 print_array[i+1, j+2] = '%s' % print_array[i+1, j+2]
-
+        
     # Vectorize the function len()
     lenvec = np.vectorize(len)
 
@@ -621,14 +644,19 @@ def check_sort_data_create_directories(frames_to_remove=[],
     if not any(header_on_sky):
         raise IOError('\n\nThere is no on-sky data.')
 
+    header_on_sky_nosky = [x for x in header if x['ESO DPR TYPE'] in ['OBJECT', 'OBJECT,CENTER', 'OBJECT,FLUX']] #added by Bin Ren to enable shared SKY frames in star hopping observations
+
     if len(set([x['ESO OBS TARG NAME'] for x in header_on_sky])) != 1:
-        different_targets = input_wrap('\nThe on-sky data provided have different targets. Continue anyway? (y/n) ')
-        if different_targets == 'y':
-            printandlog('\nWARNING, continuing reduction although the on-sky data provided have different targets.')
-        elif different_targets == 'n':
-            raise IOError('\n\nThe on-sky data provided have different targets.')
+        if len(set([x['ESO OBS TARG NAME'] for x in header_on_sky_nosky])) == 1:
+            printandlog('\nWARNING, found a single target but SKY frame is from other star(s).')
         else:
-            raise IOError('\n\nThe provided input \'' + str(different_targets) + '\' is not valid.')
+            different_targets = input_wrap('\nThe on-sky data provided have different targets. Continue anyway? (y/n) ')
+            if different_targets == 'y':
+                printandlog('\nWARNING, continuing reduction although the on-sky data provided have different targets.')
+            elif different_targets == 'n':
+                raise IOError('\n\nThe on-sky data provided have different targets.')
+            else:
+                raise IOError('\n\nThe provided input \'' + str(different_targets) + '\' is not valid.')
 
     if len(set([x['ESO INS4 COMB ROT'] for x in header_on_sky])) != 1:
         raise IOError('\n\nThe on-sky data provided use different tracking modes.')
@@ -733,7 +761,8 @@ def check_sort_data_create_directories(frames_to_remove=[],
 
     if any(header_center):
         if not all([x['ESO DET SEQ1 DIT'] == object_exposure_time for x in header_center]):
-            raise IOError('\n\nOne or more CENTER-files have an exposure time different from that of the OBJECT-files.')
+            pass #changed by Bin Ren on 2023-03-20 for DG CrA reduction (20210904 data)
+            # raise IOError('\n\nOne or more CENTER-files have an exposure time different from that of the OBJECT-files.')
 
         if not all([x['ESO INS4 FILT2 NAME'] == object_nd_filter for x in header_center]):
             raise IOError('\n\nOne or more CENTER-files use a NIR neutral density filter different from that of the OBJECT-files.')
@@ -866,6 +895,7 @@ def check_sort_data_create_directories(frames_to_remove=[],
     mjd_half_center = []
 
     # Sort file paths and indices of frames to be removed according to file type
+    identifier_no_Stokes_header = False #identifier used to tell if there is no Stokes header (B. Ren, Update 2023-04-06)
     for file_sel, header_sel, file_index_sel, NDIT_sel, indices_sel in zip(path_raw_files, header, file_index, NDIT, indices_to_remove):
 
         if header_sel['ESO DPR TYPE'] in ['DARK', 'DARK,BACKGROUND']:
@@ -883,7 +913,22 @@ def check_sort_data_create_directories(frames_to_remove=[],
             NDIT_object.append(NDIT_sel)
 
             # Append Stokes parameter to list
-            stokes_parameter.append(header_sel['ESO OCS DPI H2RT STOKES'])
+            try:
+                stokes_parameter.append(header_sel['ESO OCS DPI H2RT STOKES'])
+            except: # "Keyword 'ESO OCS DPI H2RT STOKES' not found."
+                #Edited by B. Ren for when this header is not availble in early obs (Update 2023-04-06)
+                stokes_this = None
+                if abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 56:
+                    stokes_this = 'Qplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 34:
+                    stokes_this = 'Qminus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 11:
+                    stokes_this = 'Uplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 79:
+                    stokes_this = 'Uminus'
+                header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                identifier_no_Stokes_header = True
+                stokes_parameter.append(stokes_this)
 
             # Calculate mean Julian date halfway the exposure
             mjd = header_sel['MJD-OBS']
@@ -947,23 +992,26 @@ def check_sort_data_create_directories(frames_to_remove=[],
     files_to_remove_stokes = []
     n = len(stokes_parameter)
 
-    for i in range(n):
-        if stokes_parameter[i] == 'Qplus':
-            if i + 1 == n:
-                files_to_remove_stokes.append(i)
-            elif stokes_parameter[i + 1] != 'Qminus':
-                files_to_remove_stokes.append(i)
-        if stokes_parameter[i] == 'Qminus':
-            if stokes_parameter[i - 1] != 'Qplus':
-                files_to_remove_stokes.append(i)
-        if stokes_parameter[i] == 'Uplus':
-            if i + 1 == n:
-                files_to_remove_stokes.append(i)
-            elif stokes_parameter[i + 1] != 'Uminus':
-                files_to_remove_stokes.append(i)
-        if stokes_parameter[i] == 'Uminus':
-            if stokes_parameter[i - 1] != 'Uplus':
-                files_to_remove_stokes.append(i)
+    if identifier_no_Stokes_header is False:
+        for i in range(n):
+            if stokes_parameter[i] == 'Qplus':
+                if i + 1 == n:
+                    files_to_remove_stokes.append(i)
+                elif stokes_parameter[i + 1] != 'Qminus':
+                    files_to_remove_stokes.append(i)
+            if stokes_parameter[i] == 'Qminus':
+                if stokes_parameter[i - 1] != 'Qplus':
+                    files_to_remove_stokes.append(i)
+            if stokes_parameter[i] == 'Uplus':
+                if i + 1 == n:
+                    files_to_remove_stokes.append(i)
+                elif stokes_parameter[i + 1] != 'Uminus':
+                    files_to_remove_stokes.append(i)
+            if stokes_parameter[i] == 'Uminus':
+                if stokes_parameter[i - 1] != 'Uplus':
+                    files_to_remove_stokes.append(i)
+    else: # do not remove the files for those without Stokes header (B. Ren, Update 2023-04-06), mainly older observations
+        printandlog('\nWARNING, some of the FITS-file(s) are not in "Qplus, Qminus, Uplus, Uminus" sequence')
 
     # Print which object-files will be removed because they lack a Q/U^+/- counterpart; do not change len() != 0 to any() because any([0]) = False and then it doesn't work
     if len(files_to_remove_stokes) != 0:
@@ -2347,7 +2395,28 @@ def process_object_frames(path_object_files,
     for i, (path_sel, indices_sel) in enumerate(zip(path_object_files, indices_to_remove_object)):
         # Read data and header from file
         cube_sel, header_sel = read_fits_files(path=path_sel, silent=True)
-
+                    
+        try: #Add 'ESO OCS DPI H2RT STOKES' header if necessary for those without it (B. Ren, Update 2023-04-06)
+            if header_sel['ESO OCS DPI H2RT STOKES'] == '': #placeholder comparison
+                pass #means read was good, if reading succeeded
+        except: #means no Stokes parameters in raw data, now editing
+            if header_sel['ESO DPR TYPE'] == 'OBJECT':
+                stokes_this = None
+                if abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 56:
+                    stokes_this = 'Qplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 34:
+                    stokes_this = 'Qminus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 11:
+                    stokes_this = 'Uplus'
+                elif abs(int(np.round(header_sel['ESO INS4 DROT3 POSANG']))) == 79:
+                    stokes_this = 'Uminus'
+                # header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                identifier_fill_header_Stokes = True
+        
+        # Bin Ren: Calculate and correct parallactic angles for start and end values, save in memory
+        header_sel = utils_parallactic_angles.parallactic_angles_IRDIS_correct(header_sel)
+        
         # Create list of indices of frames
         frame_index = [x for x in range(0, cube_sel.shape[0])]
 
@@ -2601,7 +2670,16 @@ def process_object_frames(path_object_files,
             plt.savefig(path_plot, dpi=300, bbox_inches='tight')
             plt.close(fig)
 
+    cube_left_frames = geometric_distortion_correction_cubes(cube_left_frames) #geometric correction code from Christian Ginski; line 1/5
+    cube_right_frames = geometric_distortion_correction_cubes(cube_right_frames) #geometric correction code from Christian Ginski; line 2/5
+
     return cube_left_frames, cube_right_frames, header
+
+def geometric_distortion_correction_cubes(in_cube): #geometric correction code from Christian Ginski; line 3/5
+
+    zoom_cube = ndimage.zoom(in_cube,[1.0,1.006,1.0]) #geometric correction code from Christian Ginski; line 4/5
+
+    return zoom_cube[:,3:1027,:] #geometric correction code from Christian Ginski; line 5/5
 
 ###############################################################################
 # compute_annulus_values
@@ -3338,9 +3416,12 @@ def preprocess_data(frames_to_remove=[],
             # Determine coronagraph used and set center coordinates
             coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
 
-            if coronagraph_used == 'N_ALC_Ks':
+            if coronagraph_used == '': #if 'ESO INS COMB ICOR' was not written, find the 'ESO INS1 FILT ID' keyword instead
+                coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+
+            if coronagraph_used == 'N_ALC_Ks' or coronagraph_used == 'FILT_BBF_Ks':
                 object_center_coordinates = (477, 534, 1503, 523)
-                printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is N_ALC_Ks.')
+                printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is ' + coronagraph_used + '.')
             else:
                 object_center_coordinates = (477, 521, 1503, 511)
                 printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is not N_ALC_Ks.')
@@ -3381,9 +3462,12 @@ def preprocess_data(frames_to_remove=[],
         # Determine coronagraph used and set center coordinates
         coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS COMB ICOR']
 
-        if coronagraph_used == 'N_ALC_Ks':
+        if coronagraph_used == '': #if 'ESO INS COMB ICOR' was not written, find the 'ESO INS1 FILT ID' keyword instead
+            coronagraph_used = pyfits.getheader(path_object_files[0])['ESO INS1 FILT ID']
+
+        if coronagraph_used == 'N_ALC_Ks' or coronagraph_used == 'FILT_BBF_Ks':
             object_center_coordinates = (477, 534, 1503, 523)
-            printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is N_ALC_Ks.')
+            printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is ' + coronagraph_used + '.')
         else:
             object_center_coordinates = (477, 521, 1503, 511)
             printandlog('\nobject_center_coordinates is \'automatic\': changing it to ' + str(tuple(x + 1 for x in object_center_coordinates)) + ' because the coronagraph used is not N_ALC_Ks.')
@@ -4128,7 +4212,8 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
                                               trimmed_mean_prop_to_cut_polar=0.1,
                                               combination_method_intensity='mean',
                                               trimmed_mean_prop_to_cut_intens=0.1,
-                                              single_posang_north_up=True):
+                                              single_posang_north_up=True,
+                                              save_parang_angles = True):
     '''
     Calculate incident I_Q-, I_U-, Q- and U-images by correcting for the instrumental polarization effects of IRDIS using the polarimetric instrument model
 
@@ -4165,6 +4250,7 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
             raw frames (default = True); only valid for observations taken in field-tracking mode with a single derotator
             position angle; parameter is ignored for pupil-tracking observations or field-tracking observations with more
             than one derotator position angle, because in these cases the final images produced always have North up
+        save_parang_angles: if True the parallactic angles are saved in the preprocessed data folder                
 
     Output:
         frame_I_Q_incident: polarimetric model-corrected incident I_Q-image
@@ -4229,6 +4315,9 @@ def correct_instrumental_polarization_effects(cube_I_Q_double_sum,
         derotator_position_angle[i] = header_sel['ESO INS4 DROT2 POSANG']
         dates[i] = header_sel['DATE'][:10]
 
+    if save_parang_angles: #Written by Bin Ren
+        write_fits_files(data=p, path=os.path.join(path_preprocessed_dir, name_file_root + 'parangs.fits'), header=False, silent=False)
+    
     # Define a Julian date with respect to noon at Paranal and round it to night number
     # (Paranal is 70 deg in longitude or a fraction 0.2 away from Greenwich and mjd is
     # defined with respect to midnight at Greenwich)
@@ -6522,7 +6611,10 @@ def run_pipeline(path_main_dir):
         raise IOError('\n\nThe raw directory {0:s} does not contain FITS-files. You need to put your raw FITS-files in this folder.'.format(path_raw_dir))
 
     # Define the base of the name of each file to be generated
-    header_target_name = [pyfits.getheader(x) for x in path_raw_files if 'ESO OBS TARG NAME' in pyfits.getheader(x)]
+    header_target_name = [pyfits.getheader(x) for x in path_raw_files if ('ESO OBS TARG NAME' in pyfits.getheader(x) and pyfits.getheader(x)['ESO DPR TYPE'] == 'OBJECT')]
+    # Update by Bin Ren on 2022-05-09: second condition in the "if" command above is used to make sure only target is taken into account
+    # Update by Bin Ren on 2022-05-09: Code updated in case people use SKY frames that have different names than the target
+    
     if len(header_target_name) == 0:
         raise IOError('\n\nThe target name has not been found in the headers. There is likely no on-sky data in the raw directory {0:s}.'.format(path_raw_dir))
     else:
@@ -7220,7 +7312,31 @@ def run_pipeline(path_main_dir):
 
             # Read headers
             header = [pyfits.getheader(x.rstrip('\n')) for x in open(path_object_files_text, 'r')]
+            #
+            identifier_fill_header_Stokes = False # fill Stokes header if needed (B. Ren, Update 2023-04-06)
+            for i in range(len(header)):
+                if header[i]['ESO DPR TYPE'] != 'OBJECT':
+                    continue
+                try:
+                    if header[i]['ESO OCS DPI H2RT STOKES'] == '': #placeholder comparison
+                        pass #means read was good, if reading succeeded
+                except: #means no Stokes parameters in raw data, now editing
+                    stokes_this = None
+                    if abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 56:
+                        stokes_this = 'Qplus'
+                    elif abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 34:
+                        stokes_this = 'Qminus'
+                    elif abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 11:
+                        stokes_this = 'Uplus'
+                    elif abs(int(np.round(header[i]['ESO INS4 DROT3 POSANG']))) == 79:
+                        stokes_this = 'Uminus'
+                    # header_sel['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    header[i]['ESO OCS DPI H2RT STOKES'] = stokes_this
+                    identifier_fill_header_Stokes = True
+
             printandlog('Read headers from OBJECT-files specified in ' + path_object_files_text + '.')
+            if identifier_fill_header_Stokes:
+                printandlog('Stokes header inferred from "ESO INS4 DROT3 POSANG".')
 
             # Read indices of OBJECT-files
             file_index_object = literal_eval([x for x in open(path_file_index_object, 'r')][0])
